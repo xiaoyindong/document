@@ -36,4 +36,16 @@ const server = http.createServer((req, res) {
 });
 // 监听端口号
 server.listen(8080);
-``
+```
+
+- writeHeader: 设置响应码 
+
+- write: 返回的就是响应体，即前端拿到的数据
+
+- setHeader: 设置响应头
+
+上面的服务是一个```web```的静态服务器，也即适配```get```请求，对于```post```请求来说，由于请求数据量较大，需要持续接收数据，这里使用```querystring```解析前端传入的参数
+
+```js
+const http = require('http');
+const querystrin
