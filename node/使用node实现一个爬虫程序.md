@@ -1,0 +1,59 @@
+## 1. 概述
+
+爬虫是一种自动获取网页内容的程序，是搜索引擎的重要组成部分，搜索引擎优化很大程度上是针对爬虫而做出的优化。网站中存在一个叫做```robots.txt```的文本文件，```robots.txt```是一个协议，告诉爬虫要查看的第一个文件，```robots.txt```文件告诉爬虫服务器上什么文件是可以被查看的，搜索机器人会按照该文件中的内容确定访问的范围。比如百度的```robots```文件```https://www.baidu.com/robots.txt```。
+
+```txt
+User-agent: *
+Disallow: /baidu
+Disallow: /s?
+Disallow: /ulink?
+Disallow: /link?
+Disallow: /home/news/data/
+Disallow: /bh
+```
+
+```robots.txt```文件必须放在网站的跟目录下，当搜索机器人访问一个站点时，会首先检查该站点根目录下是否存在```robots.txt```，如果存在，搜索机器人就会按照该文件中的内容来确定访问的范围；如果该文件不存在，那么搜索机器人就沿着链接抓取。
+
+```User-agent```表示针对哪种搜索引擎，```*```表示全部，还可以设置```Baiduspider```，```Googlebot```，```MSNBot```，```YoudaoBot```等。```Disallow```表示禁止爬虫抓取的文件。如设置为```/```则表示全部都不允许抓取。```Allow```是允许抓取的位置，如不设置则默认为```Allow: /```全部允许。
+
+## 2. 爬虫工具
+
+```node```中可以使用```cheerio```模块进行页面抓取，它可以像```jq```一样操作```dom```。通过```https```发送请求。在```finish```方法中就获取到页面的```html```了，然后使用```cheerio.load```方法对```dom```节点进行解析。
+
+```js
+const cheerio = require('cheerio');
+const https = require('https');
+
+let html = '';
+
+const $ = '';
+
+https.get('url', res => {
+    res.on('data', data => {
+        html += data; // 保存返回的数据
+    });
+    res.on('finish', () => {
+        $ = cheerio.load(html); // cheerio解析数据
+        // $就是拿到的dom树, 想jq一样。
+    })
+})
+```
+
+## 3. 手动编写一个爬虫
+
+```js
+const url = require('url');
+const http = require('http');
+const https = require('https');
+
+
+function requestUrl(url, headers) {
+    const obj = url.parse(url);
+    let httpMode = null;
+    if (obj.protool == 'https') {
+            httpMode = https;
+        } else {
+            httpMode = http;
+        }
+    return new Promise((resolve, reject) => {
+        const req = 
