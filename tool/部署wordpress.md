@@ -1,0 +1,327 @@
+## 1. 概述
+
+这里演示```freestyle```和```pipeline```两种部署方式。结合```Jenkins```，```ansible```，```Gitlab```.
+
+首先需要有一台域名为```gitlab.example.com```的```gitlab```主机，用来保存源代码和版本管理。
+
+还需要有一台域名为```jenkins.example.com```的```jenkins```服务与```ansible```共用一台服务器。在这台主机中安装```Jenkins```和```ansible```。保证```jenkins```和```ansible```共用一个系统用户可以协同工作。
+
+还需要一台域名为```test.example.com```的服务，作为远程交付的主机。项目使用自动化交付到这台主机当中，并可以根据用户的需求持续的更新，自动交互到客户手中。
+
+利用J```enkins```抓取开发人员的项目代码，维护```ansible```脚本到```jenkins```的```workspace```工作区域，通过```Jenkins```内建工具编写```freestyle```或者```pipeline```将代码推送到交付主机。
+
+## 2. FreestyleJob 部署
+
+1. 初始环境构建
+
+2. 编写ansible playbook脚本实现静态网页远程部署
+
+3. 将playbook部署脚本提交到gitlab仓库
+
+4. 构建Freestyle Job任务框架
+
+5. Jenkins集成ansible与Gitlab实现静态网页的自动化部署
+
+
+先关闭```git```的安全认证。
+
+```s
+git config --global http.sslVerify false
+```
+
+### 1. 编写playbook
+
+```nginx_playbooks```目录。
+
+```s
+inventory/
+    prod
+    dev
+roles/
+    nginx/
+        files/
+            health_check.sh
+            index.html
+        tasks/
+            main.yml
+        templates/
+            nginx.conf.j2
+
+deploy.yml
+```
+
+```deploy.yml```
+
+```yml
+- hosts: "nginx"
+  gather_facts: true
+  remote_user: root
+  roles:
+    - nginx
+```
+
+```inventory/prod```
+
+```yml
+[nginx]
+test.example.com
+
+[nginx:vars]
+server_name=test.example.com
+port=80
+user=deploy
+worker_processes=4
+max_open_file=65505
+root=/www
+```
+
+```inventory/dev```
+
+```yml
+[nginx]
+test.example.com
+
+[nginx:vars]
+server_name=test.example.com
+port=80
+user=deploy
+worker_processes=4
+max_open_file=65505
+root=/www
+```
+
+```roles/nginx/files/health_check.sh```用于检查网站是否部署成功
+
+```s
+#!/bin/sh
+
+URL=$1
+
+curl -Is http://$URL > /dev/null && echo "The remote side is healthy" || echo "The remote side is failed, please check"
+```
+
+```roles/nginx/files/index.html```
+
+```
+this is first website
+```
+
+```roles/nginx/templates/nginx.conf.j2```
+
+```s
+# For more information on configuration, see:
+user    {{ user }};
+worker_processes    {{ worker_processes }};
+
+error_log  /var/log/nginx/error.log;
+
+pid  /var/run/nginx.pid;
+
+evnets {
+  worker_connections    {{ max_open_file }};
+}
+
+http {
+  include   /etc/nginx/mime.types;
+  default_type    application/octet-stream;
+
+  log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+  access_log /var/log/nginx/access.log main;
+
+  sendfile on;
+
+  keepalive_timeout 65;
+
+  server {
+    listen  {{ port }} default_server;
+
+    location / {
+      root  {{ root }};
+      index   index.html index.htm;
+    }
+
+    error_page 404  /404.html;
+    location = /404.html {
+      root    /usr/share/nginx/html;
+    }
+
+    error_page    500 502 503 504 /50x.html;
+    location = /50x.html {
+      root    /usr/share/nginx/html
+    }
+  }
+}
+```
+
+```roles/testbox/tasks/main.yml```
+
+```yml
+- name: Disable system firewall
+  service: name=firewalld state=stopped
+
+- name: Disable SELINUX
+  selinux: state=disabled
+
+- name: setup nginx yum source
+  yum: pkg=epel-release state=latest
+
+- name: write the nginx config file
+  template: src=roles/nginx/templates/nginx.conf.j2 dest=/etc/nginx/nginx.conf
+
+- name: create nginx root folder
+  file: 'path={{ root }} state=directory owner={{ user }} group={{ user }} mode=0755'
+
+- name: copy index.html to remote
+  copy: 'remote_src=nop src=roles/nginx/files/index.html desc=/www/index.html mode=0755'
+
+- name: restart nginx service
+  service: name=nginx state=restarted
+
+- name: run the health check locally
+  shell: "sh roles/nginx/files/health_check.sh {{ server_name }}"
+  delegate_to: localhost
+  register: health_status
+
+- debug: msg="{{ health_status.stdout }}"
+```
+
+编写好之后可以将上面的文件提交到```gitlab```中，方便```Jenkins```抓取。
+
+### 2. Jenkins集成ansible。
+
+新建任务```nginx-freestyle-job```, 选择构建```自由风格```的软件项目，描述随便输入就可以，源码管理选择```git```，仓库地址选择上面提交的```playbook```仓库地址，这里注意使用```https```格式的，凭证选择```root```，分支选中```master```。
+
+参数化构建过程新增一个选项参数，```deploy_env```, 选项输入```prod```和```dev```，再添加一个文本参数，名称为```branch```，默认值为```master```。
+
+构建区域增加构建步骤，选择执行```shell```，在```shell```命令中输入内容。
+
+```s
+#/bin/sh
+
+set +x
+source /home/deploy/.py3-a2.5-env/bin/activate
+source /home/deploy/.py3-a2.5-env/ansible/hacking/env-setup -q
+
+cd $WORKSPACE/nginx_playbooks
+ansible --version
+ansible-playbook --version
+
+ansible-playbook -i inventory/$deploy_env ./deploy.yml -e project=nginx -e branch=$branch -e env=$deploy_env
+```
+
+点击```build with parameters```, 选择```deploy_dev```的```dev```环境，分支为```master```。
+
+部署完成
+
+## 3. Pipeline部署
+
+基于```Nginx```, ```Mysql```，```PHP```, ```Wordpress```来实现自动化交付平台。
+
+1. 初始环境构建
+
+2. 编写ansible playbook脚本实现静态网页远程部署
+
+3. 将playbook部署脚本提交到gitlab仓库
+
+4. 编写Pipeline Job脚本实现Jenkins流水线持续交付流程
+
+5. Jenkins集成ansible与Gitlab实现Wordpress自动化部署
+
+首先进行```ansible```的```playbook```脚本的编写工作，可以先关闭```git```的安全认证。
+
+```s
+git config --global http.sslVerify false
+```
+
+### 1. 编写playbook
+
+```wordpress_playbooks```目录。
+
+```s
+inventory/
+    prod
+    dev
+roles/
+    wordpress/
+        files/
+            health_check.sh
+            index.php
+            www.conf
+        tasks/
+            main.yml
+        templates/
+            nginx.conf.j2
+
+deploy.yml
+```
+
+```deploy.yml```
+
+```yml
+- hosts: "wordpress"
+  gather_facts: true
+  remote_user: root
+  roles:
+    - wordpress
+```
+
+```inventory/prod```
+
+```yml
+[wordpress]
+test.example.com
+
+[wordpress:vars]
+server_name=test.example.com
+port=80
+user=deploy
+worker_processes=4
+max_open_file=65505
+root=/data/www
+gitlab_user='root'
+gitlab_pass='123456'
+```
+
+```inventory/dev```
+
+```yml
+[wordpress]
+test.example.com
+
+[wordpress:vars]
+server_name=test.example.com
+port=8080
+user=deploy
+worker_processes=2
+max_open_file=30000
+root=/data/www
+gitlab_user='root'
+gitlab_pass='123456'
+```
+
+```roles/wordpress/files/health_check.sh```用于检查网站是否部署成功
+
+```s
+#!/bin/sh
+
+URL=$1
+PORT=$2
+
+curl -Is http://$URL:$PORT/info.php > /dev/null && echo "The remote side is healthy" || echo "The remote side is failed, please check"
+```
+
+```roles/wordpress/files/index.php```
+
+```php
+<?php phpinfo(); ?>
+```
+
+```roles/wordpress/files/www.conf```
+
+```s
+; Start a new pool named 'www'.
+[www]
+
+; Unix user/group of 
