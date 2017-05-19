@@ -360,4 +360,46 @@ listen.group = deploy
 ;listen.mode = 0660
 ; When POSIX Access Control Lists are supported you can set them using
 ; these options, value is a comma separated list of user/group names.
-; When 
+; When set, listen.owner and listen.group are ignored
+;listen.acl_users =
+;listen.acl_groups =
+
+; List of addresses (IPv4/IPv6) of FastCGI clients which are allowed to connect.
+; Equivalent to the FCGI_WEB_SERVER_ADDRS environment variable in the original
+; PHP FCGI (5.2.2+). Makes sense only with a tcp listening socket. Each address
+; must be separated by a comma. If this value is left blank, connections will be
+; accepted from any ip address.
+; Default Value: any
+listen.allowed_clients = 127.0.0.1
+
+; Specify the nice(2) priority to apply to the pool processes (only if set)
+; The value can vary from -19 (highest priority) to 20 (lower priority)
+; Note: - It will only work if the FPM master process is launched as root
+;       - The pool processes will inherit the master process priority
+;         unless it specified otherwise
+; Default Value: no set
+; process.priority = -19
+
+; Choose how the process manager will control the number of child processes.
+; Possible Values:
+;   static  - a fixed number (pm.max_children) of child processes;
+;   dynamic - the number of child processes are set dynamically based on the
+;             following directives. With this process management, there will be
+;             always at least 1 children.
+;             pm.max_children      - the maximum number of children that can
+;                                    be alive at the same time.
+;             pm.start_servers     - the number of children created on startup.
+;             pm.min_spare_servers - the minimum number of children in 'idle'
+;                                    state (waiting to process). If the number
+;                                    of 'idle' processes is less than this
+;                                    number then some children will be created.
+;             pm.max_spare_servers - the maximum number of children in 'idle'
+;                                    state (waiting to process). If the number
+;                                    of 'idle' processes is greater than this
+;                                    number then some children will be killed.
+;  ondemand - no children are created at startup. Children will be forked when
+;             new requests will connect. The following parameter are used:
+;             pm.max_children           - the maximum number of children that
+;                                         can be alive at the same time.
+;             pm.process_idle_timeout   - The number of seconds after which
+;                                         an idle proc
