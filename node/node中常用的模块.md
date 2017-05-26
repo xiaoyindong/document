@@ -197,3 +197,54 @@ path.format({
     dir: '/a/b/c',
     base: 'index.html',
     ext: '.html',
+    name: 'index'
+});
+// /a/b/c/index.html
+```
+
+### 9. normalize()
+
+规范化路径，将不可用路径变为可用路径, 这个方法注意如果有转译字符会转译。
+
+```js
+path.normalize('a/b/c/d'); // a/b/c/d
+path.normalize('a//b/c../d'); // a/b/c../d
+path.normalize('a\\/b/c\\/d'); // a/b/c/d 
+```
+
+## 3. Buffer
+
+```Buffer```一般称为缓冲区，可以认为因为```Buffer```的存在让开发者可以使用```js```操作```二进制```。```IO```行为操作的就是二进制数据。```NodeJS```中的```Buffer```是一片内存空间。他的大小是不占据```V8```内存大小的，```Buffer```的内存申请不是由```Node```生成的。只是回收的时候是```V8```的```GC```进行回收的。
+
+```Buffer```是```NodeJS```中的一个全局变量，无需```require```就可以直接使用。一般配合```stream```流使用，充当数据的缓冲区。
+
+```alloc```可以创建指定字节大小的```Buffer```，默认没有数据
+
+```allocUnsafe``` 创建指定大小的```Buffer```但是不安全，使用碎片的空间创建```Buffer```，可能存在垃圾脏数据，不一定是空的。
+
+```from``` 接收数据创建```Buffer```
+
+在```v6```版本之前是可以通过实例化创建```Buffer```对象的，但是这样创建的权限太大了，为了控制权限，就限制了实例化创建的方式。
+
+```js
+// 创建Buffer
+const b1 = Buffer.alloc(10);
+const b2 = Buffer.allocUnsafe(10);
+```
+
+```from```创建```Buffer```可以接收三种类型，字符串，数组，```Buffer```。 第二个参数是编码类型。
+
+```js
+const b3 = Buffer.from('1');
+const b4 = Buffer.from([1, 2, 3]);
+```
+
+```Buffer```的一些常见实例方法。
+
+fill: 使用数据填充```Buffer```，会重复写入到最后一位
+
+write：向```Buffer```中写入数据，有多少写多少，不会重复写入。
+
+toString: 从```Buffer```中提取数据
+
+slice
