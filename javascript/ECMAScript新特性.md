@@ -503,4 +503,253 @@ set方法接收三个参数, 分别是```代理目标对象```，以及要写入
         if (property === 'age') {
             if (!Number.isInteger(value)) {
                 throw new TypeError(``${value} must be a integer);
-            
+            }
+        }
+        target[property] = value;
+    }
+}
+```
+
+### 1. Proxy 对比 defineProperty
+
+相比于```Object.defineProperty```,```Proxy```到底有哪些优势。
+
+```Object.defineProperty```只能监听到对象属性的```读取```或```写入```，```Proxy```除读写外还可以监听对象中属性的```删除```，对对象当中```方法调用```等。
+
+```js
+const person = {
+    name: 'yd',
+    age: 18
+}
+const personProxy = new Proxy(person, {
+    deleteProperty(target, property) {
+        console.log(target, property);
+        delete target[property];
+    },
+})
+```
+
+除了```delete```以外, 还有很多其他的对象操作都能够被监视到，列举如下。
+
+get: 读取某个属性
+
+set: 写入某个属性
+
+has:```in```操作符调用
+
+deleteProperty:```delete```操作符调用
+
+getProperty:```Object.getPropertypeOf()```
+
+setProperty:```Object.setProtoTypeOf()```
+
+isExtensible:```Object.isExtensible()```
+
+preventExtensions:```Object.preventExtensions()```
+
+getOwnPropertyDescriptor:```Object.getOwnPropertyDescriptor()```
+
+defineProperty:```Object.defineProperty()```
+
+ownKeys:```Object.keys()```,```Object.getOwnPropertyNames()```,```Object.getOwnPropertSymbols()```
+
+apply: 调用一个函数
+
+construct: 用```new```调用一个函数。
+
+第二点是对于数组对象进行监视更容易。
+
+通常想要监视数组的变化，基本要依靠重写数组方法，这也是```Vue```的实现方式，```Proxy```可以直接监视数组的变化。
+
+```js
+const list = [];
+const listProxy = new Proxy(list, {
+    set(target, property, value) {
+        console.log(target, property, value);
+        target[property] = value;
+        return true; // 写入成功
+    }
+});
+
+listProxy.push(100);
+```
+
+```Proxy```内部会自动根据```push```操作推断出来他所处的下标，每次添加或者设置都会定位到对应的下标```property```。数组其他的也谢操作方式都是类似的。
+
+最后```Proxy```是以非入侵的方式监管了对象的读写，那也就是说一个已经定义好的对象不需要对对象本身去做任何的操作，就可以监视到他内部成员的读写，而```defineProperty```的方式就要求必须按特定的方式单独去定义对象当中那些被监视的属性。
+
+对于一个已经存在的对象要想去监视他的属性需要做很多额外的操作。这个优势实际上需要有大量的使用然后在这个过程当中去慢慢的体会。
+
+## 18. Reflect
+
+如果按照```java```或者```c#```这类语言的说法，```Reflect```属于一个静态类，也就是说他不能通过```new```的方式去构建一个实例对象。只能够去调用这个静态类中的静态方法。
+
+这一点应该并不陌生，因为在```javascript```中的```Math```对象也是相同的，```Reflect```内部封装了一系列对对象的底层操作，具体一共提供了```14```个静态方法，其中有```1```个已经被废弃掉了，那还剩下```13```个，仔细去查看```Reflect```的文档会发现这```13```个方法的方法名与```Proxy```的处理对象里面的方法成员是完全一致的。
+
+其实这些方法就是````Proxy````处理对象那些方法内部的默认实现.
+
+```js
+const obj = {
+    foo: '123',
+    bar: '456',
+}
+
+const Proxy = new Proxy(obj, {
+    get(target, property) {
+        console.log('实现监视逻辑');
+        return Reflect.get(target, property);
+    }
+})
+```
+
+这也就表明在实现自定义的```get```或者```set```这样的逻辑时更标准的做法是先去实现自己所需要的监视逻辑，最后再去返回通过```Reflect```中对应的方法的一个调用结果。
+
+个人认为```Reflect```对象最大的意义就是他提供了一套统一操```作Object```的```API```，因为在这之前去操作对象时有可能使用```Object```对象上的方法，也有可能使用像```delete```或者是```in```这样的操作符，这些对于新手来说实在是太乱了，并没有什么规律。
+
+```Reflect```对象就很好的解决了这样一个问题，他统一了对象的操作方式。
+
+## 19. Promise
+
+```Promise```提供了一种全新的异步编程解决方案，通过链式调用的方式解决了在传统异步编程过程中回调函数嵌套过深的问题。
+
+关于```Promise```的细节有很多内容，所以说这里先不做详细介绍在```JavaScript```异步编程的文章中已经专门针对```Promise```进行了详细的分析。
+
+## 20. class类
+
+以前```ECMAScript```中都是通过定义函数以及函数的原型对象来去实现的类型，在构造函数中可以通过this去访问当前的实例对象，如果需要在这个类型所有的实例间去共享一些成员，可以借助于函数对象的```prototype```, 也就是原型去实现。
+
+```js
+function Person (name) {
+    this.name = name;
+}
+
+Person.prototype.say = function() {
+    console.log(this.name);
+}
+```
+
+```ECMAScript2015```可以使用一个叫做```class```的关键词来声明类型，这种独立定义类型的语法，要更容易理解，结构也会更加清晰。
+
+```js
+class Person {
+
+}
+```
+
+这种语法与一些老牌面向对象语言当中```class```非常相似的。如果需要在构造函数当中做一些额外的逻辑，可以添加一个```constructor```方法，这个方法就是构造函数。
+
+同样可以在这个函数中使用```this```去访问当前类型的实例对象。
+
+```js
+class Person {
+    constructor (name) {
+        this.name = name;
+    }
+    say() {
+        console.log(this.name);
+    }
+}
+```
+
+### 1. 静态方法
+
+类型中的方法分为```实例方法```和```静态方法```，实例方法就是需要通过这个类型构造的实例对象去调用，静态方法是直接通过类型本身去调用。可以通过static关键字定义。
+
+```js
+class Person {
+    constructor (name) {
+        this.name = name;
+    }
+    say() {
+        console.log(this.name);
+    }
+    static create (name) {
+        return new Person(name);
+    }
+}
+```
+
+调用静态方法是直接通过类型然后通过成员操作符调用方法名字。
+
+```js
+const yd = Person.create('yd');
+```
+
+注意：因为静态方法是挂载到类型上面的，所以说在静态方法内部他不会指向某一个实例对象，而是当前的类型。
+
+### 2. 类的继承
+
+继承是面向对象当中一个非常重要的特性，通过继承这种特性能抽象出来相似类型之间重复的地方, 可以通过关键词```extends```实现继承。
+
+super对象指向父类, 调用它就是调用了父类的构造函数。
+
+```js
+class Student extends Person {
+    constructor(name, number) {
+        super(name);
+        this.number = number;
+    }
+    hello () {
+        super.say();
+        console.log(this.number);
+    }
+}
+
+const s = new Student('yd', '100');
+
+s.hello();
+```
+
+## 21. Set
+
+可以把他理解为集合，他与传统的数组非常类似，不过```Set```内部的成员是不允许重复的。那也就是说每一个值在同一个```Set```中都是唯一的。
+
+通过这个类型构造的实例就用来存放不同的数据。可以通过这个实例的```add```方法向集合当中去添加数据，由于```add```方法他会返回集合对象本身，所以可以链式调用。如果在这个过程中添加了之前已经存在的值那所添加的这个值就会被忽略掉。
+
+```js
+const s = new Set();
+
+s.add(1).add(2).add(3).add(2);
+```
+
+想要遍历集合当中的数据，可以使用集合对象的```forEach```方法去传递一个回调函数。
+
+```js
+s.forEach(i => console.log(i));
+```
+
+也可以使用```for...of```循环。
+
+```js
+for (let i of s) {
+    console.log(i);
+}
+```
+
+可以通过```size```属性来去获取整个集合的长度。
+
+```js
+console.log(s.size);
+```
+
+```has```方法就用来判断集合当中是否存在某一个特定的值。
+
+```js
+console.log(s.has(100)); // false
+```
+
+```delete```方法用来删除集合当中指定的值，删除成功将会返回一个```true```。
+
+```js
+console.log(s.delete(3)); // true
+```
+
+```clear```方法用于清除当前集合当中的全部内容。
+
+```js
+s.clear()
+```
+
+## 22. Map
+
+```Map```结构与对象非常类似，本质上他们都是```键值对集合```但是这种对象结构中的键，只能是字符串类型，如果说用其他类型作为键会被转换成字符串，出现```[object object]```。不同的对象转换成字符串可能会变成相同的键名```[object object]``
