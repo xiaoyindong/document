@@ -100,4 +100,48 @@ FLUSH PRIVILEGES;
 
 ```s
 # 收回权限
-REVOKE ALL PRIVILEGE
+REVOKE ALL PRIVILEGES ON *.* FROM 'test'@'%';
+
+# 删除本地用户
+DROP USER 'user'@'localhost';
+
+# 删除远程用户
+DROP USER 'user'@'%';
+
+# 刷新权限
+FLUSH PRIVILEGES;
+```
+
+## 7. 远程登录
+
+在```mysql```数据库查看```user```表信息 ：
+
+```s
+use mysql;
+select host， user， authentication_string， plugin from user;
+```
+
+表格中```root```用户的```host```默认是```localhost```，只允许本地访问。授权```root```用户的所有权限并设置远程访问：
+```s
+# 授权
+GRANT ALL ON *.* TO 'root'@'%';
+
+# 刷新
+FLUSH PRIVILEGES;
+```
+
+```root```用户默认的密码加密方式是：```caching_sha2_password```；而很多图形客户端工具可能还不支持这种加密认证方式，连接的时候就会报错 。通过以下命令重新修改密码：
+
+```s
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'your password';
+```
+这里指定了```root```的密码加密方式为```mysql_native_password```，如果想改变默认密码加密方式都是，可以在```/etc/my.cnf```文件加上一行：
+
+```s
+default-authentication-plugin=mysql_native_password
+```
+如果服务器开启了防火墙，则需要打开```3306```端口。
+
+```s
+firewall-cmd --add-port=3306/tcp --permanent
+firewa
