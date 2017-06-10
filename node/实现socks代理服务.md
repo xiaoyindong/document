@@ -105,4 +105,68 @@ sock.once('readable', () => {
 | VER | CMD | RSV | ATYP | DST.ADDR | DST.PORT |
 | -- | -- | -- | -- | -- | -- |
 | 1 | 1 | 0x00 | 1 | Variable | 2 |
-| SOCKS协议版本，固定0x05 | 命令(本文只实现CONNECT) | 保留字段 | 目标服务器地址类型(本文仅实现IP 
+| SOCKS协议版本，固定0x05 | 命令(本文只实现CONNECT) | 保留字段 | 目标服务器地址类型(本文仅实现IP V4与域名) | 目标地址 | 端口 |
+
+ver代表 socks 协议的版本，socks 默认为0x05，其值长度为1个字节，cmd代表客户端请求的类型，值长度也是1个字节，有三种类型。
+
+connect 0x01；
+
+bind: 0x02；
+
+udp： ASSOCIATE 0x03；
+
+rev是保留字，值长度为1个字节；
+
+atyp代表请求的远程服务器地址类型，值长度1个字节，有三种类型；
+
+ipv4：address: 0x01；
+
+domaonname: 0x03；
+
+ipv6： address: 0x04；
+
+dst.addr：代表远程服务器的地址，根据 atyp 进行解析，值长度不定；
+
+dst.port：代表远程服务器的端口，要访问哪个端口的意思，值长度2个字节。
+
+需要说的是在域名类型下，域名地址第1个字节为域名长度，剩下字节为域名名称字节数组
+
+```js
+sock.write(Buffer.from([0x05, 0x00]), (err) => {
+    if (err) {
+        console.log(`写入数据失败,失败信息:${err.message}`);
+        socket.destroy();
+    }
+    sock.once('readable', () => {
+        const data = sock.read();
+        remoteAddr = Buffer.from(data.slice(4, data.length - 2)).toString().trim().replace(/\u0000|\u0001|\u0002|\u0003|\u0004|\u0005|\u0006|\u0007|\u0008|\u0009|\u000a|\u000b|\u000c|\u000d|\u000e|\u000f|\u0010|\u0011|\u0012|\u0013|\u0014|\u0015|\u0016|\u0017|\u0018|\u0019|\u001a|\u001b|\u001c|\u001d|\u001e|\u001f/g, '');
+        remotePort = data.readUInt16BE(data.length - 2);//最后两位为端口值
+        console.log(`连接到 ${remoteAddr}:${remotePort}`);
+    });
+});
+```
+
+服务端在得到来自客户端告诉的目标服务地址后，便和目标服务进行连接，不管连接成功与否，服务器都应该把连接的结果告诉客户端。在连接成功的情况下，服务端返回的包格式如下。
+
+| VER | REP | RSV	ATYP | BND.ADDR | BND.PORT |
+| 1 | 1 | 0x00 | 1 | Variable | 2 |
+| SOCKS协议版本，固定0x05 | 响应命令 | 保留字段 | 代理服务器地址类型 | 代理服务器地址 | 代理服务器端口 |
+
+VER：代表 SOCKS 协议的版本，SOCKS 默认为0x05，其值长度为1个字节；
+
+REP代表响应状态码，值长度也是1个字节，有以下几种类型
+
+0x00 代理服务器连接目标服务器成功
+0x01 代理服务器故障
+0x02 代理服务器规则集不允许连接
+0x03 网络无法访问
+0x04 目标服务器无法访问（主机名无效）
+0x05 连接目标服务器被拒绝
+0x06 TTL已过期
+0x07 不支持的命令
+0x08 不支持的目标服务器地址类型
+0x09 - 0xFF 未分配
+
+RSV：保留字，值长度为1个字节
+
+ATYP：代表
