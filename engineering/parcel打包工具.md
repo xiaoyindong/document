@@ -26,4 +26,13 @@ yarn add parcel-bundler --dev
 
 ```html
 <!DOCTYPE html>
-<ht
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcel Tutorials</title>
+</head>
+<body>
+    <script src="main.js"></script>
+</body>
+</html>
