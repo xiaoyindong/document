@@ -36,3 +36,32 @@ yarn add parcel-bundler --dev
     <script src="main.js"></script>
 </body>
 </html>
+```
+
+新建```/src/main.js```文件，除此之外再新建一个```/src/foo.js```文件。
+
+```foo.js```以```ES Module```的方式默认导出一个对象。
+
+```js
+export default {
+    bar: () => {
+        console.log('hello parcel~')
+    }
+}
+```
+
+```main.js```中通过```import```导入```foo```模块。
+
+```js
+import foo from './foo';
+
+foo.bar();
+```
+
+```parcel```支持对```ES Module```模块的打包，打包命令需要传入打包入口的路径。
+
+```s
+yarn parcel src/index.html
+```
+
+```p
