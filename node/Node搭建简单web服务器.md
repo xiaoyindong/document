@@ -48,4 +48,18 @@ server.listen(8080);
 
 ```js
 const http = require('http');
-const querystrin
+const querystring = require('querystring'); // 用于解析前端传入的参数，将a=1&b=2 解析为 {a:1, b: 2};
+const server = http.createServer((req, res) => {
+    const arr = []; // 创建一个数组，用于接收前端传入的数据，前端传入的数据为Buffer类型。
+    req.on('data', data => { // 持续接收数据
+        arr.push(data);
+    });
+    req.on('end', data => { // 数据传输完成
+        const str = Buffer.concat(arr);
+        const post = querystring.parse(str);
+        console.log(post); // 获取到传入的参数
+        res.end(); // 结束
+    })
+});
+server.listen(8080);
+``
