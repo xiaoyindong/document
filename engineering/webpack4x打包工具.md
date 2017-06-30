@@ -1316,4 +1316,689 @@ module.exports = source => {
     // return 'console.log("hello")';
     const html = marked(source);
     // return `module.exports = ${JSON.stringify(html)}`
-    return `export def
+    return `export default ${JSON.stringify(html)}`
+}
+```
+
+打包结果同样也是可以的，```webpack```内部会自动转换导出代码中的```ES Module```。
+
+```js
+/* 1 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = ("<h1 id=\"关于我\">关于我</h1>\n<p>我是隐冬</p>\n");
+
+/***/ })
+```
+
+接下来尝试一下第二种方法，```markdown-loader```中去返回一个```html```字符串。然后交给下一个```loader```去处理这个```html```的字符串。这里直接返回```marked```解析过后的```html```，然后再去安装一个用于去处理```html```加载的```loader```叫做```html-loader```。
+
+```js
+const marked = require('marked');
+module.exports = source => {
+    // console.log(source);
+    // return 'console.log("hello")';
+    const html = marked(source);
+    // return `module.exports = ${JSON.stringify(html)}`
+    // return `export default ${JSON.stringify(html)}`
+    return html;
+}
+```
+
+```s
+yarn add html-loader --dev
+```
+
+把```use```属性修改为一个数组，这样就会依次使用多个```loader```了。需要注意执行顺序是从数组的后面往前面，也就是说应该把先执行的```loader```放在数组的后面。
+
+```js
+const path = require('path');
+
+module.exports = {
+    mode: 'none',
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.md$/,
+                use: ['html-loader', './markdown-loader']
+            }
+        ]
+    }
+}
+
+```
+
+完成后打包依然是可以的。
+
+```js
+/* 1 */
+/***/ (function(module, exports) {
+
+module.exports = "<h1 id=\"关于我\">关于我</h1>\n<p>我是隐冬</p>\n"
+
+/***/ })
+```
+
+```loader```不建议使能用剪头函数会拿不到上下文的```this```。
+
+官方推荐使用```loader-utils```工具处理```loader.query```。
+
+```js
+const loaderUtils = require('loader-utils');
+module.exports = function(source) {
+    const options = loaderUtils.getOptions(this);
+    console.log(options);
+    return source;
+}
+```
+
+```this.callback```可以返回更多内容用于替代```return```。
+
+```js
+module.exports = function(source) {
+    const options = loaderUtils.getOptions(this);
+    const result = "2123";
+    this.callback(null, result);
+}
+```
+
+```this.async```用于处理异步。
+
+```js
+module.exports = function(source) {
+    const options = loaderUtils.getOptions(this);
+    // 定义异步callback
+    const callback = this.async();
+    setTimeout(() => {
+        const result = "2123";
+        callback(null, result);
+    });
+}
+```
+
+```resolveLoader```可以用于```webpack```配置```loader```的简写，当配置文件里面使用模块，先去```node_modules```里面找，如果找不到就去后面路径上面找。
+
+
+```json
+resolveLoader: {
+    modules: ["node_modules", "./loaders"],
+}
+```
+
+## 13. 插件机制介绍
+
+插件机制是```webpack```另一个核心特性，目的是为了增强```webpack```在项目自动化方面的能力，```loader```负责实现项目中各种各样资源模块的加载，```plugin```则是用来解决项目中除了资源加载以外其他的一些自动化的工作。
+
+例如```plugin```可以实现在打包之前清除```dist```目录，还可以```copy```不需要参与打包的资源文件到输出目录，又或是压缩打包结果输出的代码。总之，有了插件```webpack```几乎无所不能的实现了前端工程化中绝大多数工作，这也是很多初学者会把```webpack```理解成前端工程化的原因。
+
+接下来体验几个常见的插件。
+
+### 1. clean-webpack-plugin
+
+自动清除输出目录，```webpack```每次打包的结果都是覆盖到```dist```目录而在打包之前```dist```中可能已经存在一些之前的遗留文件，再次打包可能只覆盖那些同名的文件，对于其他已经移除的资源文件会一直积累在```dist```里面非常不合理。合理的做法是每次打包前自动清理```dist```目录，这样的话```dist```中就只会保留需要的文件。
+
+```clean-webpack-plugin```就很好的实现了这样一个需求。
+
+```s
+yarn add clean-webpack-plugin --dev
+```
+
+```webpack```配置文件中导入这个插件，插件中导出了一个```CleanWebpackPlugin```的成员可以解构出来，```webpack```使用插件需要为配置对象添加```plugins```属性，值是一个数组里面每一个成员就是一个插件实例。绝大多数插件模块导出的都是一个类型，使用插件就是通过类型创建实例，然后将实例放入到```plugins```数组中。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin()
+    ]
+}
+```
+
+### 2. html-webpack-plugin
+
+在之前```html```都是通过硬编码的方式单独存放在项目的跟目录下的这种方式有两个问题，第一项目发布时需要发布跟目录下的```html```文件和```dist```目录下所有的打包结果，相对麻烦一些。而且上线过后还需要确保```html```代码当中路径引用都是正确的。第二个如果输出的目录或输出的文件名也就是打包结果的配置发生了变化，那```html```代码当中```script```标签所引用的路径也要手动修改。
+
+解决这两个问题最好的办法就是通过```webpack```自动生成```html```文件，也就是让```html```参与到构建过程中去，在构建过程中```webpack```知道生成了多少个```bundle```，会自动将这些打包的```bundle```添加到页面中。这样```html```也输出到了```dist```目录，上线时只需把```dist```目录发布出去就可以了。二来html中对于```bundle```的引用是动态注入的，不需要硬编码也就确保了路径的引用是正常的。
+
+需要借助```html-webpack-plugin```插件。
+
+```s
+yarn html-webpack-plugin --dev
+```
+
+配置文件中载入这个模块```html-webpack-plugin```默认导出的就是一个插件的类型，不需要解构他内部的成员。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin()
+    ]
+}
+```
+
+打包过后```dist```目录中生成了```index.html```文件，这里引入的```bundle.js```路径是可以通过```output```属性中的```publicPath```进行修改的，可以删除这个配置。这样打包之后```index.html```中```bundle```的引用就标成了```/bundle.js```。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        // publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin()
+    ]
+}
+```
+
+
+对于默认生成的```html```的标题是可以修改的，页面中的一些原数据标签和基础的```DOM```结构也是可以定义的，对于简单的自定义可以通过修改```html-webpack-plugin```插件传入的参数属性实现。```html-webpack-plugin```构造函数可以传入一个对象参数，用于指定配置选项，```title```属性就是用来设置```html```的标题。```meta```属性可以设置页面中的一些原数据标签。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        // publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            title: 'Webpack Plugin Sample',
+            meta: {
+                viewport: 'width=device-width'
+            }
+        })
+    ]
+}
+```
+
+如果需要对```html```文件进行大量自定义，最好的做法就是在原代码中添加一个用于生成```html```文件的一个模板，然后让```html-webpack-plugin```插件根据模板生成页面。
+
+对于模板中动态输出的内容可以使用loadsh模板语法的方式去输出。通过```htmlWebpackPlugin.options```属性去访问到插件的配置数据，```htmlWebpackPlugin```变量实际上是内部提供的变量，也可以通过另外的属性添加一些自定义的变量。
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+</head>
+<body>
+    <script src="dist/"></script>
+</body>
+</html>
+```
+
+配置文件当中通过```template```属性指定所使用的模板文件。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        // publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            title: 'Webpack Plugin Sample',
+            meta: {
+                viewport: 'width=device-width'
+            },
+            template: './src/index.html'
+        })
+    ]
+}
+```
+
+除了自定义输出文件的内容，同时输出多个页面文件也是常见的需求，可以通过创建新的实例对象，用于去创建额外的```html```文件，通过```filename```指定输出的文件名，这个属性的默认值是```index.html```。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        // publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            title: 'Webpack Plugin Sample',
+            meta: {
+                viewport: 'width=device-width'
+            },
+            template: './src/index.html'
+        }),
+        new HtmlWebpackPlugin({
+            filename: 'about.html'
+        })
+    ]
+}
+
+```
+
+如果说需要创建多个页面，就可以在插件列表当中加入多个```htmlWebpackPlugin```实例的对象，每个对象就是用来负责生成一个页面文件的。
+
+### 3. copy-webpack-plugin
+
+项目中一般有一些不需要参与构建的静态文件最终也需要发布到线上，例如网站的```favicon.ico```，一般会把这一类文件统一放在项目根目录下的```public```目录中，希望```webpack```在打包时可以将他们复制到输出目录。对于这种需求可以借助```copy-webpack-plugin```实现。
+
+```s
+yarn add copy-webpack-plugin --dev
+```
+
+配置文件当中导入这个插件的类型并在```plugins```属性当中添类型实例，这个这个类型的构造函数要求传入一个数组，用于指定需要```copy```的文件路径，可以是一个通配符，也可以是一个目录或者是文件的相对路径。这里传入```public/**```表示在打包时会将```public```目录下所有的文件拷贝到输出目录。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        // publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            title: 'Webpack Plugin Sample',
+            meta: {
+                viewport: 'width=device-width'
+            },
+            template: './src/index.html'
+        }),
+        new HtmlWebpackPlugin({
+            filename: 'about.html'
+        }),
+        new CopyWebpackPlugin([
+            'public/**'
+        ])
+    ]
+}
+
+```
+
+至此就了解了几个非常常用的插件，这些插件一般都适用于任何类型的项目，最好能仔细过一遍这些插件的官方说明，然后看看他们还可以有哪些特别的用法，做到心中有数。
+
+除此之外社区当中还提供了成百上千的插件，并不需要全部认识，在有一些特殊的需求时，提炼需求中的一些关键词然后去```github```上去搜索他们，例如想要压缩输出的图片可以搜索```imagemin webpack plugin```。
+
+## 14. 开发一个插件
+
+```webpack```的插件机制其实就是软件开发过程中最长见到的钩子机制。```webpack```要求的插件必须是一个函数，或者是一个包含```apply```方法的对象，一般会把插件定义为一个类型，在类型中定义```apply```方法。
+
+这里定义```MyPlugin```的类型，在这个类型中定义```apply```方法，这个方法会在```webpack```启动时被调用，接收一个```compiler```对象参数就是```webpack```工作过程中的核心对象，对象里面包含了此次构建的所有的配置信息，通过这个对象可以注册钩子函数。
+
+这里的需求是希望这个插件可以用来去清除```webpack```打包生成的```js```中没必要的注释，有了这个需求需要明确这个任务的执行时机，也就是要把这个任务挂载到哪个钩子上。
+
+需求是删除```bundle.js```中的注释，也就是说当```bundle.js```文件内容明确后才可以实施相应的动作，在```webpack```的官网的```API```文档中找到```emit```的钩子，这个钩子在```webpack```即将要往输出目录输出文件时执行。
+
+通过```compiler```当的```hooks```属性访问到```emit```钩子，然后通过```tap```方法注册钩子函数，这个方法接收两个参数，第一个参数是插件的名称```MyPlugin```，第二个是需要挂载到这个钩子上的函数。在函数中接收一个```complation```的对象参数，这个对象可以理解成此次打包过程的上下文。
+
+所有打包过程中产生的结果都会放到这个对象中，使用对象的```assets```属性获取即将写入到目录文件中的资源信息```complation.assets```。这是一个对象通过```for in```遍历这个对象，对象当中的键就是每一个文件的名称。然后将这个插件应用到配置当中通过 ```new MyPlugin```的方式把他应用起来。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+class MyPlugin {
+    apply(compiler) {
+        console.log('MyPlugin 启动');
+        compiler.hooks.emit.tap('MyPlugin', complation => {
+            for (const name in complation.assets) {
+                console.log(name);
+            }
+        })
+    }
+}
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        // publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            title: 'Webpack Plugin Sample',
+            meta: {
+                viewport: 'width=device-width'
+            },
+            template: './src/index.html'
+        }),
+        new HtmlWebpackPlugin({
+            filename: 'about.html'
+        }),
+        new CopyWebpackPlugin([
+            'public/**'
+        ]),
+        new MyPlugin()
+    ]
+}
+```
+
+此时打包过程就会输出打包的文件名称，可以通过文件中值的```source```方法来获取文件内容。
+
+```js
+class MyPlugin {
+    apply(compiler) {
+        console.log('MyPlugin 启动');
+
+        compiler.hooks.emit.tap('MyPlugin', complation => {
+            for (const name in complation.assets) {
+                console.log(assets[name].source());
+            }
+        })
+    }
+}
+```
+
+拿到文件名和内容后要判断文件是否以```.js```结尾，如果是```js```文件将文件的内容得到然后通过正则的方式替换掉代码当中对应的注释，将替换的结果覆盖到原有的内容当中，要覆盖```complation```当中```assets```里面所对应的属性。这个属性的值同样暴露一个```source```方法用来去返回新的内容。除此之外还需要一个```size```方法，用来返回这个内容的大小，这个是```webpack```内部要求的必须的方法。
+
+```js
+class MyPlugin {
+    apply(compiler) {
+        // console.log('MyPlugin 启动');
+        compiler.hooks.emit.tap('MyPlugin', complation => {
+            for (const name in complation.assets) {
+                // console.log(assets[name].source());
+                if (name.endsWith('.js')) {
+                    const contents = complation.assets[name].source();
+                    const withoutComments = contents.replace(/\/*\**\*\//g, '');
+                    complation.assets[name] = {
+                        source: () => withoutComments,
+                        size: () => withoutComments.length
+                    }
+                }
+            }
+        })
+    }
+}
+```
+
+打包过后```bundle.js```每一行开头的注释就被移除掉了，以上就是实现移除```webpack```注释插件的过程，通过这个过程了解，插件是通过往```webpack```生命周期里面的一些钩子函数里面挂载任务函数来去实现的。如果需要深入了解插件机制，可能需要理解一些```webpack```底层的实现原理，通过去阅读源代码来了解他们。
+
+## 15. 开发体验问题
+
+在此之前已经了解了一些```webpack```的相关概念和一些基本的用法，但是以目前的状态去应对日常的开发工作还远远不够，编写源代码再通过```webpack```打包然后运行应用，最后刷新浏览器这种方式过于原始。如果实际的开发过程中还按照这种方式去使用必然会大大降低开发效率。
+
+希望开发环境必须能够使用```http```的服务运行而不是以文件的形式预览，这样一来可以更加接近生产环境的状态，而且使用```ajax```之类的一些```api```也需要服务器环境。其次希望这个环境在修改源代码后```webpack```可以自动完成构建，然后浏览器可以及时的显示最新的结果，这样的话就可以大大的减少在开发过程中额外的重复操作。
+
+最后还需要能够去提供```sourceMap```支持，运行过程中一旦出现了错误就根据错误的堆栈信息快速定位到源代码当中的位置，便于调试应用。
+
+### 1. 自动编译
+
+用命令行手动重复去使用```webpack```命令从而去得到最新的打包结果，这种办法特别的麻烦可以使用```webpack-cli```提供的```watch```工作模式解决这个问题。这种模式项目下的源文件会被监视，一旦这些文件发生变化，会自动重新运行打包任务。
+
+用法非常简单，就是启动```webpack```时添加```--watch```参数。
+
+```s
+yarn webpack --watch
+```
+
+可以再开启一个新的命令行终端以```http```的形式运行应用。
+
+```s
+http-server ./dist
+```
+
+此时修改源代码```webpack```就会自动重新打包，可以刷新页面看到最新的页面结果。
+
+### 2. 自动刷新浏览器
+
+如果流浏览器能在编译过后自动去刷新，开发体验将会更好一些，```browser-sync```工具就会实现自动刷新的功能。
+
+```s
+yarn add --global browser-sync
+```
+
+使用```browser-sync```启动```http```服务同时要监听```dist```文件下的文件变化。此时修改源文件保存过后浏览器会自动刷新然后显示最新的结果。
+
+```s
+browser-sync dist --files "**/*"
+```
+
+原理是```webpack```自动打包源代码到```dist```当中，```dist```的文件变化被```browser-sync```监听从而实现了自动编译并且自动刷新浏览器。
+
+### 3. 开发服务器
+
+```Webpack Dev Server```提供了一个开发服务器，并且将自动编译和自动刷新浏览器等一系列对开发友好的功能全部集成在了一起。这是一个高度集成的工具使用起来非常的简单。
+
+```s
+yarn add webpack-dev-server --dev
+```
+
+```s
+yarn webpack-dev-server
+```
+
+运行命令内部会自动使用```webpack```打包我应用并且会启动一个```http-server```去运行打包结果。还会监听代码变化，一旦源文件发生变化就会自动打包，这一点和```watch```模式是一样的。
+
+```webpack-dev-server```为了提高工作效率并没有将打包结果写入到磁盘中，是将打包结果暂时存放在内存中，内部的```http-server```也是从内存中把这些文件读出来发送给浏览器，这样一来就会减少很多磁盘不必要的读写操作，从而大大提高构建效率。
+
+这个命令可以传入```--open```参数，用于自动唤起浏览器，打开运行地址。
+
+```s
+yarn webpack-dev-server --open
+```
+
+如果有两块屏幕就可以把浏览器放到另外一块屏幕中，一边编码，一边及时预览开发环境。
+
+### 4. 静态资源访问
+
+静态文件需要作为开发服务器的资源被访问需要额外的去告诉```webpack-dev-server```，具体的方法就是在webpack的配置文件当中添加对应的配置。在配置对象当中添加```dev-server```的属性这个属性专门用来为```webpack-dev-server```指定相关的配置选项。
+
+配置对象的```contentBase```属性用来指定静态资源路径，可以是一个字符串或者是一个数组，也就是说可以配置一个或者是多个路径，这里设置为```public```目录。
+
+之前通过```copy-webpack-plugin```插件将```public```目录输出到了输出目录，正常所有输出的文件都应该可以直接被```server```也就是直接在浏览器端访问到。按道理来讲这些文件不需要再作为开发服务器的额外的资源路径了，但是在实际使用```webpack```的时候一般都会把```copy-webpack-plugin```这插件留在上线前的那次打包中。在平时的开发过程中一般不会去使用它，因为在开发过程中会重复执行打包任务。假设```copy```的文件比较多或者是比较大，每次执行插件的话打包过程中的开销就会比较大速度自然也就会降低了。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+// const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist')
+    },
+    devServer: {
+        contentBase: './public',
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'file-loader'
+            }
+        ]
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpack
