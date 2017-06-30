@@ -913,4 +913,407 @@ module.exports = {
                 use: [
                     'style-loader',
                     'css-loader'
-  
+                ]
+            },
+            {
+                test: /.png$/,
+                use: {
+                    loader: 'url-loader',
+                    options: {
+                        limit: 10 * 1024
+                    }
+                }
+            }
+        ]
+    }
+}
+```
+
+## 9. babel-loader
+
+```webpack```默认就可以处理代码中的```import```和```export```，所以很自然的会有人认为，```webpack```会自动编译```ES6```的代码，实则不然，```webpack```仅仅完成模块打包工作，会对代码中的```import```和```export```做一些相应的转换，除此之外它并不能转换代码中其他的```ES6```代码。如果需要```webpack```在打包过程中同时处理其他```ES6```特性，需要为```js```文件配置一个额外的加载器```babel-loader```。
+
+首先需要安装```babel-loader```，由于```babel-loader```需要依赖额外的```babel```核心模块，所以需要安装```@babel/core```模块和用于完成具体特性转换```@babel/preset-env```模块。
+
+```s
+yarn add babel-loader @babel/core @babel/preset-env --dev
+```
+
+配置文件中为js文件指定加载器为```babel-loader```，这样```babel-loader```就会取代默认的加载器，在打包过程当中处理代码中的一些新特性。
+
+```js
+const path = require('path');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.js$/,
+                use: 'babel-loader'
+            }
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'url-loader'
+            }
+        ]
+    }
+}
+```
+
+还需要为```babel```配置需要使用的插件，配置文件中给```babel-loader```传入相应的配置，们直接使用```preset-env```插件集合，这个集合当中就已经包含了全部的```ES```最新特性。
+
+```js
+const path = require('path');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.js$/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: ['@babel/preset-env']
+                    }
+                }
+            }
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'url-loader'
+            }
+        ]
+    }
+}
+```
+
+## 10. 加载资源
+
+```webpack```中提供了几种资源加载方式，首先第一个就是```ES Module```标准的```import```声明。
+
+```js
+import heading from './heading.js';
+import icon from './icon.png';
+```
+
+其次是遵循```Commonjs```标准的```require```函数，不过通过```require```函数载入```ES Module```的话，对于```ES Module```的默认导出需要通过```require```函数导入结果的```default```属性获取。
+
+```js
+const heading = require('./heading.js').default;
+const icon = require('./icon.png');
+```
+
+遵循```AMD```标准的```define```函数和```require```函数```webpack```也同样支持。
+
+```js
+define(['./heading.js', './icon.png', './style.css'], (createHeading, icon) => {
+    const heading = createHeading();
+    const img = new Image();
+    img.src = icon;
+    document.body.append(heading);
+    document.body.append(icon);
+});
+
+require(['./heading.js', './icon.png', './style.css'], (createHeading, icon) => {
+    const heading = createHeading();
+    const img = new Image();
+    img.src = icon;
+    document.body.append(heading);
+    document.body.append(icon);
+})
+```
+
+```webpack```兼容多种模块化标准，除非必要的情况否则不要在项目中去混合使用这些标准，每个项目使用一个标准就可以了。
+
+除了```js```代码中的三种方式外还有一些加载器在工作时也会处理资源中导入的模块，例如```css-loader```加载的```css```文件(```@import```指令和```url```函数)
+
+```css
+@import '';
+```
+
+```html-loader```加载的```html```文件中的一些```src```属性也会触发相应的模块加载。
+
+```main.js```
+
+```js
+import './main.css';
+```
+
+```main.css```
+
+```css
+body {
+    min-height: 100vh;
+    background-image: url(background.png);
+    background-size: cover;
+}
+```
+
+```webpack```在遇到```css```文件时会使用```css-loader```进行处理，处理的时候发现```css```中有引入图片，就会将图片作为一个资源模块加入到打包过程。```webpack```会根据配置文件中针对于遇到的文件找到相应的```loader```，此时这是一张```png```图片就会交给```url-loader```处理。
+
+```reset.css```。
+
+```css
+@import url(reset.css);
+body {
+    min-height: 100vh;
+    background-image: url(background.png);
+    background-size: cover;
+}
+```
+
+```html```文件中也会引用其他文件例如img标签的```src```，```src/footer.html```。
+
+```html
+<footer>
+    <img src="better.png" />
+</footer>
+```
+
+```s
+yarn add html-loader --dev
+```
+
+配置文件中为扩展名为```html```的文件配置```loader```。
+
+```js
+const path = require('path');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.js$/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: ['@babel/preset-env']
+                    }
+                }
+            }
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'url-loader'
+            },
+            {
+                test: /.html$/,
+                use: 'html-loader'
+            }
+        ]
+    }
+}
+```
+
+```html-loader```默认只会处理```img```标签的```src```属性，如果需要其他标签的一些属性也能够触发打包可以额外做一些配置，具体的做法就是给```html-loader```添加```attrs```属性，也就是```html```加载的时候对页面上的属性做额外的处理。比如添加一个```a:href```属性，让他能支持```a```标签的```href```属性。
+
+```js
+const path = require('path');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.js$/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: ['@babel/preset-env']
+                    }
+                }
+            }
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'url-loader'
+            },
+            {
+                test: /.html$/,
+                use: {
+                    loader: 'html-loader',
+                    options: {
+                        attrs: ['img:src', 'a:href']
+                    }
+                }
+            }
+        ]
+    }
+}
+```
+
+完成以后运行打包，在打包的结果中可以看到```a```标签用到的资源已经参与了打包。
+
+## 11. 工作原理
+
+在项目中一般都会散落着各种各样代码及资源文件，```webpack```会根据配置找到其中的一个文件作为打包的入口，一般情况这个文件都会是```js```文件。
+
+然后顺着入口文件中的代码根据代码中出现的import或者```require```之类的语句解析推断出来这个文件所依赖的资源模块，然后分别解析每个资源模块对应的依赖，最后就形成了整个项目中所有用到文件之间的一个依赖关系的依赖树。
+
+有了依赖关系树后```webpack```会递归这个依赖树然后找到每个节点对应的资源文件。最后再根据配置文件中的属性找到这个模块所对应的加载器，然后交给加载器去加载这个模块。
+
+最后会将加载到的结果放到```bundle.js```也就是打包结果中，从而实现整个项目的打包。整个过程中```loader```的机制起了很重要的作用，如果没有```loader```就没办法实现各种各样的资源文件的加载，对于```webpack```来说也就只能算是一个用来去打包或是合并```js```模块代码的工具了。
+
+## 12. 开发一个Loader
+
+```markdown-loader```，需求是有了这个加载器后就可以在代码当中直接导入```markdown```文件。
+
+```main.js```
+
+```js
+import about from './about.md';
+console.log(about);
+```
+
+```about.md```
+
+```md
+# 关于我
+
+我是隐冬
+```
+
+```markdown```文件一般是要被转换为```html```后呈现到页面上的，所以说这里希望导入的```markdown```文件得到的结果是````markdown````转换过后的```html```字符串。
+
+在项目的根目录创建```markdown-loader.js```文件，```webpack-loader```需要去导出一个函数，这个函数就是```loader```对所加载到资源的处理过程，入参是加载到的资源文件的内容，输出是加工过后的结果。通过```source```接收输入，通过返回值输出。
+
+```js
+module.exports = source => {
+    console.log(source);
+    return 'hello';
+}
+```
+
+在```webpac```k的配置文件中添加加载器的规则配置，扩展名就是```.md```使用的加载器是我编写的```markdown-loader```模块。
+
+```js
+const path = require('path');
+
+module.exports = {
+    mode: 'none',
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.md$/,
+                use: './markdown-loader'
+            }
+        ]
+    }
+}
+
+```
+
+
+```webpack```加载资源的过程类似工作管道，可以在这个过程中依次使用多个```loader```，但是最终这个管道工作过后的结果必须是一段```javascript```代码，```markdow-loader```中，将返回的字符串修改为```console.log("hello")```标准的```js```代码。
+
+```js
+module.exports = source => {
+    console.log(source);
+    return 'console.log("hello")';
+}
+```
+
+```webpack```打包的时候就是把```loader```返回的字符串拼接到模块当中了。
+
+```js
+/* 1 */
+/***/ (function(module, exports) {
+
+console.log("hello")
+
+/***/ })
+
+```
+
+安装```markdown```解析的模块```marked```。
+
+```s
+yarn add marked --dev
+```
+
+在加载器当中使用这个模块去解析来自参数中的```source```，这里返回值就是一段```html```字符串也就是转换过后的结果。正确的做法就是把这段```html```变成一段```javascript```代码。
+
+```js
+const marked = require('marked');
+module.exports = source => {
+    // console.log(source);
+    // return 'console.log("hello")';
+    const html = marked(source);
+    return `module.exports = ${JSON.stringify(html)}`
+}
+```
+
+打包后就是下面的样子。
+```js
+/* 1 */
+/***/ (function(module, exports) {
+
+module.exports = "<h1 id=\"关于我\">关于我</h1>\n<p>我是隐冬</p>\n"
+
+/***/ })
+```
+
+除了```module.exports```方式以外```webpack```还允许在返回的代码中直接使用```ES Module```的方式去导出。
+
+```js
+const marked = require('marked');
+module.exports = source => {
+    // console.log(source);
+    // return 'console.log("hello")';
+    const html = marked(source);
+    // return `module.exports = ${JSON.stringify(html)}`
+    return `export def
