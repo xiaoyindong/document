@@ -367,4 +367,415 @@ fs.watchFile('bbb.txt', {
     }
 })
 
-fs.un
+fs.unwatchFile('bbb.txt'); // 取消监控
+```
+
+### 2. 文件打开与关闭
+
+前面我们使用了```fs```实现了文件的读写操作，既然已经读写了就证明已经实现了文件的打开，为什么```Node```还要单独的提供打开关闭的```api```呢？
+
+因为```readFile```和```writeFile```的工作机制是将文件里的内容一次性的全部读取或者写入到内存里，而这种方式对于大体积的文件来讲显然是不合理的，因此需要一种可以实现边读编写或者边写边读的操作方式，这时就需要文件的打开、读取、写入、关闭看做是各自独立的环节，所以也就有了```open```和```close```。
+
+```js
+const fs = require('fs');
+const path = require('path');
+
+// open
+fs.open(path.resolve('aaa.txt'), 'r', (err, fd) => {
+    console.log(err);
+    console.log(fd);
+
+    fs.close(fd, (err) => {
+
+    });
+})
+```
+
+### 3. 目录操作
+
+access: 判断文件或目录是否具有操作权限
+
+```js
+fs.access('aaa.txt', (err) => {
+    console.log(err); // 存在错误就是没有权限
+})
+```
+
+stat: 获取目录及文件信息
+
+```js
+fs.stat('aaa.txt', (err, stat) => {
+    console.log(stat); // size isFile(), isDirectory()
+})
+```
+
+mkdir: 创建目录
+
+```js
+fs.mkdir('a/b/c', {
+    recursive: true, // 递归创建
+}, (err) => {
+    console.log(err);
+})
+```
+
+rmdir: 删除目录
+
+```js
+fs.rmdir('a', {
+    recursive: true, // 递归删除
+}, (err) => {
+    console.log(err);
+})
+```
+
+readdir: 读取目录中内容, 不会递归子目录
+
+```js
+fs.readdir('a', (err, files) => {
+    console.log(files);
+})
+```
+
+unlink: 删除指定文件
+
+```js
+fs.unlink('a', (err) => {
+    console.log(err);
+})
+```
+
+## 6. commonjs
+
+```CommonJS```的出现是为了解决前端模块化，他的作者希望可以倒逼浏览器们实现前端模块化，但是由于浏览器本身具备的单线程阻塞的特点，```CommonJS```并不能适用于浏览器平台。```CommonJS```是一个超集，他是语言层面的规范，模块化只是这个规范中的一个部分。
+
+## 7. Events
+
+```Node```中通过```EventEmitter```类实现事件统一管理。实际开发中基本很少引入这个类。这个类大部分供内置模块使用的, 比如```fs```、```http```都内置了这个模块。
+
+```Node```是基于事件驱动的异步操作架构，内置```events```模块，模块提供了```EventEmitter```类，他的实例对象具备注册事件和发布事件删除事件的常规操作。
+
+on：添加当事件被触发时调用的回调函数
+
+emit: 触发事件，按照注册的顺序调用每个事件监听器
+
+once: 注册执行一次的监听器
+
+off：移除特定的监听器
+
+```js
+const EventEmitter = require('events');
+
+const ev = new EventEmitter();
+
+ev.on('event', () => {
+
+})
+
+ev.emit('event');
+```
+
+## 7. stream
+
+```流```并不是```NodeJS```独创的内容，在```linux```系统中可以使用```ls | grep *.js```命令操作，其实就是将```ls```命令获取到的内容交给```grep```去处理，这就是一个流操作。
+
+使用流可以从空间和时间上提升效率，```NodeJS```诞生之初就是为了提高```IO```性能，其中最常用的文件系统和网络他们就是流操作的应用者。
+
+```NodeJS```中流就是处理流式数据的抽象接口，```NodeJS```中的```stream```对象提供了用于操作流的对象。对于流来说只有多使用才能加深了解。
+
+流的分段处理可以同时操作多个数据```chunk```，同一时间流无须占据大内存空间。流配合管道，扩展程序会变得很简单。
+
+```NodeJS```中内置了```stream```模块，它实现了流操作对象。```Stream```模块实现了四个具体的抽象。所有的流都继承自```EventEmitter```。
+
+Readable: 可读流，能够实现数据的获取。
+
+Writeable: 可写流，能够实现数据的写操作。
+
+Duplex: 双工流，即可度又可写。
+
+Tranform: 转换流，可读可写，还能实现数据转换。
+
+```js
+const fs = require('fs');
+
+const rs = fs.createReadStream('./a.txt');
+const ws = fs.createWriteStream('./b.txt');
+
+rs.pipe(ws);
+```
+
+### 1. 可读流
+
+生产供消费的数据流。
+
+```js
+const rs = fs.createReadStream('./a.txt');
+```
+
+```js
+const { Readable } = require('stream');
+
+const source = ['a', 'b', 'c'];
+
+class MyReadable extends Readable {
+    constructor() {
+        super();
+        this.source = source;
+    }
+    _read() {
+        const data = this.source.shift() || null;
+        this.push(data);
+    }
+}
+
+const myreadable = new MyReadable(source);
+
+myreadable.on('data', (chunk) => {
+    console.log(chunk.toString());
+})
+```
+
+### 2. 可写流
+
+用于消费数据的流，响应。
+
+```js
+const ws = fs.createWriteStream('./b.txt');
+```
+
+```js
+const { Writable } = require('stream');
+
+class MyWriteable extends Writable {
+    constructor() {
+        super();
+    }
+    _write (chunk, en, done) {
+        process.stdout.write(chunk.toString());
+        process.nextTick(done);
+    }
+}
+
+const mywriteable = new MyWriteable();
+
+mywriteable.write('yindong', 'utf-8', () => {
+    consoel.log('end');
+})
+```
+
+### 3. Duplex
+
+```js
+const { Duplex } = require('stream');
+
+class MyDuplex extends Duplex {
+    constructor(source) {
+        super();
+        this.source = source;
+    }
+    _read() {
+        const data = this.source.shift() || null;
+        this.push(data);
+    }
+    _write(chunk, en, next) {
+        process.stdout.write(chunk);
+        process.nextTick(next);
+    }
+}
+
+const source = ['a', 'b', 'c'];
+
+const myDuplex = new MyDuplex(source);
+
+mtDuplex.on('data', (chunk) => {
+    console.log(chunk.toString());
+})
+
+mtDuplex.write('yindong', () => {
+    console.log('end');
+})
+
+```
+
+### 4. Transform
+
+```js
+const { Transform } = require('stream');
+
+class MyTransform extends Transform {
+    constructor() {
+        super();
+    }
+    _transform(chunk, en, cb) {
+        this.push(chunk.toString().toUpperCase());
+        cb(null);
+    }
+}
+
+const t = new MyTransform();
+
+t.write('a');
+
+t.on('data', (chunk) => {
+    console.log(chunk.toString());
+})
+```
+
+## 8. 链表
+
+链表是一种数据存储结构。
+
+在文件可写流的```write```方法工作的时候，有些被写入的内容需要在缓冲区排队等待的，而且遵循的是先进先出的规则，为了保存这些排队的数据，在新版的```Node```中就采用了链表的结构来存储这些数据。
+
+相比较数组来说，链表的优势更明显，在多个语言下，数组存放数据的长度是有上限的，数组在执行插入或者删除操作的时候会移动其他元素的位置，并且在```JS```中数组被实现成了一个对象。所以在使用效率上会低一些。
+
+当然这都是相对的，实际应用中数组的作用还是很强大的。
+
+链表是由一系列节点组成的集合。这里的节点都称为```Node```节点，每个节点的身上都有一个对象的引用是指向下一个节点，将这些指向下一个节点的引用组合到一起也就形成了一个链，对于链表结构来说我们常听到的会有不同类型，双向链表，单向链表，循环链表。常用的一般是双向链表。
+
+
+## 9. Assertion
+
+断言, 如果不符合，会停止程序，并打印错误
+
+```js
+const assert = require('assert');
+// assert(条件, 一段话)
+function sum(a, b) {
+  assert(arguments.length === 2,  '必须有两个参数');
+  assert(typeof a === 'number',  ‘第一个参数必须是数字’);
+}
+```
+
+## 10. C++ Addons
+
+使用c语言写的插件，在Node中使用。
+
+## 11. Cluster
+
+多线程
+
+一个程序就是一个进程，一个进程会有多个线程
+进程和进程是严格隔离的，拥有独立的执行空间。
+同一个进程内的所有线程共享一套空间、代码
+
+1. 多进程
+
+成本高，速度慢，安全，进程间通信麻烦，写代码简单。
+
+2. 多线程
+
+成本低，速度快，不安全，线程间通信简单，写代码复杂。
+
+```Child_Processes```, ```Cluster```, ```Process```。
+
+## 12. Command Line Options
+
+获取命令行参数
+
+## 13. Crypto
+
+签名，完成加密算法的
+
+```js
+const cryptp = require("crypto");
+let obj = cryto.createHash('md5');
+obj.update('123');
+console.log(obj.digest('hex')); // MD5 32位
+```
+
+## 14. OS
+
+系统相关
+
+```js
+const os = require('os');
+// 获取cpu个数
+os.cpus(); 
+```
+
+## 15. Events 
+
+事件队列
+
+```js
+const Event = require('events').EventEmitter;
+let ev = new Event();
+// 绑定事件
+ev.on('msg', function(a, b,c) {
+    console.log(a, b, c); // 12 ， 3， 8
+})
+// 派发事件
+ev.emit('msg', 12,3,8);
+```
+
+自己实现一个```Events```:
+
+```js
+class EventEmitter {
+    constructor() {
+        this._events = {};
+    }
+    on(eventName, callBack) {
+        if (this._events[eventName]) {
+            this._events[eventName].push(callBack);
+        } else {
+            this._events[eventName] = [callBack];
+        }
+        
+    }
+    emit(eventName) {
+        this._events[eventName].forEach(fn => {
+            fn();
+        })
+    },
+    off(eventName, callBack) {
+        this._events[eventName] = this._events[eventName].filter(fn => fn !== callBack)
+    }
+}
+
+```
+
+## 16. url
+
+请求```url```模块
+
+```js
+const url = require('url');
+url.parse('url', true); // 会解析出url和参数，包含query-string的功能。
+```
+
+## 17. Net
+
+```TCP``` 稳定  ```Net```
+
+```UDP``` 快 ```UDP/Datagram```
+
+```DNS/Domain```
+
+## 18. DNS
+
+域名解析成```ip```
+
+```js
+const dns = require('dns');
+dns.resolve('baidu.com', (err, res) => {
+})
+```
+
+## 19. http
+
+基于```net```的```http```服务
+
+```js
+const http = require('http');
+const server = http.createServer((request, response) => {
+    // request 为请求数据
+    // response 为响应数据
+    // 设置返回值类型
+    res.writeHead(200, {'Content-type' : 'text/html'});
+    response.write = 'server start';
+    return response.end(); // 结束
+});
+server.listen(3000); // 服务监听的端口号
+```
