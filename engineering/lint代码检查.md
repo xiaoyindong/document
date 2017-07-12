@@ -222,4 +222,111 @@ module.exports = {
 
 ```extends```选项是用来继承一些共享的配置，如果需要在多个项目当中共享一个```eslint```配置，可以定义一个公共的配置文件然后在这里继承就可以了。这个属性值是一个数组，数组中的每一项都是一个配置。
 
-```parserOptions```的作用是设置语法解析器的，```ECMAScript```近几年发布了很多版本，这个配置的作用就是是否允许
+```parserOptions```的作用是设置语法解析器的，```ECMAScript```近几年发布了很多版本，这个配置的作用就是是否允许使用某一个```ES```版本的语法。这里设置的是```11```也就是```ECMAScript2020```。
+
+如果将```ecamVersion```设置为```5```，这个时候就没办法使用```ES6```的新特性了，在```ecamVersion```低于```6```的情况下```sourceType```不能是```module```，因为```ES Modules```是```ES6```的新特性。
+
+```parserOptions```影响的只是语法检测，不代表某个成员是否可用，如果是```ES2015```提供的全局成员比如```Promise```还是需要```env```中的```ES6```选项进行控制。
+
+```js
+module.exports = {
+    env: {
+        browser: true,
+        es2015: false
+    },
+    extends: [
+        'standard'
+    ],
+    parserOptions: {
+        ecamVersion: 2015
+    },
+    rules: {
+
+    }
+}
+```
+
+```rules```属性是配置```ESLint```中每个规则的开启或者是关闭，例如这里可以尝试开启```no-alert```规则。具体的开启方法就是在rules里面添加一个属性，属性名是内置的规则名称，属性值可以有三种，分别是```off```，```warning```和```error```。如果是```off```代表规则关闭，如果是```warning```就是发出警告，如果是```error```就表示当前报出错误。
+
+```js
+module.exports = {
+    env: {
+        browser: true,
+        es2015: false
+    },
+    extends: [
+        'standard'
+    ],
+    parserOptions: {
+        ecamVersion: 2015
+    },
+    rules: {
+        'no-alert': "error"
+    }
+}
+```
+
+设置后代码中使用```alert```就会报出```error```错误，这就是```rules```的属性的作用。在```eslint```的官网上就给出了所有内置的可用的校验规则列表，可以在使用的时候进行查看。```standard```风格中已经开启了很多规则。基本上也满足了所有的需求，如果有需要的情况下可以根据自己的需求来进行具体的配置。
+
+```globals```是额外的声明在代码中可以使用的全局成员。例如在使用了```JQuery```的项目当中，一般都会使用全局的```JQuery```对象，那么就可以直接去添加一个```JQuery```，将他的值设置为```readonly```，这样代码当中就能直接去使用```JQuery```，而且也不会报错。
+
+```js
+module.exports = {
+    env: {
+        browser: true,
+        es2015: false
+    },
+    extends: [
+        'standard'
+    ],
+    parserOptions: {
+        ecamVersion: 2015
+    },
+    rules: {
+        'no-alert': "error"
+    },
+    globals: {
+        jQuery: 'readonly'
+    }
+}
+```
+
+### 4. 配置注释
+
+配置注释就可以理解为将配置直接通过注释的方式写在脚本文件中，然后再去执行代码的校验。比如在实际的开发过程中如果使用```ESLint```难免遇到一两处需要违反配置规则的地方，这种情况肯定不能因为这一两个点就去推翻校验规则的配置，在这个时候就可以去使用校验规则的配置注释去解决这个问题。
+
+比如定义一个普通的字符串，在字符串中使用```${}```占位符，但是```standard```风格不允许这样使用。要解决这样的问题可以通过注释的方式，临时禁用一下规则，注释的语法有很多种，具体可以参考ESLint官方给出的文档，这里直接使用```eslint-disable-line```，这样```eslint```在工作的时候就会选择忽略这一行代码。
+
+```js
+const str = '${name} is a coder'; // eslint-disable-line
+console.log(str);
+```
+
+这样使用虽然可以解决问题，但同样也会带来新的问题，一行当中如果有多个问题存在的时候这样操作所有问题就都不会被检测。因此更好的做法应该是在```eslint-disable-line```后面跟上一个具体要禁用的规则名称。比如这里的是```no-template-curly-in-string```。这样就会只忽略指定的问题规则，其他的问题仍旧可以被发现。
+
+
+```js
+const str = '${name} is a coder'; // eslint-disable-line no-template-curly-in-string
+console.log(str);
+```
+
+当然注释的方式不仅可以禁用某个规则，还能声明全局变量，修改某个规则的配置，临时开启某个环境等等，这些功能可以通过下面的链接找到对应的文档查询对应的使用。[文档](http://eslint.cn/docs/user-guide/configuring#configuring-rules)
+
+### 5. 结合 gulp
+
+```ESLint```本身是一个独立的工具，但是如果现在是一个有自动化构建的工作流的项目当中，还是建议集成到自动化构建的工作流当中。
+
+首先需要安装```eslint```模块和```gulp-eslint```模块，通过```eslint --init```创建```eslint```的配置文件。```guipfile.js```在处理```js```的任务中做修改。
+
+```js
+const script = () => {
+    return src('src/main.js', {base: 'src'})
+    .pipe(plugins.babel({presets: ['@babel/preset-env']}))
+    .pipe(dest('temp'))
+    .pipe(bs.reload({stream: true}))
+}
+```
+
+```gulp```属于一种管道的工作机制，想把```eslint```集成到这个工作当中，应该在```babel```处理之前先进行```eslint```操作，否则经过```babel```之后代码就不是真正的源代码了。
+
+可以使用```plugins.eslint```找到这个插件进行
