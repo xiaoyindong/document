@@ -470,3 +470,271 @@ public
         }
     }
 ?>
+```
+
+```Controller.class.php```。
+
+```php
+<?php
+    class Controller {
+        private static $retValue = array(
+            'hasError' => false,
+            'content' => null,
+            'message' => '请求成功'
+        );
+        public static function initCode() {
+            $str="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            $key = "";
+            for($i = 0; $i < 32; $i++)
+             {
+                 $key .= $str{mt_rand(0,32)};    //生成php随机数
+             }
+             return md5($key);
+        }
+
+        // 设置返回的content信息
+        public static function setContent($content) {
+            self::$retValue['content'] = $content;
+        }
+
+        // 服务器错误
+        public static function serverError($error) {
+            self::$retValue = $error;
+        }
+
+        // 将数据返回给前端
+        public static function send() {
+            echo json_encode(self::$retValue);
+        }
+    }
+?>
+```
+
+```Framework.class.php```。
+
+```php
+<?php
+    class Framework {
+        public static function run() {
+            // 设置主机名字
+            $GLOBALS['localhost'] = 'http://www.yingview.com/';
+            // 设置时区;
+            ini_set('date.timezone','Asia/Shanghai');
+            // 开启session
+            session_start();
+            // 关闭警告
+            error_reporting(0);
+            self :: init();
+            self :: autoload();
+            self :: dispatch();
+        }
+
+        private static function dispatch() {
+            $controller_name = CONTROLLER . 'Controller';
+            $action_name = ACTION . 'Action';
+            $controller = new $controller_name();
+            $controller -> $action_name();
+        }
+        private static function autoload() {
+            spl_autoload_register(array(__CLASS__, 'load'));
+        }
+        private static function load($classname) {
+            if (substr($classname, -10) == 'Controller') {
+                include CUR_CONTROLLER_PATH . "{$classname}.class.php";
+            } else if (substr($classname, -5) == 'Model') {
+                include MODEL_PATH . "{$classname}.class.php";
+            } else {
+                echo '无';
+            }
+        }
+        private static function init() {
+
+            foreach( $_POST as $key => $value) {
+                $_GET[$key] = $value;
+            };
+
+            define("DS", DIRECTORY_SEPARATOR);
+            define("ROOT", getcwd() . DS);
+            define("APP_PATH", ROOT . 'application' . DS);
+            define("FRAMWORK_PATH", ROOT . 'framework' . DS);
+            define("PUBLIC_PATH", ROOT . 'public' . DS);
+            define("CONFIG_PATH", APP_PATH . 'config' . DS);
+            define("CONTROLLER_PATH", APP_PATH . 'controllers' . DS);
+            define("MODEL_PATH", APP_PATH . 'models' . DS);
+            define('CORE_PATH', FRAMWORK_PATH . 'core' . DS);
+            define('DB_PATH', FRAMWORK_PATH . 'databases' . DS);
+            define('LIB_PATH', FRAMWORK_PATH . 'libraries' . DS);
+            define("CONTROLLER", isset($_GET['rpcname']) ? ucfirst($_GET['rpcname']) : 'Index');
+            define("ACTION", isset($_GET['method']) ? $_GET['method'] : 'index');
+            define("PLATFORM", isset($_GET['p']) ? $_GET['p'] : 'front');
+            define("CUR_CONTROLLER_PATH", CONTROLLER_PATH . PLATFORM . DS);
+            define("UPLOAD_PATH", PUBLIC_PATH . 'uploads' . DS);
+            define("UPLOAD_COVER_PATH", UPLOAD_PATH . 'covers' . DS);
+            define("UPLOAD_CONTENT_PATH", UPLOAD_PATH . 'contents' . DS);
+            define("UPLOAD_PHOTO_PATH", UPLOAD_PATH . 'photos' . DS);
+            define("UPLOAD_SYSTEM_PATH", UPLOAD_PATH . 'system' . DS);
+            define("FRONT_UPLOAD_PATH",  '/public/uploads' . DS);
+            define("FRONT_UPLOAD_COVER_PATH", '/public/uploads/covers' . DS);
+            define("FRONT_UPLOAD_CONTENT_PATH", '/public/uploads/contents' . DS);
+            define("FRONT_UPLOAD_PHOTO_PATH", '/public/uploads/photos' . DS);
+ 
+            // 设置跨域
+            // header('Access-Control-Allow-Origin:*');
+            // 设置编码
+            header("Content-type: text/html; charset=utf-8");
+            // 引入基础控制器
+            include CORE_PATH . 'Controller.class.php';
+
+            // 引入数据库基础模型
+            include CORE_PATH . 'Model.class.php';
+            // 邮件发送
+            include LIB_PATH . 'Mail.class.php';
+            // 上传附件
+            include LIB_PATH . 'Upload.class.php';
+
+            // 载入数据库配置项
+            $GLOBALS['config'] = include CONFIG_PATH . 'config.php';
+            include DB_PATH . 'Mysql.class.php';
+
+        }
+    }
+?>
+```
+
+```Mysql.class.php```。
+
+```php
+<?php
+
+class Mysql{
+	protected $conn = false;  //数据库连接资源
+	protected $sql;           //sql语句
+	
+	/**
+	 * 构造函数，负责连接服务器、选择数据库、设置字符集等
+	 * @param $config string 配置数组
+	 */
+	public function __construct($config = array()){
+		$host = isset($config['host'])? $config['host'] : 'localhost';
+		$user = isset($config['user'])? $config['user'] : 'root';
+		$password = isset($config['password'])? $config['password'] : '';
+		$dbname = isset($config['dbname'])? $config['dbname'] : '';
+		$port = isset($config['port'])? $config['port'] : '3306';
+		$charset = isset($config['charset'])? $config['charset'] : 'utf8';
+		
+		$this->conn = mysqli_connect("$host",$user,$password,$dbname, "$port") or die('数据库连接错误');
+		// mysqli_select_db($dbname) or die('数据库选择错误');
+		$this->setChar($charset);
+	}
+
+	/**
+	 * 设置字符集
+	 * @access private
+	 * @param $charset string 字符集
+	 */
+	private function setChar($charest){
+		$sql = 'set names '.$charest;
+		$this->query($sql);
+	}
+
+	/**
+	 * 执行sql语句
+	 * @access public
+	 * @param $sql string 查询sql语句
+	 * @return $result，成功返回资源，失败则输出错误信息，并退出
+	 */
+	public function query($sql){		
+		$this->sql = $sql;
+		$result = @mysqli_query($this->conn, $this->sql);
+		
+		// if (! $result) {
+		// 	die($this->errno().':'.$this->error().'<br />出错语句为'.$this->sql.'<br />');
+		// }
+		return $result;
+	}
+
+	/**
+	 * 获取第一条记录的第一个字段
+	 * @access public
+	 * @param $sql string 查询的sql语句
+	 * @return 返回一个该字段的值
+	 */
+	public function getOne($sql){
+		$result = $this->query($sql);
+		$row = mysqli_fetch_row($result);
+		if ($row) {
+			return $row[0];
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * 获取一条记录
+	 * @access public
+	 * @param $sql 查询的sql语句
+	 * @return array 关联数组
+	 */
+	public function getRow($sql){
+		if ($result = $this->query($sql)) {
+			$row = mysqli_fetch_assoc($result);
+			return $row;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * 获取所有的记录
+	 * @access public 
+	 * @param $sql 执行的sql语句
+	 * @return $list 有所有记录组成的二维数组
+	 */
+	public function getAll($sql){
+		$result = $this->query($sql);
+		$list = array();
+		while ($row = mysqli_fetch_assoc($result)){
+			$list[] = $row;
+		}
+		return $list;
+	}
+
+	/**
+	 * 获取某一列的值
+	 * @access public
+	 * @param $sql string 执行的sql语句
+	 * @return $list array 返回由该列的值构成的一维数组
+	 */
+	public function getCol($sql){
+		$result = $this->query($sql);
+		$list = array();
+		while ($row = mysqli_fetch_row($result)) {
+			$list[] = $row[0];
+		}
+		return $list;
+	}
+
+	/**
+	 * 获取上一步insert操作产生的id
+	 */
+	public function getInsertId(){
+		return mysqli_insert_id($this->conn);
+	}
+	/**
+	 * 获取错误号
+	 * @access private
+	 * @return 错误号
+	 */
+	public function errno(){
+		return mysqli_errno($this->conn);
+	}
+	/**
+	 * 获取错误信息
+	 * @access private
+	 * @return 错误private信息
+	 */
+	public function error(){
+		return mysqli_error($this->conn);
+	}
+}
+```
