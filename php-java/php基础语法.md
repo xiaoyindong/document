@@ -330,4 +330,143 @@ if (mysql_select_db($db_name, $link));
 
 ```mysql_num_rows()```获取结果集的长度。
 
-```mysql_qu
+```mysql_query("set names utf8")```在选择数据库之前设置方才有效。
+
+```mysql_fetch_array```参数```2```如下，不需要加引号，是常量。
+
+```MYSQL_BOTH```两种下标都存在。
+
+```MYSQL_ASSOC```字符型下标。
+
+```MYSQL_NUM```数字型下标，相当于```mysql_fetch_row()```的功能。
+
+```PHP```内置函数
+
+```incluse()```包含文件， 如果文件不存在，报错，但不阻塞后面程序执行。
+
+```php
+include $filename;
+include($filename);
+```
+
+```require()```包含文件，如果文件不存在，报错并且阻塞代码运行。
+
+```php
+require $filename;
+require($filename);
+```
+
+```header()```文件头信息，自定义的```http```报文。
+
+```php
+header("Content-type", "text/html;charset=utf-8"); // 设置一个返回的字符集
+header("location", "http://www.baidu.com"); // 网页跳转
+```
+
+```date(format, Time)```参```1```，格式化时间格式，参```2```，时间戳```/```秒。
+
+```urldecode()```编码。
+
+```urlencode()```解码。
+
+```md5()```加密成```md5```值；以```32```个字符十六进制数字形式返回散列值。
+
+```define()```定义全局变量， 参```1```: 变量名，大写， 参数```2```: 变量的值。
+
+```ucfirst()```首字母大写。
+
+```strtolower()```将字符串转为小写。
+
+```strtoupper()```将字符串转为大写。
+
+```addslashes()```转译特殊字符。
+
+```htmlspecialchars()```，```标签转译。
+
+```htmlentities()```，```html```标签转译。
+
+```array_map(function, arr)```遍历数组。
+
+```json_encode```将对象转为```json```。
+
+```json_decode```将```json```转为对象。
+
+```get_object_vars()```将```obj```转为数组。
+
+全局对象
+
+```$_SERVER```: 获取服务之星环境信息，以及客户端信息。
+
+```$_SERVER["ROMOTE_ADDR"]```: 客户端的```IP```地址。
+
+```$_SERVER["SERVER_ADDR"]```: 服务器的```IP```地址。
+
+```$_SESSION```:```session```容器。
+
+## 4. 项目结构
+
+```s
+application
+    config 配置文件目录
+    controllers 控制器目录
+        admin 后台管理
+            方法类1
+            方法类2
+            方法类3
+        web 前端管理
+    models 数据库模型
+    views 视图目录
+framework
+    core 核心
+        Controller.class.php: 抽象类
+        Framework.class.php 启动类
+        Upload.class.php 上传文件类
+    databases 数据库驱动
+        Mysql.class.php
+    helps 辅助函数
+    libraries 类库目录
+public
+    css
+    images
+    js
+    uploads
+```
+
+入口文件```index.php```。
+
+```index.php
+<?php
+    include "framework/core/Framework.class.php";
+    $app = new Framework();
+    $app -> run();
+?>
+```
+
+配置文件```config.php```。
+```php
+<?php
+    return array(
+        'host' => '127.0.0.1',
+        'user' => 'root',
+        'password' => 123456,
+        'dbname' => 'yingview',
+        'charset' => 'utf8',
+        'port' => 3306,
+        'prefix' => 'ying'
+    );
+?>
+```
+
+控制器文件```controllers```->```web```->```UserController```。
+
+```php
+<?php
+    class UserController extends Controller {
+        // 用户退出
+        public static function logoutAction(){
+            if (isset($_SESSION['userInfo'])) {
+                unset($_SESSION['userInfo']);
+            }
+        }
+    }
+?>
