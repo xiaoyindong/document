@@ -45,4 +45,71 @@ const upload = () => {
             console.log('文件传输异常:',err);
             process.exit(0);
          });
-   }).catch(err=
+   }).catch(err=>{
+       console.log('ssh连接失败:',err);
+       process.exit(0);
+   });
+}
+
+// 将dist文件夹压缩成zip ---- start -----
+// 设置初始化压缩参数
+const archive = archiver('zip', { zlib: { level: 9 }}); 
+
+// 创建压缩后的文件
+const output = fs.createWriteStream(__dirname + '/dist.zip');
+// 监听压缩事件
+output.on('close', (err) => {
+    if (err) {
+        console.log('关闭archiver异常:', err);
+        return;
+    }
+    // 压缩完成
+    console.log(`----压缩文件总共 ${archive.pointer()} 字节----`);
+    // 调用上传方法
+    upload();
+});
+
+// 通过管道方法设置输出文件的位置
+archive.pipe(output);//典型的node流用法
+// 打包dist里面的所有文件和目录
+archive.directory('./dist');
+// 完成
+archive.finalize();
+```
+
+## 5. 创建服务器对应脚本
+
+```deploy.sh```
+
+```s
+#!/bin/bash
+
+# 进入文件所在目录
+cd /home
+
+# 删除原静态资源目录
+rm -rf dev
+
+# 进入文件所在目录
+cd /home
+
+#解压新的包
+unzip dist.zip
+
+# 将解压出的dist目录修改名称为dev
+mv dist dev
+
+```
+
+## 6. 文件上传后，执行服务器脚本
+
+```js
+ssh.execCommand('sh deploy.sh', { cwd: 'deploy.sh所在绝对路径' }).then(result => {
+    console.log('远程STDOUT输出: ' + result.stdout)
+    console.log('远程STDERR输出: ' + result.stderr)
+    if (!result.stderr) {
+        console.log('发布成功!');
+        process.exit(0);
+    }
+});
+```
