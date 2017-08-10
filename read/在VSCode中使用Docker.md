@@ -69,4 +69,38 @@ CMD [ "pwd" ]
 
 将```Dockerfile```中最后一个配置```CMD```进行了修改。这个```image```生成的```container```运行起来后会执行```pwd```命令，而非```htop```命令。
 
-修改完```Dockerfile```之后，第一件要做的事情，就是重新构建```image```。在构建```image```时，可以覆盖之前的```image```，也可以重新起个名字来创建新的```image```。比如新的```image```取名为
+修改完```Dockerfile```之后，第一件要做的事情，就是重新构建```image```。在构建```image```时，可以覆盖之前的```image```，也可以重新起个名字来创建新的```image```。比如新的```image```取名为```vscode-docker-sample2:latest```。
+
+有了新的```image```后，接下来就是从```vscode-docker-sample2:latest```创建一个新的```container```。
+
+在运行```docker run```的时候，如果留意左侧视图```containers```这个列表的话，会发现```vscode-docker-sample2```的```container```出现了一下然后又消失了。这是为什么呢?来看一下集成终端，此时集成终端里运行的脚本是。
+
+```s
+docker run --rm -d vscode-docker-sample2:latest
+```
+
+这行脚本中有一个参数```–rm```，意思是如果```container```里的命令执行结束的话，就将这个```container```删除。由于这个```container```中运行的命令是```pwd```，这个命令很快就结束了，所以来不及在视图中看到并且操作它。如果不希望这个```container```被删除可以选择手动地运行如下的脚本。
+
+```s
+docker run -d vscode-docker-sample2:latest
+```
+
+这次创建的```container```运行结束后就不会被删除了。也就是此时能够在左侧```Containers```列表里看到```vscode-docker-sample2:latest (dreamy_...)```这个```container```了。它前面的图标里有一个 红色的点，这说明这个```container```已经结束工作了。
+
+可以在这个```container```上右击调出上下文菜单，选择```Show logs```命令。接着就能够看到这个```container```中```pwd```命令执行的结果了，就是```/```。
+
+## 3. Docker Compose
+
+除了```Dockerfile```的支持，```Docker```插件还支持```Docker Compose```。```Docker Compose```是用于配置多个```container```并且将其同时运行。和```Dockerfile```一样也可以在```Docker compose file```里获得自动补全和错误检查。
+
+这里用一个```Node.js```的代码示例，来展示```Docker Compose```以及接下来调试相关的内容。
+
+首先将上文中创建的```Dockerfile```删除。然后在文件夹下创建一个```JavaScript```文件```index.js```。
+
+```js
+function foo() { 
+    bar("Hello World");
+}
+
+function bar(sr) {
+    console.lo
