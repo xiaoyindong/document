@@ -1,0 +1,52 @@
+
+## 概述
+
+```webapp```用户体验差，不能离线访问，用户粘性低，```pwa```就是为了解决这一系列问题，让```webapp```具有快速，可靠，安全等特点。但是兼容性较差。
+
+## PWA用到的技术
+
+- web app manifest
+
+图标添加
+
+- service worker
+
+缓存机制
+
+- push api & notification api
+
+消息通知
+
+- app shell & app skeleton
+
+## Web App Manifest 设置
+
+安卓支持比较好
+
+```html
+<link rel="manifest" href="/manifest.js">
+```
+
+```manifest.js```
+
+```json
+{
+    "name": "应用名称",
+    "short_name": "桌面应用名称",
+    "display": "standalone", // fullScreen(standalone) minimal-ui browser
+    "start_url": "打开时的网址",
+    "icons": [], // 设置桌面图片的icon图标，修改图标需要重新添加到桌面，[{src, sizes, type}]，[{"src": "", "sizes": "144x144", type: "image/png"}] 默认144 * 144
+    "background_color": "#aaa", // 启动画面颜色
+    "theme_color": "#aaa" // 状态栏颜色
+}
+```
+
+```ios```需要使用```meta```来设置
+
+```html
+// 图标
+<link rel="apple-touch-icon" href="apple-touch-iphone.png">
+// 添加到主屏后的标题和short_name一致
+<link rel="apple-mobile-web-app-title" content="标题">
+// 隐藏safari地址栏 standalone模式下默认隐藏
+<link rel="apple-mob
