@@ -91,4 +91,40 @@ redundant废弃
 ```js
 window.addEventListener('load', function() {
     // 解决离线缓存的问题 缓存 把缓存取出来
-    if ('serviceWorker' in navigator) { // 判断当前浏览器是否支持serviceWo
+    if ('serviceWorker' in navigator) { // 判断当前浏览器是否支持serviceWorker
+        navigator.serviceWorker.register('/sw.js').then(function(resgisteration) {
+            console.log(resgisteration);
+        })
+    }
+});
+```
+
+```sw.js```的代码
+
+```js
+// 无window对象，采用self代替
+
+const CACHE_NAME = 'cache_v' + 1; // 默认情况，sw文件变化后，会重新注册serviceWorker
+const CACHE_LIST = [
+    '/',
+    '/index.html',
+    '/index.css',
+    '/main.js',
+    '/api/img'
+]
+
+function fetchAddSave(request) { // 数据获取后 进行缓存
+    // 如果请求到了 需要更新缓存
+    return fetch(request).then(res => { // res 是流文件
+        // 更新缓存
+        const r = res.clone(); // res必须克隆，因为使用一次就销毁
+        caches.open(CACHE_NAME).then(cache => {
+            chache.put(request, res);
+        })
+        return res;
+    });
+}
+
+// 监听fetch，只要拦截到请求就会走这里
+self.addEventListener('fetch', function(e) { // 线程中不能发送ajax，可以使用fetch
+    //
