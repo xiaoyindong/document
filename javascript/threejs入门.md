@@ -54,4 +54,22 @@ const cube = new THREE.Mesh(geometry, material);
 
 scene.add(cube);
 
-// 修
+// 修改一下相机的位置
+camera.position.z = 4; // z轴方向提升4米
+
+function animate() {
+    requestAnimationFrame(animate);
+    cube.rotation.y += 0.1; // 物体旋转
+    renderer.render(scene, camera);
+}
+```
+
+![未命名.gif](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/92d20609eedc4273901a9da947a137b8~tplv-k3u1fbpfcp-watermark.image)
+
+## 材质和相机控制
+
+```js
+// 定义全局变量
+let scene, camera, geometry, mesh, renderer, controls
+
+// 初始化渲染器
