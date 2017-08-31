@@ -130,4 +130,104 @@ tcb login
 
 准备好之后，就可以看到可选的应用的了，选择函数所属的应用后，在选择对应的函数模板，这里选择与之前一样的```Node```云函数示例，输入项目名称后，云函数会下载相关代码到本地，注意，此时在控制台中，是看不到这个函数的，也就是说，这个函数并没有上线运行，其实命令行中也给了提示:```执行命令tcb一键部署```，想要上线运行，还需要进到项目目录中，执行```tcb```命令，当前运行命令的目录在哪里，生成的模板也就在哪里。项目名称也就是目录的名称。
 
-展开目录可以看到```functions```的目录以及一些配置文件。```functions```中存放云函数的目录以及代码。里面的```node-app
+展开目录可以看到```functions```的目录以及一些配置文件。```functions```中存放云函数的目录以及代码。里面的```node-app```就是云函数名字，```index.js```就是云函数的代码。
+
+修改云函数代码之后想要部署，可以切换目录到项目目录，使用```tcb```命令就会部署到云函数。函数的名字是目录的名字，可以通过```cloudbaserc.json```中的```functions```的```name```进行修改。
+
+```json
+functions: [
+    {
+        "name": "node-app",
+        "timeout": 5,
+        "envVariables": {},
+        "runtime": "Nodejs10.15",
+        "handler": "index.main"
+    }
+]
+```
+
+函数的运行是需要触发器的，所以，函数部署成功后，执行```tcb service create```命令，创建```http```触发器，创建成功后，会返回访问地址，但是，与在控制台创建触发器一样，需要等待几分钟的时间后，才能看到访问结果。
+
+修改函数返回值的内容，重新刷新后并没有显示，这需要更新函数代码后才能生效，可以使用```tcb fn code update xxx函数名```，命令只会更新函数的代码以及执行入口，不会修改函数的其他配置。
+
+## 7. 测试工具
+
+虽然代码放在了本地编写，但是本地是没有触发器的，当然本地有```Node```环境，但是与云环境还是有很大差别的，不能每次写完代码，都需要上传在测试，这中体验根本就没法用，为了解决这个问题，腾讯开发了开源的[scf-cli](https://github.com/TencentCloud/scf-node-debug)工具，帮助在本地快速调试，基本原理就是在本地开启一个服务器模拟云环境，可以在本地进行调试。
+
+```s
+npm install scf-cli -g
+```
+
+安装成功后，在项目目录下执行```scf init```或者```scf i```开启本地测试环境，命令提示符会让输入入口文件的路径，这里是路径地址不是文件地址，路径填写相对路径。还需要入口函数名也就是```main```方法名，设置好超时时间3s后，选择测试方式。
+
+如果选择的是```http```，那么默认的会开启```3000```端口的服务器。此时，就可以愉快的使用```Serverless```云原开发了。
+
+## 8. Express 与云函数
+
+经过前面一些列的配置，终于可以在本地开发调试了，但是使用纯原生的```Node.js```开发，效率是非常低的，如果能在云函数中引入一款熟悉的后端开发框架，开发才算坐上了高铁。这里选择```Express```，先在本地安装好```Express```，按照以往的开发经验，在本地开启```HTTP```服务。
+
+在```node-app```目录下创建```app.js```文件，这个文件主要接收请求和做路由分发。
+
+```js
+const express = require("express");
+
+const app = express();
+
+app.use('/users',(req,res)=>{
+  res.send('yindong')
+})
+
+module.exports = app;
+```
+
+再创建一个启动文件```node-app/www.js```。
+
+```js
+const app = require('./app.js');
+
+app.listen(3000, () => {
+    console.log('http://127.0.0.1:3000');
+})
+```
+
+而在云函数中，代码是在入口函数运行的，而且云环境中有```HTTP```的触发器，是不需要创建服务器的。上面的代码```Express```是自己创建了一个启动文件的，这就造成了矛盾，就是本地使用```Express```就是用户先来请求```Express```创建好的服务，再去调用路由规则处理请求作出响应。
+
+但是云服务是用户请求云环境的```HTTP```触发器，由触发器调用云函数，云函数里面才是接收到的请求以及作出响应的代码，也就是需要将```HTTP```触发器和函数做一个入口，本地的触发入口在云函数中是不需要的。
+
+有一款开源工具，专门用作对框架代码进行包装，[serverless-http](https://github.com/dougmoscrop/serverless-http)，```https://www.npmjs.com/package/serverless-http```是专门用于在```Serverless```环境下，包装接口的模块，不需要服务器，也不需要监听端口。
+
+```s
+npm install serverless-http
+```
+
+在入口文件中```node-app/index.js```中。
+
+```js
+const serverless = require('serverless-http');
+
+let app = require('./app.js');
+
+const handler = serverless(app);
+
+module.exports.main = async (event, context) => {
+  const result = await handler(event, context)
+  return result;
+};
+```
+
+写好之后将代码部署到云平台，然后进行请求测试，在本地开发测试，开启本地服务器就可以了。
+
+注意执行```tcb```命令时需要在项目的目录中运行。安装依赖的时候需要在```node-app```目录中执行。
+
+## 9. API 接口案例
+
+这里我实现一个```TodoList```案例的后端```API```接口，这个案例具备最基础的增删改查等基础功能。回到```app.js```中将基础代码进行补齐。
+
+```js
+const express = require("express");
+
+const app = express();
+
+app.use(express.json());
+
+app.use(express.urlen
