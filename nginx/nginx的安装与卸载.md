@@ -105,4 +105,22 @@ http {
 
 像上面```http```就是一个指令快，```include mime.types```是一条指令。
 
-每条指令都是以分号结尾的，指令和参数间以空格符号分隔，拿```include mime.types;
+每条指令都是以分号结尾的，指令和参数间以空格符号分隔，拿```include mime.types;```来看，```include```是一个指令名，他的中间可以用一个或者多个空格来分隔，那么后面的```mime.types```就是他的参数，也可以具备多个参数，比如```limit_req_zone $binary_remote_addr zone=one:10 rate=1r/s;```他有三个参数。
+
+两条指令间是以分号作为分隔符的，两条指令放在一行中写也是没有问题的。只不过这样可读性会变得很差。
+
+第三个指令块是以 ```{} ```组成的，他会将多条指令组织到一起，比如```upstream```，他把一条指令```server```放在了```thwp```这个指令块下面。
+
+像```server```他也放置了```listen```，```limit_req_zone```这些指令，他还可以包含其他的指令块，比如说```location```。
+
+有些指令块可以有名字，比如说像```upstream```，后面有个```thwp```，有些指令块是没有名字的，比如说```server```和``http``。
+
+
+演示一下配置，首先创建 ```Nginx``` 运行使用的用户 ```www```：
+
+```s
+/usr/sbin/groupadd www 
+/usr/sbin/useradd -g www www
+```
+
+配置```nginx.conf``` ，将```/usr/local/nginx/conf/nginx.conf```替
