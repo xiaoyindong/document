@@ -236,4 +236,98 @@ foreach( $arr as [$key =>] value) {
 ## 2. 函数
 
 ```php
-function
+function getMax($a, $b) {
+    return $a >= $b ? $a : $b;
+}
+```
+
+```php```函数和```js```中的相同，函数名称不需要添加```$```。
+
+变量作用域:
+
+在```php```中，全局变量，不能直接在函数内部使用。
+
+全局变量在函数外部定义的变量，网页执行完毕消失。
+
+局部变量在函数内部定义的变量，函数执行完毕胡消失。
+
+使用```global```生命全局变量
+
+```global```关键字只能在函数内部使用;
+
+```global```生命和赋值要分离
+
+```php
+global $name;
+$name = "feiyang";
+```
+
+```global```的真正含义是， "引用传地址";
+
+日期时间函数```date()```。
+
+```php
+date("Y-m-d H:i:s"); 年月日 时分秒
+```
+
+```time()```时间戳，秒数。
+
+```php
+time();
+```
+
+## 3. 链接数据库
+
+```mysql_connect```链接函数，返回资源，```php```可以链接多重数据库。
+
+```php
+resource $link = mysql_connect("localhost", "root", "123456");
+var_dump($link);
+```
+
+使用```@```符号，屏蔽错误
+
+```php
+$link = @mysql_connect("localhost", "root", "123456");
+```
+
+```mysql_error```返回上一次```mysql```执行失败时的文本错误信息。
+
+```php
+echo mysql_error();
+```
+
+```exit()```结束程序，输出提示信息。
+
+```php
+exit(["信息"]);
+```
+
+```mysql_select_db()```选择当前要操作的数据库，返回布尔值。
+
+参数1: 数据库名称
+
+参数2: [资源，默认上一次的资源]
+
+```php
+if (mysql_select_db($db_name, $link));
+```
+
+操作数据库
+```mysql_query()```。
+
+参1:```sql```语句
+
+参2: [资源链接]
+
+操作成功时，返回结果集，失败返回```false```。
+
+```mysql_fetch_row()```返回值，```array```， 从结果集获取一行。
+
+```mysql_fetch_array```取出一行，作为混合数组返回， 参数```2```: 返回数组的类型。
+
+```mysql_fetch_assoc()```取出一行，已关联数组返回。
+
+```mysql_num_rows()```获取结果集的长度。
+
+```mysql_qu
