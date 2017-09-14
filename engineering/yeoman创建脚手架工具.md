@@ -105,4 +105,181 @@ module.exports = class extends Generator {
     writing() { 
         // Yeoman自动生成文件阶段调用此方法
         // 我们尝试往项目目录中写入文件
-        this.fs.write(this.destina
+        this.fs.write(this.destinationPath('temp.txt'), '123'); // 这里的fs模块与node中的fs不同，是高度封装的模块功能更强大一些，
+    }
+
+}
+```
+
+```this.destinationPath```是父类中方法用来获取绝对路径，```this.fs```是父类中模块。
+
+这时一个简单的```generator```就已经完成了，通过```npm link```的方式把这个模块连接到全局范围，使之成为一个全局模块包，这样```Yeoman```在工作的时候就可以找到自己写的这个```generator-simple```模块
+
+```s
+yarn link
+```
+
+可以通过```Yeoman```运行这个生成器具体的操作方式是```yo simple```。
+
+```s
+yo simple
+```
+
+## 5. 根据模板创建文件
+
+很多时候需要自动创建的文件有很多，而且文件的内容也相对复杂，这种情况可以使用模板创建文件。在生成器的目录下添加```template```目录，然后将需要生成的文件都放入到```template```目录中作为模板。模板中完全遵循ejs模板引擎的语法。
+
+有了模板过后在生成文件之时就不用再借助于```fs```的```write```方法去写入文件，而是借助于```fs```中的```copytemplate```方式，使用的时候有三个参数，分别是模板文件的路径，输出文件的路径，模板数据的上下文。
+
+模板文件路径可以借助```this.templatePath('foo.txt')```自动获取当前template目录下的文件路径。输出路径仍旧是用```this.destinationPath('foo.txt')```，模板数据上下文只需要定义一个对象就可以了用于传入```ejs```。
+
+```js
+
+const tmpl = this.templatePath('foo.txt');
+
+const output = this.destinationPath('foo.txt');
+
+const context = { title: 'yd'}
+
+this.fs.copyTpl(tmpl, output, context);
+
+```
+
+运行
+
+```s
+yo simple
+```
+
+## 6. 接收用户输入数据
+
+在```generator```中想要发起一个命令行交互询问，可以通过实现```generator```类型中的```promting```方法。
+
+```js
+
+const Generator = require('yeoman-generator');
+
+module.exports = class extends Generator {
+    prompting() {
+    }
+}
+
+```
+
+可以调用父类提供的```promit```方法发出对用户的命令行询问。这个方法返回```promise```，在调用的时候对他```return```，这样```Yeoman```在调用的时候就有更好的异步流程控制。
+
+这个方法接受数组参数，数组的每一项都是一个问题对象，可以传入类型```type```、```name```、```message```和```default```。
+
+```js
+[
+    {
+        type: "input", // 提问类型
+        name: "name", // 得到结果的一个键
+        message: "message", // 命令行提示的话
+        default: this.appname // appname为项目生成目录文件夹的名字，会作为问题的默认值
+    }
+]
+```
+
+```promise```执行过后我们会得到一个返回值，返回值就是问题的结果。会以对象的形式出现。对象的键就是输入的```name```，值就是用户输入的内容，可以将这个值挂载在全局```this```中方便日后使用
+
+```js
+const Generator = require('yeoman-generator');
+module.exports = class extends Generator {
+    prompting() {
+        return this.prompt([
+            {
+                type: "input", // 提问类型
+                name: "projectName", // 得到结果的一个键
+                message: "message", // 命令行提示的话
+                default: this.appname // appname为项目生成目录文件夹的名字，会作为问题的默认值
+            }
+        ]).then(answers => {
+            this.answers = answers;
+        })
+    }
+}
+```
+
+有了```this.answers```就可以在```writing```的时候传入模板引擎，使用这个数据作为模板数据的上下文。
+
+```js
+const context = this.answers;
+this.fs.copyTpl(tmpl, output, context);
+```
+
+## 7. 案例演示
+
+首先打开命令行窗口然后通过```mkdir```创建一个全新的```gengerator```目录。
+
+```s
+mkdir generator-vue
+cd generator-vue
+```
+
+通过```yarn init```初始化```package.json```，然后安装```Yeoman```的依赖。
+
+```s
+yarn init
+yarn add yeoman-generator
+```
+
+新建```generator```主入口文件```generators/app/index.js```。
+
+```js
+const Generator = require('yeoman-generator');
+
+module.exports = class extends Generator {
+    prompting() {
+        return this.promit([
+            {
+                type: 'input',
+                name: 'name',
+                message: 'Your project name',
+                default: this.appname
+            }
+        ]).then(answer => { // 获取到用户输入的数据
+            this.answer = answer;
+        })
+    }
+    writing() {
+
+    }
+}
+```
+
+创建```templates```目录，把项目的结构```copy```到```templates```当中作为模板，有了模板过后需要把项目结构里面一些可能发生变化的地方通过模板引擎的方式修改。
+
+通过数组循环的方式批量生成每一个文件，把每一个文件通过模板转换，生成到对应的路径。
+
+```js
+writing() {
+    const templates = [
+        '.browserslistrc',
+        'src/views/Home.vue'
+    ]
+    templayes.forEach(item => {
+        this.copyTpl(this.templatePath(item),
+        this.destinationPath(item),
+        this.answer);
+    })
+}
+```
+
+将```generator-vue```通过```link```的方式定义到全局。
+
+```s
+yarn link
+```
+
+在全新的目录使用该```generator```。
+
+```s
+yo vue;
+```
+
+会提示输入项目名称，输入之后就可以看到模板被拉去到了新的目录。
+
+## 8. 发布
+
+```Generator```实际上就是一个```npm```的模块，发布```generator```就是发布```npm```的模块。只需要将已经写好的```generator```模块通过```npm publish```命令发布成一个公开模块就可以了。
