@@ -43,4 +43,17 @@ https.get('url', res => {
 
 ```js
 const url = require('url');
-const http = require(
+const http = require('http');
+const https = require('https');
+
+
+function requestUrl(url, headers) {
+    const obj = url.parse(url);
+    let httpMode = null;
+    if (obj.protool == 'https') {
+            httpMode = https;
+        } else {
+            httpMode = http;
+        }
+    return new Promise((resolve, reject) => {
+        const req = 
