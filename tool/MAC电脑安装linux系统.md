@@ -1,0 +1,13 @@
+## 1. 安装virtualbox
+
+需要借助virtualbox虚拟机，可在[官方下载](https://www.virtualbox.org/)。
+
+下载后直接点击下一步一路向下安装即可。
+
+## 2. 下载linux
+
+需要提前准备linux系统，可以使用阿里云提供的下载地址，http://mirrors.aliyun.com/centos/ 挑选合适的系统，
+
+## 3. 加载系统
+
+开启虚拟机，点击左上角```新建```按钮，填写名称随便写什么，类型
