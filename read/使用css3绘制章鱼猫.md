@@ -163,4 +163,88 @@ border-bottom-right-radius: 70px 70px;
         .face {
             position: absolute;
             /* border: 1px solid red; */
-            backgroun
+            background: #ffc09f;
+            width: 203px;
+            height: 107px;
+            top: 164px;
+            left: 150px;
+            border-top-left-radius: 50px 46px;
+            border-top-right-radius: 50px 46px;
+            border-bottom-left-radius: 76px 56px;
+            border-bottom-right-radius: 62px 54px;
+        }
+        .eye-left, .eye-right {
+            position: absolute;
+            width: 43px;
+            height: 61px;
+            /* border: 1px solid red; */
+            background: #fdfffd;
+            top: 182px;
+            left: 174px;
+            border-radius: 50%;
+        }
+        .eye-right {
+            left: 288px;
+        }
+        .eye-left2, .eye-righ2 {
+            position: absolute;
+            width: 27px;
+            height: 39px;
+            /* border: 1px solid red; */
+            background: #b14239;
+            border-radius: 50%;
+            top: 193px;
+            left: 183px;
+        }
+        .eye-righ2 {
+            left: 296px;
+        }
+        .nose {
+            position: absolute; 
+            height: 11px;
+            width: 11px;
+            /* border: 1px solid red; */
+            background: #b4403b;
+            border-radius: 50%;
+            top: 233px;
+            left: 246px;
+        }
+        .mouth {
+            position: absolute; 
+            height: 10px;
+            width: 22px;
+            border: 3px solid #b4403b;
+            top: 251px;
+            left: 240px;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            border-top: none;
+        }
+        .beard-left-1 {
+            position: absolute; 
+            height: 8px;
+            width: 98px;
+            top: 222px;
+            left: 26px;
+            border-top-left-radius: 98px 10px;
+            border-top: 1px solid #000;
+        }
+        .beard-right-1 {
+            position: absolute; 
+            height: 8px;
+            width: 98px;
+            top: 222px;
+            left: 380px;
+            border-top-right-radius: 98px 10px;
+            border-top: 1px solid #000;
+        }
+        .beard-left-2 {
+            position: absolute; 
+            height: 20px;
+            width: 330px;
+            top: 228px;
+            left: 26px;
+            border-top-left-radius: 570px 40px;
+            border-top: 1px solid #000;
+        }
+ 
