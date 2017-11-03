@@ -370,4 +370,120 @@ src/tinyReact/updateNodeElement.js
 
 ```js
 function updateNodeElement(newElement, virtualDOM) {
-    // 获取节点对
+    // 获取节点对应的属性对象
+    const newProps = virtualDOM.props;
+    Object.keys(newProps).forEach(propName => {
+        const newPropsValue = newProps[propName];
+        // 判断是否是事件属性
+        if (propName.startsWith('on')) {
+            // 截取出事件名称
+            const eventName = propName.toLowerCase().slice(2);
+            // 为元素添加事件
+            newElement.addEventListener(eventName, newPropsValue);
+        } else if (propName === 'value' || propName === 'checked') {
+            // 如果属性名是value或者checked不能使用setAttribute来设置，直接以属性方式设置即可
+            newElement[propName] = newPropsValue;
+        } else if (propName !== 'children') {
+            // 排除children
+            if (propName === 'className') {
+                newElement.setAttribute('class', newPropsValue)
+            } else {
+                newElement.setAttribute(propName, newPropsValue)
+            }
+        }
+    })
+}
+```
+
+## 5. 组件渲染
+
+在渲染组件之前首先我们要明确地是，组件的虚拟DOM类型值为函数，函数组件和类组件都是如此。
+
+```jsx
+const Head = () => <span>head</span>
+```
+组件的虚拟DOM
+
+```js
+{
+    type: function(){},
+    props: {},
+    children: []
+}
+```
+
+在渲染组件时，要先将Component与Native Element区分开，如果是Native Element可以直接进行渲染，这个我们之前已经处理过了，如果是组件需要特别处理。
+
+我们可以在入口文件src/index.js中渲染一个组件。
+
+```jsx
+import TinyReact from "./TinyReact"
+
+const root = document.getElementById('root');
+
+function Demo () {
+    return <div>hello</div>
+}
+function Head () {
+  return <div><Demo /></div>
+}
+
+TinyReact.render(<Head />, root);
+```
+
+然后就需要在mountElement方法中区分原生标签和组件。
+
+src/tinyReact/isFunction.js
+
+```js
+function isFunction(virtualDOM) {
+    return virtualDOM && typeof virtualDOM.type === 'function';
+}
+```
+
+我们在mountComponent方法中处理组件。首先我们要考虑这个组件是类组件还是函数组件，因为他们的处理方式是不同的，可以使用原型上是否存在render函数。我们可以借助isFunctionComponent函数来判断
+
+src/tinyReact/mountComponent.js
+
+如果type存在，并且对象是一个函数，并且对象上不存在render方法，那就是一个函数组件
+src/tinyReact/isFunctionComponent.js
+
+```js
+import isFunctionComponent from './isFunctionComponent';
+
+function mountComponent(virtualDOM, container) {
+    // 判断组件是类组件还是函数组件
+    if (isFunctionComponent(virtualDOM)) {
+        
+    }
+}
+```
+
+src/tinyReact/isFunctionComponent.js
+
+```js
+import isFunction from "./isFunction";
+
+function isFunctionComponent(virtualDOM) {
+    const type = virtualDOM.type;
+    return type && isFunction(virtualDOM) && !(type.prototype && type.prototype.render)
+}
+```
+
+## 6. 处理函数组件
+
+我们先来处理函数组件, 函数组件其实很简单，只需要调用type函数就可以了，就可以获取返回的虚拟dom。获取之后我们需要判断新获取的虚拟DOM是否是一个组件，如果是继续调用mountComponent，如果不是则为原生DOM元素直接调用mountNativeElement方法将虚拟DOM渲染到页面中。
+
+src/tinyReact/mountComponent.js
+
+```js
+import isFunction from './isFunction';
+import isFunctionComponent from './isFunctionComponent';
+import mountNativeElement from './mountNativeElement';
+
+function mountComponent(virtualDOM, container) {
+    //存储得到的虚拟DOM
+    let nextVirtualDOM = null;
+    // 判断组件是类组件还是函数组件
+    if (isFunctionComponent(virtualDOM)) {
+     
