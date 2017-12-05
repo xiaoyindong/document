@@ -658,4 +658,184 @@ function passMixed(value: mixed) {
 
 相比较来讲的话```any```则是不安全的，在实际使用的过程中，尽量不要使用```any```类型。
 
-```any```类型存在的意义主要是为了兼容以前的一些老代码，因为在很多的陈旧代码中可能会借助于```js```的弱类型或者动态类型去做一些特殊的情况。这些情况如果要被兼容就需要用到```any`
+```any```类型存在的意义主要是为了兼容以前的一些老代码，因为在很多的陈旧代码中可能会借助于```js```的弱类型或者动态类型去做一些特殊的情况。这些情况如果要被兼容就需要用到```any```类型。
+
+### 12. Flow 类型小结
+
+关于```Flow```中的类型这里只是了解了一部分常见的，其实他还有很多很多，这里不可能一一介绍，也没有太大的意义。
+
+对于```Flow```的学习最主要的目的是为了可以在以后去理解像```vue```或者是```react```的一些第三方项目的源码时，可能会遇到这个项目中使用了```Flow```的情况，所以说必须要能够看懂。
+
+在这些项目中可能会存在一部分没有了解过的类型，这些类型到时候可以再去查一下相应的文档。
+
+```https://flow.org/en/docs/types```
+
+这里推荐第三方的类型手册，这个类型手册整理的更为直观，更适合在当前这种了解过```Flow```过后，然后再去做对应的查询。
+
+```https://www.saltycrane.com/cheat-sheets/flow-type/latest/```
+
+如果访问这些链接的时候遇到打开的情况，可以借助于科学上网的工具去访问。
+
+### 13. Flow 运行环境
+
+最后了解一下```Flow```中对一些运行环境提供的```API```，因为```js```不是独立工作的，必须运行在某特定的运行环境。例如浏览器环境或者```Node```环境。
+
+在浏览器环境中有```DOM```和```BOM```，在```node```环境中有各种各样的模块，这也就是说代码他必然会使用到这些环境中所提供的一些```API```或者是一些对象。
+
+对于这些```API```和对象同样会有一定的类型限制，例如```DOM```中获取元素的方法。这要求必须要传入字符串，如果传入数字的话就会报错。
+
+```ts
+document.getElementById('app');
+```
+
+这就属于浏览器环境所内置的一些```API```所对应的一些类型限制，这个函数的方法的返回的就是```HTMLElement```类型，而且如果没有找到对应的元素他还有可能返回```null```。
+
+```ts
+const element: HTMLElement | null = document.getElementById('app');
+```
+
+这属于运行环境所内置的一些类型限制。下面列出```Flow```针对不同环境提供的一些```API```。
+
+```s
+https://github.com/facebook/flow/blob/master/lib/core.js
+
+https://github.com/facebook/flow/blob/master/lib/dom.js
+
+https://github.com/facebook/flow/blob/master/lib/bom.js
+
+https://github.com/facebook/flow/blob/master/lib/cssom.js
+
+https://github.com/facebook/flow/blob/master/lib/node.js
+```
+
+## 8. TypeScript 概述
+
+```TypeScript```是一门基于```JavaScript```基础之上的编程语言，很多时候都在说，他是```JavaScript```的超集或扩展集。
+
+所谓超级其实就是在```JavaScript```原有基础之上多了一些扩展特，多出来的实际上就是一套更强大的类型系统，以及对```ECMAScript```的新特性的支持。
+
+他最终会被编译为原始的```JavaScript```，这也就是说开发者在开发过程中可以直接使用```JavaScript```所提供的新特性，以及在```TypeScript```强大的类型系统。在完成开发工作过后，将代码编译成能够在生产环境直接去运行的```JavaScript```代码。
+
+```TypeScript```中的类型系统的优势其实在之前已经有所体会了，因为他跟```Flow```是类似的。无外乎就是避免在开发过程中有可能会出现的类型异常，提高编码效率，以及代码的可靠程度。
+
+对于新特性的支持也不用多说，因为```ECMAScript```在近几年迭代了很多非常有用的新功能，```TypeScript```支持自动取转换这些新特性，使用上不需要考虑兼容性。也就是说，即便是不需要类型系统通过```TypeScript```去使用```ECMAScript```的新特性，也是很好的选择。
+
+之前都是使用```babel```去转换```JavaScript```中的一些新特性，其实```TypeScript```在这方面跟```babel```实际是类似的，因为```TypeScript```最终他可以选择编译到```ECMAScript3```版本的代码，兼容性特别好。```TypeScript```最终编译成```JavaScript```工作，所以说任何```JavaScript```运行环境的运行程序都可以使用```TypeScript```开发。
+
+相比较于之前所介绍的```Flow```，```TypeScript```作为一门完整的编程语言，他的功能要更为强大，他的生态更加健全更加完善，特别是对于开发工具这块，微软的开发工具对```TypeScript```的支持特别友好。
+
+在```vscode```中使用```Flow```的话会感觉迟钝，但是使用```TypeScript```的话，会感觉非常的流畅，目前很多大型的开源项目都已经开始使用```TypeScript```开发了，最知名的当然也就是```angular```和```vue3.0```。
+
+慢慢的你会发现```TypeScript```已经可以说是前端领域中的第二语言，如果是小项目，需要灵活自由，自然选择```JavaScript```本身，如果是长周期开发的大型项目，所有的人都会建议选择使用```TypeScript```。
+
+当然了，再美好的东西一般都会有些缺点，```TypeScript```他最大的缺点就是这个语言本身多了很多概念，例如像接口，泛型，枚举等等。这些概念会提高学习成本，不过好在```TypeScript```属于渐进式的，即便什么特性都不知道，也可以立马按照```JavaScript```的标准语法去编写```TypeScript```代码，说白了也就是可以完全把他当做```JavaScript```来使用，然后在学习的过程中了解到了特性就可以使用特性。
+
+再者就是对于周期比较短的小型项目，```TypeScript```可能会去增加一些开发成本，因为在项目的初期需要编写很多的类型声明，比如说对象，函数，都会有很多的类型声明，需要单独的编写。
+
+如果是长期维护的大型项目这些成本根本不算什么，而且很多时候是一劳永逸的，他给整体带来的优势实际上是远大于这点小问题的。
+
+## 9. TypeScript 快速上手
+
+想要使用```TypeScript```，首先需要安装他，```TypeScript```本身就是```npm```的模块。
+
+```s
+npm install TypeScript --save-dev
+```
+
+安装完成过后，在```node_modules/.bin```中会多出```tsc```的命令，这个命令的作用就是用来去编译```TypeScript```代码。
+
+新建```started.ts```文件，注意```TypeScript```的扩展名默认是```ts```。文件中可以使用```TypeScript```编写代码，不过在这里还没有去了解任何的```TypeScript```语法，没关系，之前说过了```TypeScript```是基于```JavaScript```基础之上的，所以完全可以按照```JavaScript```的标准语法编写代码。
+
+由于```TypeScript```支持最新的```ECMAScript```标准，可以按照最新的标准去编码。
+
+```ts
+const hello = name => {
+    console.log(`Hello，${name}`);
+}
+
+hello('TypeScript');
+```
+
+可以通过```npx```找到```tsc```命令，传入入口文件路径。
+
+```s
+npx tsc started.ts
+```
+
+完成过后跟目录下就会多出同名的```js```文件，打开文件你会发现，这里所使用的所有的```ES6```部分都会被转换成标准的```ECMAScript3```的标准的代码。
+
+除了编译转换```ES```的一些新特性，```TypeScript```更重要的就是，提供了一套更强大的类型系统。
+
+可以回到```ts```文件中，这里使用类型系统的方式跟之前在```Flow```中的一些方式基本上是完全相同的。
+
+例如需要限制```name```参数是```string```类型，可以在他的后面添加```:string```。此时如果在外界调用时传入的不是字符串再次去编译就会报出语法错误。
+
+```ts
+const hello = (name: string) => {
+    console.log(`Hello，${name}`);
+}
+
+// hello('TypeScript');
+hello(100);
+```
+
+而且```vscode```默认就支持对```TypeScript```的语法做对应的类型检查，所以说这不用等到编译，在编辑器中就可以直接看到所有的错误提示。
+
+
+最后再来总结一下使用```TypeScript```的基本过程。
+
+首先安装```TypeScript```模块，这个模块提供```tsc```的命令作用就是编译```TypeScript```文件。
+
+在编译过程中```TypeScript```首先会先去检查代码中的类型使用异常，然后移除掉类型注解之类的扩展语法，并且还会自动转换```ECMAScript```的新特性。
+
+## 10. TypeScript 配置文件
+
+```TypeScript```支持```tsconfig.json```作为配置文件，可以通过```tsc --init```生成，一般来说，```tsconfig.json```文件所处的路径就是项目的根路径。
+
+```json
+{
+  "compilerOptions": {
+    /* Visit https://aka.ms/tsconfig.json to read more about this file */
+
+    /* Basic Options */
+    // "incremental": true,                  /* Enable incremental compilation */
+    "target": "es5",                         /* Specify ECMAScript target version: 'ES3' (default),'ES5','ES2015','ES2016','ES2017','ES2018','ES2019','ES2020',or 'ESNEXT'. */
+    "module": "commonjs",                    /* Specify module code generation: 'none','commonjs','amd','system','umd','es2015','es2020',or 'ESNext'. */
+    // "lib": [],                            /* Specify library files to be included in the compilation. */
+    // "allowJs": true,                      /* Allow```JavaScript```files to be compiled. */
+    // "checkJs": true,                      /* Report errors in .js files. */
+    // "jsx": "preserve",                    /* Specify JSX code generation: 'preserve','react-native',or 'react'. */
+    // "declaration": true,                  /* Generates corresponding '.d.ts' file. */
+    // "declarationMap": true,               /* Generates a sourcemap for each corresponding '.d.ts' file. */
+    // "sourceMap": true,                    /* Generates corresponding '.map' file. */
+    // "outFile": "./",                      /* Concatenate and emit output to single file. */
+    // "outDir": "./",                       /* Redirect output structure to the directory. */
+    // "rootDir": "./",                      /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
+    // "composite": true,                    /* Enable project compilation */
+    // "tsBuildInfoFile": "./",              /* Specify file to store incremental compilation information */
+    // "removeComments": true,               /* Do not emit comments to output. */
+    // "noEmit": true,                       /* Do not emit outputs. */
+    // "importHelpers": true,                /* Import emit helpers from 'tslib'. */
+    // "downlevelIteration": true,           /* Provide full support for iterables in 'for-of',spread,and destructuring when targeting 'ES5' or 'ES3'. */
+    // "isolatedModules": true,              /* Transpile each file as a separate module (similar to 'ts.transpileModule'). */
+
+    /* Strict Type-Checking Options */
+    "strict": true,                          /* Enable all strict type-checking options. */
+    // "noImplicitAny": true,                /* Raise error on expressions and declarations with an implied 'any' type. */
+    // "strictNullChecks": true,             /* Enable strict null checks. */
+    // "strictFunctionTypes": true,          /* Enable strict checking of function types. */
+    // "strictBindCallApply": true,          /* Enable strict 'bind','call',and 'apply' methods on functions. */
+    // "strictPropertyInitialization": true, /* Enable strict checking of property initialization in classes. */
+    // "noImplicitThis": true,               /* Raise error on 'this' expressions with an implied 'any' type. */
+    // "alwaysStrict": true,                 /* Parse in strict mode and emit "use strict" for each source file. */
+
+    /* Additional Checks */
+    // "noUnusedLocals": true,               /* Report errors on unused locals. */
+    // "noUnusedParameters": true,           /* Report errors on unused parameters. */
+    // "noImplicitReturns": true,            /* Report error when not all code paths in function return a value. */
+    // "noFallthroughCasesInSwitch": true,   /* Report errors for fallthrough cases in switch statement. */
+
+    /* Module Resolution Options */
+    // "moduleResolution": "node",           /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (```TypeScript```pre-1.6). */
+    // "baseUrl": "./",                      /* Base directory to resolve non-absolute module names. */
+    
