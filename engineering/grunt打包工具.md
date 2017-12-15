@@ -123,3 +123,42 @@ module.exports = grunt => {
     grunt.registerTask('foo', () => {
         console.log('foo task~')
         return false
+    })
+    grunt.registerTask('bar', () => {
+        console.log('bar task~')
+        return false
+    })
+    grunt.registerTask('default', ['foo', 'bad', 'bar']);
+}
+```
+
+运行的时候使用```--force```可以强制执行所有任务，使用```--force```之后即使```bad```任务执行失败了也是会正常去执行```bar```。
+
+```s
+yarn grunt default --force
+```
+
+如果任务是一个异步任务就没有办法直接通过```return false```标记任务失败，需要给异步的回调函数指```false```实参标记任务失败。
+
+```js
+module.exports = grunt => {
+    grunt.registerTask('bad-async', function() {
+        const done = this.async();
+        setTimeout(() => {
+            console.log('bad async');
+            done(false)
+        }, 1000)
+    })
+}
+```
+
+## 3. 配置方法
+
+```grunt```还提供一个用于添加任务选项的```API```叫做```initConfig```，例如使用```grunt```压缩文件时就可以通过这种方式配置压缩的文件路径。
+
+这个方法接收一个对象形式的参数，对象的属性名一般与任务名称保持一致，属性的值他可以是任意类型的数据。有了这个配置属性就可以在任务中使用这个配置属性。
+
+这里注册一个叫做```foo```的任务，在任务中通过```grunt```提供的```config```方法获取这个配置，```config```方法接收一个字符串参数，这个参数就是```initConfig```中指定的字符串名字。
+
+```js
+module.exports = grunt => 
