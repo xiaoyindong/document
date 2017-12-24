@@ -47,4 +47,23 @@ export function reactive (target) {
             // set方法需要返回布尔值
             return result;
         },
-    
+        deleteProperty (target, key) {
+            // 首先要判断当前target中是否有自己的key属性
+            // 如果存在key属性，并且删除要触发更新
+            const hasKey = hasOwn(target, key)
+            const result = Reflect.deleteProperty(target, key)
+            if (hasKey && result) {
+                // 触发更新...
+            }
+            return result;
+        }
+    }
+    return new Proxy(target, handler)
+}
+```
+
+至此reactive函数就写完了，接着我们来编写一下收集依赖的过程。
+
+在依赖收集的过程会创建三个集合，分别是targetMap,depsMap以及dep。
+
+其中targetMap是用来记录目标对象和字典他使用的是weakMap，key是目标对象，targetMap的值是dep
