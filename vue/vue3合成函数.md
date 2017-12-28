@@ -89,4 +89,46 @@ function useMousePosition () {
         position.y = e.pageY;
     }
     onMounted(() => {
-        
+        window.addEventListener('mousemove', update);
+    })
+    onUnmounted(() => {
+        window.removeEventListener('mousemove', update)
+    })
+    return position;
+}
+
+const app = createApp({
+    setup() {
+        const position = useMousePosition();
+        // 这里的position并不是响应式的对象
+        return {
+            position
+        }
+    }
+})
+```
+
+Composition API中存在reactive,toRefs，ref三个函数，他们都是创建响应式数据的。
+
+setup中的代码如果我们修改一下，如下就不再是响应式了，因为我们使用reactive包装的是position对象，这里不使用position了所有无法实现响应式。但是使用position还显得比较冗杂。
+
+```js
+setup() {
+    const {x, y} = useMousePosition();
+    // 这里的position并不是响应式的对象
+    return {
+        x,
+        y
+    }
+}
+```
+- toRefs
+
+toRefs就是解决这样一个问题的，我们可以在useMousePosition返回值的位置将position使用toRefs包裹一下，这样就可以了。
+
+```js
+import { createApp, reactive, onMounted, onUnmounted, toRefs } from './node_modules/vue/dist/vue.esm-browser.js'
+
+function useMousePosition () {
+    const position = reactive({ x: 0, y: 0 });
+    co
