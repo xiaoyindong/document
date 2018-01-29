@@ -74,4 +74,42 @@ var i, str = '';
 
 ## 4. 缓存全局变量
 
-缓存全局变量指的是程序执行过程中，全局变量的使用如果是无法避免的，比如```document```，可以选择将需要大量使用的全局变量放置在某一个局部作用域中，从而达到一种缓存效果。这里比较一下使用缓存和不使用缓存的
+缓存全局变量指的是程序执行过程中，全局变量的使用如果是无法避免的，比如```document```，可以选择将需要大量使用的全局变量放置在某一个局部作用域中，从而达到一种缓存效果。这里比较一下使用缓存和不使用缓存的性能差异。
+
+```html
+<body>
+    <input value="btn" id="btn1" />
+    <input value="btn" id="btn2" />
+    <input value="btn" id="btn3" />
+    <input value="btn" id="btn4" />
+    <p>111</p>
+    <input value="btn" id="btn5" />
+    <input value="btn" id="btn6" />
+    <p>222</p>
+    <input value="btn" id="btn7" />
+    <input value="btn" id="btn8" />
+    <p>333</p>
+    <input value="btn" id="btn9" />
+    <input value="btn" id="btn10" />
+    <script>
+        function getBtn() {
+            let oBtn1 = document.getElementById('btn1');
+            let oBtn3 = document.getElementById('btn3');
+            let oBtn5 = document.getElementById('btn5');
+            let oBtn7 = document.getElementById('btn7');
+            let oBtn9 = document.getElementById('btn9');
+        }
+
+        function getBtn2() {
+            let obj = document;
+            let oBtn1 = obj.getElementById('btn1');
+            let oBtn3 = obj.getElementById('btn3');
+            let oBtn5 = obj.getElementById('btn5');
+            let oBtn7 = obj.getElementById('btn7');
+            let oBtn9 = obj.getElementById('btn9');
+        }
+    </script>
+</body>
+```
+
+``
