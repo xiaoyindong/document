@@ -126,4 +126,80 @@ MySQL 的数据类型有大概可以分为 5 种，分别是整数类型、浮�
 | TEXT | 小的非二进制字符串 | L+2字节，在此，L<2^16 |
 | MEDIUMTEXT | 中等大小的非二进制字符串 | L+3字节，在此，L<2^24 |
 | LONGTEXT | 大的非二进制字符串 | L+4字节，在此，L<2^32 |
-| ENUM | 枚举类型，只能有一个枚举字符串值 | 1或2个字节，取决于枚举值的数目 (最大值为
+| ENUM | 枚举类型，只能有一个枚举字符串值 | 1或2个字节，取决于枚举值的数目 (最大值为65535) |
+| SET | 一个设置，字符串对象可以有零个或 多个SET成员 | 1、2、3、4或8个字节，取决于集合 成员的数量（最多64个成员） |
+
+4.二进制类型
+
+```BIT```、```BINARY```、```VARBINARY```、```TINYBLOB```、```BLOB```、```MEDIUMBLOB``` 和 ```LONGBLOB```。
+
+| 类型名称 | 说明 | 存储需求 |
+| -- | -- | -- |
+| BIT(M) | 位字段类型 | 大约 (M+7)/8 字节 |
+| BINARY(M) | 固定长度二进制字符串 | M 字节 |
+| VARBINARY (M) | 可变长度二进制字符串 | M+1 字节 |
+| TINYBLOB (M) | 非常小的BLOB | L+1 字节，在此，L<2^8 |
+| BLOB (M) | 小 BLOB | L+2 字节，在此，L<2^16 |
+| MEDIUMBLOB (M) | 中等大小的BLOB | L+3 字节，在此，L<2^24 |
+| LONGBLOB (M) | 非常大的BLOB | L+4 字节，在此，L<2^32 |
+
+## 8. 创建表
+
+```s
+CREATE TABLE tb_emp1(
+    id INT(11),
+    name VARCHAR(25),
+    deptId INT(11),
+    salary FLOAT
+)
+```
+
+1.查看表
+
+```s
+SHOW TABLES;
+```
+
+使用 ```SHOW``` ```CREATE``` ````TABLE```` 语句查看表 ```tb_emp1``` 的详细信息
+
+```s
+SHOW CREATE TABLE tb_emp1;
+```
+
+以表格的形式展示表结构
+
+```s
+DESCRIBE tb_emp1;
+```
+
+## 9. 修改表
+
+1.修改表名
+
+```s
+ALTER TABLE oldname RENAME TO newname;
+```
+
+2.修改表字符集
+
+字符集修改为 ```gb2312```，校对规则修改为 ```gb2312_chinese_c```。
+
+```s
+ALTER TABLE newname CHARACTER SET gb2312  DEFAULT COLLATE gb2312_chinese_ci;
+```
+
+3.修改表中的字段
+
+使用 ```ALTER``` ```TABLE``` 修改表 ```tb_emp1``` 的结构，将 ```col1``` 字段名称改为 ```col3```，同时将数据类型变为 ```CHAR(30)```
+
+```s
+ALTER TABLE tb_emp1 CHANGE col1 col3 CHAR(30);
+```
+
+使用 ```ALTER``` ```TABLE``` 修改表 ```tb_emp1``` 的结构，将 ```name``` 字段的数据类型由 ```VARCHAR(22)``` 修改成 ```VARCHAR(30)```
+
+```s
+ALTER TABLE tb_emp1 MODIFY name VARCHAR(30);
+```
+
+```CHANGE``` 也可以只修改数据类型，实现和 ```MODIFY``` 同样的效果，方法是将 ```SQL``` 语句中的
