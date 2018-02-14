@@ -79,4 +79,37 @@ import Head from 'next/head';
 
 还有一种是css模块的方式，通过使用css模块功能，允许将组件的css样式编写在单独的css文件中，css模块约定样式文件的名称必须为组件文件名称.modules.css
 
-index.m
+index.module.css
+
+```css
+.p {
+    color: green;
+}
+```
+
+```js
+import styles from './index.module.css';
+<div className={styles.p}>test</div>
+```
+
+3. 全局样式文件
+
+在 pages 文件夹中去新建 _app.js, 必须叫这个名字，不可修改的。
+
+然后在项目根目录下创建 styles 文件夹, 并在其中创建 global.css，这个名字是可以随便修改的。
+
+接着在 _app.js 中通过 import 引入 global.css，在_app.js中还要加入如下代码。
+
+```js
+export default function App({ Component, pageProps}) {
+    return <Component {...pageProps} />
+}
+```
+
+global.css
+
+```css
+body {
+    background: red;
+}
+```
