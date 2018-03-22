@@ -387,4 +387,146 @@ default权限是默认权限，如果使用改权限，不能写改关键字，�
 
 ### 抽象
 父类知道子类包含哪些方法和哪些变量，父类不知道如何实现，父类就要抽象
-抽象的方法不允许有主体
+抽象的方法不允许有主体，也就是不能有大括号
+抽象的方法存在于一个抽象的类中 abstract
+```
+public abstract class Develop {
+    // 必须使用abstract关键字修饰
+    public abstract void work();
+}
+```
+抽象类不能实例化对象，也就是不能使用new调用
+可以使用类，继承抽象类，将抽象方法重写。创建子类对象
+抽象关键字不能和private共同使用，private修饰的方法是不能被继承得到的，也就没办法重写
+```
+public class JavaEE extends Develop {
+    public void work() {
+        System.out.print("继承类");
+    }
+}
+```
+
+抽象类的特点。
+1. 抽象类和抽象方法都需要被abstract修饰，抽象方法一定要定义在抽象类之中
+2. 抽象类不可以直接创建对象，原因是抽象方法没有意义
+3. 只有覆盖了抽象类中所有的抽象方法后，其子类才可以创建对象，否则改子类还是一个抽象类
+
+自动生成get和set方法
+右键 -> source -> generate getters and setters -> select all -> ok;
+
+### 接口
+接口是功能的集合，同样可看做是一种数据类型，是比抽象类更抽象的类
+接口只描述所应具备的方法，并没有具体实现。
+```
+public interface Test {
+    public abstract void function();
+}
+```
+接口定义
+    成员方法，全抽象
+    不能定义带有方法体的方法
+定义抽象方法: 固定格式
+    public abstract 返回值类型 方法名(参数列表);
+    修饰符 public 写或者不写，都是public
+接口成员变量
+    成员变量必须定义为常量，永远不可以改变
+    public static final int a = 1;
+
+接口的实现
+implements
+
+接口实现可以实现无数个
+```
+// instanceof 判断对象是否是类的实例
+person p = new Person();
+p instanceof Person;
+```
+接口的特点:
+1. 定义一个接口用interface关键字
+    public interface Inter {}
+2. 一个类实现一个接口，实现implements 关键字
+    class Demo implements Inter {}
+3. 接口不能直接创建对象
+    通过多态的方式，由子类来创建对象，接口多态
+接口成员的特点
+1. 成员变量
+    只能是final修饰的常量
+    默认修饰符：public static final
+    public 权限
+    static 可以直接通过类名调用
+    final 最终值，固定值
+2. 构造方法
+3. 成员方法
+    只能是抽象方法
+    默认修饰符 public abstract
+    重写接口中的抽象方法，public权限是必须的
+4. 实现类和实现方法
+    实现类，实现接口，重写接口全部抽象方法，创建实现类对象
+    实现类，重写了一部分抽象方法，实现类，还是一个抽象类
+
+类继承类的同事，可以实现多个接口
+```
+public class C extends D implements A, B {
+
+}
+```
+接口中权限只能是public
+接口是一种暴露出来的规则
+
+接口和抽象类的区别
+
+犬
+    行为
+        吼叫
+        吃饭
+缉毒犬
+    行为
+        吼叫
+        吃饭
+        缉毒
+通用的东西是出现，额外的东西是接口
+继承抽象，实现接口
+
+优先选用接口，尽量少用抽象类
+需要定义子类的行为，又要为子类提供共性功能时采选用抽象类
+
+### 多态
+多态：理解为同一种特质的多重状态
+```
+Person p = new Student();
+```
+多态使用的前提
+    1. 有继承或者实现关系
+    2. 要方法重写
+    3. 父类引用指向子类对象。
+成员变量的特点
+    编译的时候，参考父类中有没有这个变量，如果有，编译成功，否则编译失败
+    运行的时候，运行的是父类中的变量值。
+成员的方法特点
+    编译的时候，参考父类中有没有这个方法，如果有，编译成功，否则编译失败
+    运行的时候，运行的是子类中的方法。
+多态的成员访问特点
+    方法的运行看右边，其它看左边
+多态的好处
+    提高了程序的扩展性
+多态的弊端
+    不能访问子类的特有功能
+多态的分类
+    类的多态
+### 构造方法
+自定义的Person类，成员变量，name，age
+要求在new，Person的同时，就指定好name，age的值
+实现功能，利用方法去实现，构造方法，构造器，Constructor
+作用: 在new 的同时，对成员变量赋值，给对象的属性初始化赋值，new Person，对属性name，age赋值
+
+构造方法的定义格式
+    权限 方法名(参数列表) {
+
+    }
+    方法的名字必须和类名完全一致
+    不能有返回值，void也不可以写。
+```
+public class Person {
+    private String name;
+    publc Person(String name) {
+      
