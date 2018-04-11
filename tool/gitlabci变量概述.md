@@ -116,4 +116,92 @@ variables:
   LS_CMD: 'ls $FLAGS $$TMP_DIR'
   FLAGS: '-al'
 script:
-  - 'eval $LS_CMD'  # will execute 'ls -al 
+  - 'eval $LS_CMD'  # will execute 'ls -al $TMP_DIR'
+```
+
+## 4. 私有变量
+
+```GitLab Runner0.4.0```或更高版本，支持。
+
+私有变量不会隐藏，如果明确要这么做，他们的值可以显示在```job```日志中。
+
+如果项目是公共的或内部的，可以在项目的```pipeline```中设置```pipeline```为私有的。
+
+私有变量存储在```.gitlab-ci.yml```中，并被安全的传递给```GitLab Runner```。建议使用该方法存储诸如```密码```、```秘钥```和```凭据```之类的东西。
+
+可在```Settings``` -> ```Pipelines```中增加私有变量，一旦设置，所有的后续pipeline是都可以使用。
+
+## 5. 变量保护
+
+此功能要求GitLab 9.3或更高版本。
+
+私有变量可以被保护。当一个私有变量被保护时，它只会安全的传递到在受保护的分支或受保护的标签上运行的```pipeline```。其他的```pipeline```将不会得到该变量。
+
+可用在私有变量时，添加```Protected```。
+
+## 6. 使用变量
+
+在构建环境变量时，所有的变量都会被设置为环境变量，可以使用普通方法访问这些变量。
+
+在大多数情况下，用于执行```job```脚本都是通过```bash```或者是```sh```。
+
+不同环境下使用方式不同。
+
+| Shell | 用法 |
+| ---- | ---- |
+| bash/sh | $variable |
+| windows batch | %variable% |
+| PowerShell | $env:variable |
+
+在```bash```中访问环境变量，需要给变量名称加上前缀```$```：
+
+```s
+job_name:
+  script:
+    - echo $CI_JOB_ID
+```
+
+在```Windows```系统的```PowerShell```中访问环境变量，需要给变量名称加上前缀```$env:```
+
+```s
+job_name:
+  script:
+    - echo $env:CI_JOB_ID
+```
+
+可以使用```export```命令来列出所有的环境变量。在使用此命令时要注意会在```job```记录中列出所有私有变量的值
+
+```s
+job_name:
+  script:
+    - export
+```
+
+日志如下:
+
+```s
+export CI_JOB_ID="50"
+export CI_COMMIT_SHA="1ecfd275763eff1d6b4844ea3168962458c9f27a"
+export CI_COMMIT_REF_NAME="master"
+export CI_REPOSITORY_URL="https://gitlab-ci-token:abcde-1234ABCD5678ef@example.com/gitlab-org/gitlab-ce.git"
+export CI_COMMIT_TAG="1.0.0"
+export CI_JOB_NAME="spec:other"
+export CI_JOB_STAGE="test"
+export CI_JOB_MANUAL="true"
+export CI_JOB_TRIGGERED="true"
+export CI_JOB_TOKEN="abcde-1234ABCD5678ef"
+export CI_PIPELINE_ID="1000"
+export CI_PROJECT_ID="34"
+export CI_PROJECT_DIR="/builds/gitlab-org/gitlab-ce"
+export CI_PROJECT_NAME="gitlab-ce"
+export CI_PROJECT_NAMESPACE="gitlab-org"
+export CI_PROJECT_PATH="gitlab-org/gitlab-ce"
+export CI_PROJECT_URL="https://example.com/gitlab-org/gitlab-ce"
+export CI_REGISTRY="registry.example.com"
+export CI_REGISTRY_IMAGE="registry.example.com/gitlab-org/gitlab-ce"
+export CI_RUNNER_ID="10"
+export CI_RUNNER_DESCRIPTION="my runner"
+export CI_RUNNER_TAGS="docker, linux"
+export CI_SERVER="yes"
+export CI_SERVER_NAME="GitLab"
+export CI_SERVER_REVISION="706
