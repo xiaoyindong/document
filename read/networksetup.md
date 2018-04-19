@@ -8,4 +8,4 @@ man networksetup
 
 ```
 networksetup -setwebproxy "Wi-fi" 127.0.0.1 1080
-networksetup -setsocksf
+networksetup -setsocksfirewallproxy "Wi-fi" 127.0.0.1
