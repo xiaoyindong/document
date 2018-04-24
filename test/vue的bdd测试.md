@@ -24,4 +24,13 @@ describe('删除任务', () => {
 
 ```js
 import { mount, createLocalVue } from '@vue/test-utils';
-import TodoApp from
+import TodoApp from '@/components/TodoApp/index.vue';
+import VueRouter from 'vue-router';
+
+const localVue = createLocalVue();
+localVue.use(VueRouter);
+const router = new VueRouter({
+    linkActiveClass: 'selected'
+})
+
+describe('添加任务'
