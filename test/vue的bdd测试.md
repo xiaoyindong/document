@@ -33,4 +33,27 @@ const router = new VueRouter({
     linkActiveClass: 'selected'
 })
 
-describe('添加任务'
+describe('添加任务', () => {
+    test('在输入框中输入内容敲击回车，应该添加任务到列表中', async () => {
+        const wrapper = mount(TodoApp, {
+            localVue,
+            router
+        });
+        // 找到dom节点
+        const input = wrapper.find('input[data-testid="new-todo"]');
+
+        const text = 'Hello World'
+        // 设置value
+        await input setValue(text);
+        // 点击回车
+        await input.trigger('keyup.enter');
+        // 断言判断 - 添加到了列表中
+        expect(wrapper.find(['input[data-test="todo-item"]'])).toBeTruthy();
+        expect(wrapper.find(['input[data-test="todo-text"]'])).text().toBe(text);
+    })
+
+    test('添加任务成功后，输入框内容应该被清空', () => {
+
+    })
+})
+```
