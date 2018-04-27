@@ -1777,4 +1777,1875 @@ Shell if 语句使用逻辑运算符将多个退出状态组合起来，这样�
 | 运算符     | 使用格式         | 说明                                                         |
 | ---------- | ---------------- | ------------------------------------------------------------ |
 | && 或 -a   | 条件1 && 条件2   | 逻辑与运算符，当 条件1 和 条件2 同时成立时，<br>整个表达式才成立。  如果检测到 条件1 的退出状态为 0，<br>就不会再检测 条件2 了，因为不管 条件2 的退出状态是什么，<br>整个表达式必然都是不成立的，检测了也是多此一举。 |
-| \|\| 或 -o | 条件1 \|\| 条件2 | 逻辑或运算符，条件1 和 条件2 两个表<br>达式中只要有一个成立，整个表达式就成立。  如果检<br>测到 条件1 的退出状态为 1，就不会再检测 条件2 了，因为<br>不管 条件2 的退出状态是什
+| \|\| 或 -o | 条件1 \|\| 条件2 | 逻辑或运算符，条件1 和 条件2 两个表<br>达式中只要有一个成立，整个表达式就成立。  如果检<br>测到 条件1 的退出状态为 1，就不会再检测 条件2 了，因为<br>不管 条件2 的退出状态是什么，整个表达式必然都是成立的，<br>检测了也是多此一举。 |
+| !          | !条件            | 逻辑非运算符，相当于“取反”的效果。如果 条件 成立，那么整<br>个表达式就不成立；如果 条件 不成立，那么整个表达式就成立。 |
+
+示例
+
+提示输入"请输入文件全名: "和"请输入数据:" 并接收文件名与数据
+
+使用逻辑运算符判断满足2 条件 :  文件需要具有可写权限  和   输入的数据长度不为0
+
+满足以上2个条件 将用户输入的 数据 写入到指定的文件中去
+
+创建itheima.txt
+
+```shell
+touch itheima.txt
+```
+
+control2.sh脚本文件代码
+
+```shell
+#!/bin/bash
+read -p "请输入文件全名: " filename
+read -p "请输入数据:" data
+if [ -w $filename -a -n $data ]
+then
+        echo $data
+        echo $data > $filename
+        echo "成功"
+else
+        echo "失败"
+fi
+```
+
+> test命令用于对文件或字符串进行检测,  `-w` 判断文件是否存在并且可写,  `-n` 用于检测字符串是否非空, 后续讲解.
+>
+> `$data > $filename`   其中 `>`  用于将内容输出到指定文件中去
+
+
+
+## Shell内置命令：test
+
+Shell中的 test 命令用于检查某个条件是否成立，它可以进行数值、字符和文件三个方面的测试。
+
+功能与[]一样
+
+```shell
+if test 数字1 options 数字2 
+then  
+...
+fi
+```
+
+options具体如下
+
+| 参数 | 说明           |
+| :--- | :------------- |
+| -eq  | 等于则为真     |
+| -ne  | 不等于则为真   |
+| -gt  | 大于则为真     |
+| -ge  | 大于等于则为真 |
+| -lt  | 小于则为真     |
+| -le  | 小于等于则为真 |
+
+control3.sh脚本代码
+
+```shell
+#!/bin/bash
+num1=1 num2=1 num3=2
+echo "num1=${num1},num2=${num2},num3=${num3}"
+
+if test $num1 -eq $num2
+then
+    echo 'num1和num2两个数相等！'
+else
+    echo 'num1和num2两个数不相等！'
+fi
+
+if test $num2 -eq $num3
+then
+    echo 'num2和num3两个数相等！'
+else
+    echo 'num2和num3两个数不相等！'
+fi
+```
+
+## 字符串比较测试
+
+| 参数      | 说明                                      |
+| :-------- | :---------------------------------------- |
+| = 或  ==  | 等于, 等于返回0代表成功,否则返回1代表失败 |
+| !=        | 不等于                                    |
+| `\<`      | 小于                                      |
+| `\>`      | 大于                                      |
+| -z 字符串 | 字符串的长度为零则为真                    |
+| -n 字符串 | 字符串的长度不为零则为真                  |
+
+control4.sh脚本代码
+
+```shell
+#!/bin/bash
+
+str1="itheima" str2="itcast" str3=""
+echo "str1=${str1},str2=${str2},str3=${str3}"
+
+if test $str1 = $str2
+then
+    echo 'str1和str2两个字符串相等'
+else
+    echo 'str1和str2两个字符串不相等'
+fi
+
+if test $str1 \> $str2
+then
+    echo 'str1大于str2'
+else
+    echo 'str1小于str2'
+fi
+
+if test -z $str2
+then
+	echo "str2字符串长度为0"
+else
+	echo "str2字符串长度不为0"
+fi
+
+if test -z $str3
+then
+	echo "str3字符串长度为0"
+else
+	echo "str3字符串长度不为0"
+fi
+```
+
+## 文件测试
+
+| 参数          | 说明                                           |
+| :------------ | :--------------------------------------------- |
+| ==-e 文件名== | exists, 如果文件存在则为真                     |
+| ==-r 文件名== | read,如果文件存在且可读则为真                  |
+| ==-w 文件名== | write,如果文件存在且可写则为真                 |
+| ==-x 文件名== | execute,如果文件存在且可执行则为真             |
+| ==-s 文件名== | string,如果文件存在且至少有一个字符则为真      |
+| ==-d 文件名== | directory,如果文件存在且为目录则为真           |
+| -f 文件名     | file,如果文件存在且为普通文件则为真            |
+| -c 文件名     | character,如果文件存在且为字符型特殊文件则为真 |
+| -b 文件名     | 如果文件存在且为块特殊文件则为真               |
+
+查询control1.sh与control2.sh文件
+
+![image-20200704074537077](assets/image-20200704074537077.png)
+
+control5.sh脚本代码
+
+```shell
+#!/bin/bash
+
+if test -w ./control1.sh
+then
+    echo '文件已存在并且可写!'
+else
+    echo '文件不存在或不可写!'
+fi
+
+if test -e ./control1.sh -a -e ./control2.sh
+then
+    echo '两个文件都存在!'
+else
+    echo '可能有一个或两个文件不存在'
+fi
+```
+
+> Shell提供了与( -a )、或( -o )、非( ! )三个逻辑操作符用于将测试条件连接起来，其优先级为："!"最高，"-a"次之，"-o"最低,  语法
+>
+> ```shell
+> test 条件1 -o 条件2 -a 条件3 ...
+> ```
+
+
+## 流程控制语句：case语句
+
+Shell case语句为多选择语句。可以用case语句匹配一个值与一个模式，如果匹配成功，执行相匹配的命令;
+
+当分支较多，并且判断条件比较简单时，使用 case in 语句就比较方便了。
+
+```shell
+case 值 in
+匹配模式1)
+    命令1
+    命令2
+    ...
+    ;;
+匹配模式2）
+    命令1
+    命令2
+    ...
+    ;;
+*)
+    命令1
+    命令2
+    ...
+    ;;
+esac
+```
+
+每一匹配模式必须以右括号结束。取值可以为变量或常数。匹配发现取值符合某一模式后，其间所有命令开始执行直至 ;;(类似break, 不可以替代否则语法报错)。取值将检测匹配的每一个模式。一旦模式匹配，则执行完匹配模式相应命令后不再继续其他模式。如果无一匹配模式，使用星号 * 捕获该值，再执行后面的命令。
+
+case、in 和 esac 都是 Shell 关键字,   esac就是case的反写在这里代表结束case
+
+匹配模式:  可以是一个数字、一个字符串，甚至是一个简单正则表达式。
+
+简单正则表达式支持如下通配符
+
+| 格式  | 说明                                                         |
+| ----- | ------------------------------------------------------------ |
+| *     | 表示任意字符串。                                             |
+| [abc] | 表示 a、b、c 三个字符中的任意一个。比如，[15ZH] 表示 1、5、Z、H 四个字符中的任意一个。 |
+| [m-n] | 表示从 m 到 n 的任意一个字符。比如，[0-9] 表示任意一个数字，[0-9a-zA-Z] 表示字母或数字。 |
+| \|    | 表示多重选择，类似逻辑运算中的或运算。比如，abc \| xyz 表示匹配字符串 "abc" 或者 "xyz"。 |
+
+control6.sh脚本代码
+
+```shell
+#!/bin/bash
+read -p "请输入一个0~7的数字:" number
+case $number in
+1)
+    echo "星期一"
+	;;
+2)
+    echo "星期二"
+    ;;
+3)
+    echo "星期三"
+    ;;
+4)
+    echo "星期四"
+    ;;
+5)
+    echo "星期五"
+    ;;
+6)
+    echo "星期六"
+    ;;
+0|7)
+    echo "星期日"
+    ;;
+*)
+    echo "您输入的数字无效"
+    ;; 
+esac
+```
+
+## 流程控制：while语句
+
+while用于循环执行一系列命令
+
+多行写法
+
+```shell
+while 条件
+do
+	命令1
+	命令2
+	...
+	continue; # 结束当前这一次循环, 进入下一次循环
+	break; # 结束当前循环
+done
+```
+
+一行写法
+
+```shell
+while 条件; do 命令; done;
+```
+
+control7.sh脚本文件代码: 输出指定多少次的hello world
+
+```shell
+#!/bin/bash
+read -p "请输入一个数字:" number
+i=0
+while [[ $i < $number ]]
+do
+  echo "hello world"
+  ((i++))
+done
+```
+
+## 无限循环
+
+```shell
+while :
+do
+    command
+done
+```
+
+或
+
+```shell
+while true
+do
+    command
+done
+```
+
+## 流程控制：until语句
+
+until 也是循环结构语句,  until 循环与 while 循环在处理方式上刚好相反,  循环条件为false会一致循环, 条件为true停止循环.
+
+```shell
+until 条件
+do
+    命令
+done
+```
+条件如果返回值为1(代表false)，则继续执行循环体内的语句，否则跳出循环。
+
+control8.sh脚本代码
+
+```shell
+#!/bin/bash
+read -p "请输入一个数字:" number
+i=0
+until [[ ! $i < $number ]]
+do
+  echo "hello world"
+  ((i++))
+done
+```
+
+## 流程控制：for语句
+
+Shell支持for循环,  与其他编程语言类似.
+
+多行写法
+
+```shell
+for var in item1 item2 ... itemN
+do
+    命令1
+    命令2
+    ...
+done
+```
+
+一行写法
+
+```shell
+for var in item1 item2 ... itemN; do 命令1; 命令2…; done;
+```
+
+> var是循环变量
+>
+> item1 item2 ... itemN 是循环的范围
+
+control9.sh脚本代码
+
+```shell
+#!/bin/bash
+for i in 1 2 3 4 5
+do
+ echo "hello world"
+done
+```
+
+## 循环方式2
+
+多行写法
+
+```shell
+for var in {start..end}
+do
+	命令
+done
+```
+
+> start:  循环范围的起始值,必须为整数
+>
+> end: 循环范围的结束值, 必须为整数
+
+一行写法
+
+```shell
+for var in {start..end}; do 命令; done
+```
+
+循环1到5并打印
+
+```shell
+for i in {1..5}; do echo $i; done
+```
+
+## 循环方式3
+
+多行写法
+
+```shell
+for((i=start;i<=end;i++))
+do
+	命令
+done
+```
+
+一行写法
+
+```shell
+for((i=start;i<=end;i++)); do 命令; done
+```
+
+
+## 无限循环
+
+```shell
+for((;;)); do 命令; done
+```
+
+## 流程控制：select语句
+
+select in 循环用来增强交互性，它可以显示出带编号的菜单，用户输入不同的编号就可以选择不同的菜单，并执行不同的功能.   select in 是 Shell 独有的一种循环，非常适合终端（Terminal）这样的交互场景, 其他语言没有;
+
+```shell
+select var in menu1 menu2 ...
+do
+    命令
+done
+```
+
+> 注意: select 是无限循环（死循环），输入空值，或者输入的值无效，都不会结束循环，只有遇到 break 语句，或者按下 Ctrl+D 组合键才能结束循环。
+>
+> 执行命令过程中: 终端会输出 `#?`  代表可以输入选择的菜单编号
+
+```shell
+#!/bin/bash
+echo "你的爱好是什么?"
+select hobby in "编程" "游戏" "篮球" "游泳"
+do
+	echo $hobby
+    break
+done
+echo "你的爱好是:${hobby}"
+```
+
+脚本文件代码
+
+```shell
+#!/bin/bash
+echo "你的爱好是什么"
+select hobby in "编程" "游戏" "篮球" "游泳"
+do
+    case $hobby in
+        "编程")
+            echo "编程,多敲代码"
+            break
+            ;;
+        "游戏")
+            echo "少玩游戏"
+            break
+            ;;
+        "篮球"|"游泳")
+            echo "运动有利健康"
+            break
+            ;;
+        *)
+            echo "输入错误，请重新输入"
+    esac
+done
+```
+
+## 函数介绍
+
+Shell编程和其他编程语言一样, 有函数,  函数是由若干条shell命令组成的语句块，实现Shell脚本代码重用和模块化编程。
+
+1. 系统函数
+2. 自定义函数
+
+## 系统函数介绍
+
+系统自带提供的函数, 可以直接使用.
+
+basename系统函数
+
+basename函数用于获取文件名的函数,  根据给出的文件路径截取出文件名
+
+```shell
+basename [string / pathname] [suffix]  
+```
+
+> 根据根据指定字符串或路径名进行截取文件名,  比如:  根据路径"/one/two/aa.txt",  可以截取出aa.txt
+>
+> suffix: 用于截取的时候去掉指定的后缀名.
+
+ dirname系统函数
+
+从指定的文件绝对路径,  去除文件名，返回剩下的前缀目录路径
+
+```shell
+dirname 文件绝对路径
+```
+
+## 自定义函数
+
+开发人员可以通过自定义开发函数,实现代码重用.
+
+```shell
+# 函数的定义
+[ function ] funname ()
+{
+    命令
+    [return 返回值]
+
+}
+
+# 调用函数
+funname 传递参数1 传递参数2 ...
+```
+
+> 1. 可以带function fun() 定义，也可以直接fun() 定义,不带任何参数。
+>
+> 2. 参数返回，可以显示加：return 返回，如果不加，将以最后一条命令运行结果，作为返回值。 return后跟数值n(0~255)
+
+必须在调用函数地方之前，先声明函数，shell脚本是逐行运行,  只要先运行了函数, 后面才可以时使用函数
+
+文件脚本代码
+
+```shell
+#!/bin/bash
+demo()
+{
+    echo "执行了函数"
+}
+
+# 调用函数
+demo
+```
+
+fun2.sh文件脚本代码
+
+```shell
+#!/bin/bash
+sum()
+{
+    echo "求两个数的和..."
+    read -p "输入第一个数字: " n1
+    read -p "输入第二个数字: " n2
+    echo "两个数字分别为 $n1 和 $n2 "
+    return $(($n1+$n2))
+}
+
+# 调用函数
+sum
+echo "两个数字的和为: $? "  # 获取函数返回值
+```
+
+## 示例：有参函数
+
+在Shell中，调用函数时可以向其传递参数。在函数体内部，通过 `$n` 的形式来获取参数的值，例如，`$1` 表示第一个参数，`$2` 表示第二个参数...
+
+其他参数介绍
+
+| 参数处理 | 说明                                                         |
+| :------- | :----------------------------------------------------------- |
+| $#       | 传递到脚本或函数的参数个数                                   |
+| $*       | 以一个单字符串显示所有向脚本传递的参数                       |
+| $$       | 脚本运行的当前进程ID号                                       |
+| $!       | 后台运行的最后一个进程的ID号                                 |
+| $@       | 与$*相同，但是使用时加引号，并在引号中返回每个参数。         |
+| $?       | 显示最后命令的退出状态。0表示没有错误，其他任何值表明有错误。 |
+
+fun3.sh文件脚本代码
+
+```shell
+#!/bin/bash
+funParam(){
+    echo "第一个参数为 $1 !"
+    echo "第二个参数为 $2 !"
+    echo "第十个参数为 $10 !"
+    echo "第十个参数为 ${10} !"
+    echo "第十一个参数为 ${11} !"
+    echo "参数总数有 $# 个!"
+    echo "作为一个字符串输出所有参数 $* !"
+}
+# 调用函数
+funParam 1 2 3 4 5 6 7 8 9 10 22
+```
+
+## Shell程序与函数的区别
+
+函数和shell程序比较相似，区别在于：
+	Shell 程序(内置命令和外部脚本文件),  外部脚本文件是在子Shell中运行,  会开启独立的进程运行
+	Shell函数在当前Shell的进程中运行
+
+fun4.sh脚本文件代码
+
+```shell
+#!/bin/bash
+demo(){
+        echo "函数中打印当前进程ID:$$"
+}
+
+echo "当前脚本文件(Shell程序)打印当前进程ID:$$"
+# 调用函数
+demo
+```
+
+## Shell重定向输入输出
+
+从键盘读取用户输入的数据，然后再把数据拿到Shell程序中使用；
+
+Shell程序产生的数据，这些数据一般都是呈现到显示器上供用户浏览查看;
+
+默认输入输出文件
+
+每个 Unix/Linux 命令运行时都会打开三个文件,  文件如下
+
+| 文件名 | 类型                                  | 文件描述符(file description, fd) | 功能                     |
+| ------ | ------------------------------------- | -------------------------------- | ------------------------ |
+| stdin  | (standard input)<br>标准输入文件      | 0                                | 获取键盘的输入数据       |
+| stdout | (standard output)<br/>标准输出文件    | 1                                | 将正确数据输出到显示器上 |
+| stderr | (standard error)<br/>标准错误输出文件 | 2                                | 将错误信息输出到显示器上 |
+
+> 每个文件都有一个唯一的 **文件描述符fd**,  后面会通过唯一 **文件描述符fd** 操作对应的信息
+
+Shell程序操作输入输出时用到这3个文件
+
+1. Shell程序默认会从stdin文件中读取输入数据
+2. Shell程序默认会向stdout文件输出正确数据
+3. Shell程序默认会项stderr文件中输出错误信息
+
+这3个文件用于临时传输数据使用
+
+重定向输入输出介绍
+
+1. 标准输入是数据默认从键盘流向程序，如果改变了它的方向，数据就从其它地方流入，这就是输入重定向。
+
+2. 标准输出是数据默认从程序流向显示器，如果改变了它的方向，数据就流向其它地方，这就是输出重定向。
+
+   > Linux Shell 重定向分为两种，一种输入重定向，一种是输出重定向；
+
+输出重定向是指命令的结果不再输出到显示器上，而是输出到其它地方，一般是文件中。这样做的最大好处就是把命令的结果保存起来，当我们需要的时候可以随时查询。
+
+| 命令                  | 说明                                                         |
+| :-------------------- | :----------------------------------------------------------- |
+| 命令 > file           | 将正确数据重定向输出到 file 文件中, 覆盖方式                 |
+| 命令 < file           | 将输入重定向从 file 文件中读取数据                           |
+| 命令 >> file          | 将正确数据重定向输出到 file 文件中, 追加方式                 |
+| 命令 < file1 > file2  | 从file文件读取数据, 输出数据到file2文件中                    |
+| 命令 fd> file         | 根据指定的文件描述符fd 将数据重定向输出到 file 文件中, 覆盖方式 |
+| 命令 fd>> file        | 根据指定的文件描述符fd 将数据重定向输出到 file 文件中, 追加方式 |
+| 命令 > file fd1>& fd2 | 将 fd1 和 fd2 文件描述符合并 输出到文件。                    |
+| fd1<& fd2             | 将 fd1 和 fd2 文件描述符合并 从文件读取输入.                 |
+| << tag                | 读取终端输入数据,  将开始标记 tag 和结束标记 tag 之间的内容作为输入。<br>标记名tag可以任意 |
+
+> 在输出重定向中，`>`代表的是覆盖输出，`>>`代表的是追加输出。
+>
+> fd是文件描述符 
+>
+> ​		0 通常是标准输入（STDIN），
+>
+> ​		1 是标准输出（STDOUT），
+>
+> ​		2 是标准错误输出（STDERR）。
+>
+> fd>  或  fd>>  中间不可以有空格
+
+创建文件redirect1.txt
+
+```shell
+touch redirect1.txt
+```
+
+执行who命令重定向输出到redirect1.txt文件中
+
+```shell
+echo "itheima" >> redirect1.txt
+```
+
+![image-20200705211524230](assets/image-20200705211524230.png)
+
+
+预览错误消息
+
+```shell
+ls java
+```
+
+没有java目录所以报错
+
+将错误消息输出到error.log文件中
+
+```shell
+ls java 2> redirect2.txt
+```
+
+> 2 是标准错误输出（STDERR）, 注意
+>
+> `>` 覆盖方式输出
+>
+> `2>` 注意fd与>符号之间不能有空格 
+
+
+## 正确和错误信息同时输出
+
+将正确信息与错误信息都保存到一个文件中
+
+```shell
+echo "itcast" > redirect2.txt 2>&1
+```
+
+> 数字 1 代表正确输出的结果输出到文件中
+> 数字 2 代表错误结果输出到文件中
+>
+> `2>& 1` 将正确和错误都输出到文件中.  `2>&` 中间不能有空格,  写法有2种
+>
+> ​		合并第一种写法:  `2>& 1`
+>
+> ​        合并第二种写法:  `2>&1`
+
+## wc命令介绍
+
+Linux wc 命令可以用来对文本进行统计，包括单词个数、行数、字节数
+
+```shell
+wc  [options]  [文件名]
+```
+
+ options有如下:
+
+| 选项 | 含义                  |
+| ---- | --------------------- |
+| `-c` | character, 统计字节数 |
+| `-w` | word, 统计单词数      |
+| `-l` | line, 统计行数        |
+
+统计文件redirect2.txt中数据行数
+
+```shell
+wc -l < redirect2.txt
+```
+
+循环读取文件每一行数据
+
+```shell
+while read str; do echo $str; done < redirect2.txt
+```
+
+## cut
+
+`cut`  译为“剪切, 切割”  ,  是一个强大文本处理工具，它可以将文本按列进行划分的文本处理。cut命令逐行读入文本，然后按列划分字段并进行提取、输出等操作。
+
+```shell
+cut [options]  filename
+```
+
+options参数说明
+
+| 选项参数        | 功能                                                         |
+| --------------- | ------------------------------------------------------------ |
+| -f 提取范围     | 列号，获取第几列                                             |
+| -d 自定义分隔符 | 自定义分隔符，默认为制表符。                                 |
+| -c 提取范围     | 以字符为单位进行分割                                         |
+| -b 提取范围     | 以字节为单位进行分割。这些字节位置将忽略多字节字符边界，除非也指定了 -n 标志。 |
+| -n              | 与“-b”选项连用，不分割多字节字符；                           |
+
+提取范围说明
+
+| 提取范围  | 说明                                                       |
+| --------- | ---------------------------------------------------------- |
+| n-        | 提取指定第n列或字符或字节后面所有数据                      |
+| n-m       | 提取指定第n列或字符或字节到第m列或字符或字节中间的所有数据 |
+| -m        | 提取指定第m列或字符或字节前面所有数据                      |
+| n1,n2,... | 提前指定枚举列的所有数据                                   |
+
+切割提取指定列数据
+
+cut1.txt文件数据准备
+
+```shell
+touch cut1.txt
+```
+
+编辑文件添加内容
+
+```shell
+AA  itheima 11 XX
+BB  itcast 22 XXX
+CC  Shell 33 XXXX
+DD  it 44 XXXXXXX
+```
+
+提取文件中第一列数据
+
+```shell
+cut cut1.txt -d " " -f 1
+```
+
+提取文件中第一列,第三列, 枚举查找
+
+```shell
+cut cut1.txt -d " " -f 1,3
+```
+
+提取文件中第二列,第三列,第四列, 范围查找
+
+提取文件中第一列后面所有列的数据
+
+```shell
+ cut cut1.txt -d " "  -f 2- 
+```
+
+提起文件中结束列前面所有列的数据
+
+```shell
+cut -d " " -f -2 cut1.txt
+# -2 提取指定列前面所有列数据
+```
+
+切割提取指定字符数据
+
+提取每行前3个字符
+
+```shell
+cut cut1.txt -c1-3
+```
+
+提取每行第4个字符以后的数据
+
+```shell
+cut cut1.txt -c 4-
+```
+
+提取每行第3个字符前面所有字符
+
+```shell
+cut cut1.txt -c -3
+```
+
+切割提取指定字节数据
+
+提取字符串"abc传智播客" 前3个字节
+
+```shell
+echo "abc传智播客" | cut -b -3
+```
+
+提取字符串"abc传智播客" 前4个字节
+
+```shell
+echo "abc传智播客" | cut -b -4
+```
+
+提取字符串"abc传智播客" 前6个字节
+
+```shell
+echo "abc传智播客" | cut -b -6
+# 由于linux系统默认utf-8码表, 所以一个汉字占3个字节
+```
+
+提取字符串"abc传智播客" 前4个字节, 就可以将汉字 "传"输出,
+
+```shell
+echo "abc传智播客" | cut -nb -4
+#  -n 取消多字节字符分割直接输出
+```
+
+切割提取指定单词数据
+
+在cut1.txt文件中切割出"itheima"
+
+```shell
+cat cut1.txt | grep itheima | cut -d " " -f 2
+```
+
+切割提取bash进程的PID号
+
+命令
+
+```shell
+ps -aux | grep 'bash' | head -n 1 | cut -d " " -f 8
+```
+
+切割提取IP地址
+
+```shell
+ifconfig | grep broadcast | cut -d " " -f 10
+```
+
+## sed
+
+sed （stream editor, 流编辑器） 是Linux下一款功能强大的非交互流式文本编辑器(vim是交互式文本编辑器)，可以对文本文件的每一行数据匹配查询之后进行增、删、改、查等操作，支持按行、按字段、按正则匹配文本内容，灵活方便，特别适合于大文件的编辑.
+
+sed是一种流编辑器，它一次处理一行内容,  将这行放入缓存(存区空间称为：模式空间)，然后才对这行进行处理，处理完后，将缓存区的内容发送到终端。
+
+```sehll
+sed [选项参数] [模式匹配/sed程序命令] [文件名]
+
+# 模式匹配,sed会读取每一行数据到模式空间中, 之后判断当前行是否符合模式匹配要求,符合要求就会
+#     执行sed程序命令, 否则不会执行sed程序命令;如果不写匹配模式,那么每一行都会执行sex程序命令
+```
+
+选项参数说明
+
+| 选项参数                   | 功能                                                         |
+| -------------------------- | ------------------------------------------------------------ |
+| `-e`                       | 直接在指令列模式上进行sed的动作编辑。它告诉sed将下一个参数解释为一个sed指令，只有当命令行上给出多个sed指令时才需要使用-e选项;一行命令语句可以执行多条sed命令 |
+| `-i`                       | 直接对内容进行修改，不加-i时默认只是预览，不会对文件做实际修改 |
+| `-f`                       | 后跟保存了sed指令的文件                                      |
+| `-n`                       | 取消默认输出，sed默认会输出所有文本内容，使用-n参数后只显示处理过的行 |
+| `-r ruguler              ` | 使用扩展正则表达式，默认情况sed只识别基本正则表达式 *        |
+
+sed程序命令功能描述
+
+| 命令 | 功能描述                                      |
+| ---- | --------------------------------------------- |
+| `a`  | add新增，a的后面可以接字串，在下一行出现      |
+| `c`  | change更改, 更改匹配行的内容                  |
+| d    | delete删除, 删除匹配的内容                    |
+| `i`  | insert插入, 向匹配行前插入内容                |
+| `p`  | print打印, 打印出匹配的内容，通常与-n选项和用 |
+| s    | substitute替换, 替换掉匹配的内容              |
+| `=`  | 用来打印被匹配的行的行号                      |
+| `n`  | 读取下一行，遇到n时会自动跳入下一行           |
+
+特殊符号
+
+| 命令                | 功能描述                                                     |
+| ------------------- | ------------------------------------------------------------ |
+| `!`                 | 就像一个sed命令，放在限制条件后面, 对指定行以外的所有行应用命令(取反) |
+| {sed命令1;sed命令2} | 多个命令操作同一个的行                                       |
+
+sed.txt文件内容
+
+```shell
+ABC
+itheima itheima
+itcast
+123
+itheima
+```
+
+- 指定行号的前或后面添加数据
+
+向第三行后面添加hello
+
+```shell
+ sed '3ahello' sed.txt
+```
+
+> 3 , 代表第三行
+>
+> a,  代表在后面添加, 出现在下一行
+>
+> 注意这里没有修改源文件
+
+向第三行前面添加hello
+
+```shell
+ sed '3ihello' sed.txt
+```
+
+> 3 , 代表第三行
+>
+> i,  代表在前面添加, 出现在上一行
+>
+> 注意这里没有修改源文件
+
+- 指定内容前或后面添加数据
+
+向内容 `itheima` 后面添加 `hello` ，如果文件中有多行包括 ``itheima` `，则每一行后面都会添加
+
+```shell
+sed '/itheima/ahello' sed.txt
+```
+
+向内容 `itheima` 前面添加 `hello` ，如果文件中有多行包括 ``itheima` `，则每一行前面都会添加
+
+```shell
+sed '/itheima/ihello' sed.txt
+```
+
+- 在最后一行前或后添加hello
+
+在最后一行后面添加hello
+
+```shell
+sed '$ahello' sed.txt
+```
+
+> $a:  最后一行后面添加
+
+在最后一行前面添加hello
+
+```shell
+sed '$ihello' sed.txt
+```
+
+> $i:  最后一行前面添加
+
+- 删除文件中的数据
+
+命令
+
+```shell
+sed  '2d' sed.txt
+# d 用于删除
+# 2d 删除第2行
+```
+
+命令: 删除第1行,第4行数据
+
+```shell
+sed '1d;4d' sed.txt
+```
+
+- 删除奇数行
+
+从第一行开始删除，每隔2行就删掉一行
+
+```shell
+sed '1~2d' sed.txt
+# 1~2 从第1行开始, 每隔2行
+```
+
+- 删除指定范围的多行数据
+
+删除从第1行到第3行的数据
+
+```shell
+sed '1,3d' sed.txt
+# 1,3  从指定第1行开始到第3行结束
+```
+
+- 删除指定范围取反的多行数据
+
+删除从第1行到第3行取反的数据
+
+```shell
+sed '1,3!d' sed.txt
+# 1,3! 从指定第1行开始到第3行结束取反, 就是不在这个范围的行
+```
+
+- 删除最后一行
+
+命令
+
+```shell
+sed  '$d'   sed.txt
+```
+
+- 删除匹配itheima的行
+
+命令
+
+```shell
+sed '/itheima/d' sed.txt
+```
+
+- 删除匹配行到最后一行
+
+删除匹配itheima行到最后一行 , 命令
+
+```shell
+sed '/itheima/,$d' sed.txt
+# , 代表范围匹配
+```
+
+- 删除匹配行及其后面一行
+
+删除匹配itheima行及其后面一行
+
+```shell
+sed '/itheima/,+1d' sed.txt
+```
+
+- 删除不匹配的行
+
+删除不匹配 `itheima` 或 `itcast` 的行
+
+```shell
+sed '/itheima\|itcast/!d' sed.txt
+
+# \| 是正则表达式的或者 这里|需要转义, 所以为\|
+# ! 取反
+```
+
+## 更改文件中的数据
+
+- 将文件的第一行修改为hello
+
+命令
+
+```shell
+sed  '1chello'  sed.txt
+```
+
+- 将包含itheima的行修改为hello
+
+命令
+
+```shell
+sed  '/itheima/chello' sed.txt
+```
+
+- 将最后一行修改为hello
+
+命令
+
+```shell
+sed '$chello' sed.txt
+```
+
+- 将文件中的itheima替换为hello
+
+将文件中的itheima替换为hello,默认只替换每行第一个itheima
+
+```shell
+sed 's/itheima/hello/'  sed.txt
+```
+
+> 注意 `'s/itheima/hello/'`  最后一个`/` 不可少
+
+将文本中所有的itheima都替换为hello, 全局替换
+
+```shell
+sed 's/itheima/hello/g'  sed.txt
+# g 代表匹配全局所有符合的字符
+```
+
+- 将每行中第二个匹配替换
+
+将每行中第二个匹配的itheima替换为hello 命令
+
+```shell
+sed 's/itheima/hello/2'   sex.txt
+```
+
+- 替换后的内容写入文件
+
+将每行中第二个匹配的itheima替换为hello ,  将替换后的内容写入到sed2.txt文件中
+
+```shell
+# 第一种方式
+sed -n 's/itheima/hello/2pw sed2.txt' sed.txt
+# w写入
+# p打印, -n只是获取
+
+# 第二种方式
+sed -n 's/itheima/hello/2p ' sed.txt > sed2.txt
+```
+
+- 正则表达式匹配替换
+
+匹配有 `i` 的行，替换匹配行中 `t` 后的所有内容为空 
+
+```shell
+sed '/i/s/t.*//g' sed.txt
+# /t.*/ 表示逗号后的所又内容
+```
+
+- 每行末尾拼接test
+
+```shell
+sed 's/$/& test' sed.txt
+# & 用于拼接
+```
+
+- 每行行首添加注释 `#`
+
+命令
+
+```shell
+sed 's/^/#/' sed.txt
+```
+
+## 查询文件或管道中的数据
+
+- 查询含有  `itcast`  的行数据
+
+命令
+
+```shell
+sed -n '/itcast/p' sed.txt
+```
+
+- 管道过滤查询
+
+管道查询所有进程中含有sshd的进程信息命令
+
+```shell
+ ps -aux | sed -n '/sshd/p'
+```
+
+- 多个sed程序命令执行
+
+将sed.txt文件中的第1行删除并将 `itheima` 替换为 `itcast`
+
+```shell
+# 第一种方式, 多个sed程序命令 在每个命令之前使用 -e 参数
+sed -e '1d' -e 's/itheima/itcast/g' sed.txt 
+
+# 第二种方式
+sed  '1d;s/itheima/itcast/g' sed.txt
+```
+
+### sed高级用法: 缓存区数据交换
+
+1. 首先需要明白, sed处理文件是逐行处理的, 即**读取一行处理一行,输出一行**;
+
+2. sed把文件读出来每一行存放的空间叫模式空间, 会在该空间中对读到的内容做相应处理;
+
+3. 此外sed还有一个额外的空间即暂存空间, 暂存空间刚开始里边只有个空行, 记住这一点;
+
+4. sed可使用相应的命令从模式空间往暂存空间放入内容或从暂存空间取内容放入模式空间;
+
+   > 2个缓存空间传输数据的目的是为了更好的处理数据, 一会参考案例学习  
+
+关于缓存区sed程度命令
+
+| 命令 | 含义                                                       |
+| ---- | ---------------------------------------------------------- |
+| h    | 将**模式空间**里面的内容复制到**暂存空间**缓存区(覆盖方式) |
+| H    | 将**模式空间**里面的内容复制到**暂存空间**缓存区(追加方式) |
+| g    | 将**暂存空间**里面的内容复制到**模式空间**缓存区(覆盖方式) |
+| G    | 将**暂存空间**里面的内容复制到**模式空间**缓存区(追加方式) |
+| x    | 交换2个空间的内容                                          |
+
+
+
+## 缓存空间数据交换
+
+- 第一行粘贴到最后1行
+
+将模式空间第一行复制到暂存空间(覆盖方式),并将暂存空间的内容复制到模式空间中的最后一行(追加方式)
+
+```shell
+sed '1h;$G' sed.txt
+# 1h 从模式空间中将第一行数据复制到暂存空间(覆盖方式)
+# $G 将暂存空间中的内容复制到模式空间中最后一行(追加方式)
+```
+
+- 第一行删除后粘贴到最后1行
+
+将模式空间第一行复制到暂存空间(覆盖方式)并删除, 最后将暂存空间的内容复制到模式空间中的最后一行(追加方式)
+
+```shell
+sed '1{h;d};$G' sed.txt
+# 1{h;d}对模式空间中的第一行数据同时进行复制到暂存空间(覆盖方式)和删除模式空间中的第一行数据
+```
+
+- 第一行数据复制粘贴替换其他行数据
+
+将模式空间第一行复制到暂存空间(覆盖方式), 最后将暂存空间的内容复制到模式空间中替换从第2行开始到最后一行的每一行数据(覆盖方式)
+
+```shell
+sed '1h;2,$g' sed.txt
+```
+
+- 将前3行数据数据复制粘贴到最后一行
+
+将前3行数据复制到暂存空间(追加方式), 之后将暂存空间的所有内容复制粘贴到模式空间最后一行(追加方式)
+
+```shell
+sed '1,3H;$G' sed.txt
+```
+
+## 给每一行添加空行
+
+插入空行
+
+```shell
+sed G -i sed.txt
+# G 每行后面添加一个空行
+# -i 修改源文件
+```
+
+## 删除所有的空行
+
+命令
+
+```shell
+sed -i '/^$/d' sed.txt
+```
+
+## awk
+
+awk是一个强大的文本分析工具，相对于grep的查找，sed的编辑，awk在其对数据分析并生成报告时,显得尤为强大简单来说awk就是把文件逐行的读入，以空格为默认分隔符将每行切片，切开的部分再进行各种分析处理, 因为切开的部分使用awk可以定义变量,运算符, 使用流程控制语句进行深度加工与分析。
+
+> 创始人 Alfred V. **A**ho、Peter J. **W**einberger和Brian W. **K**ernighan  awk由来是姓氏的首字母
+
+```shell
+awk [options] 'pattern{action}' {filenames}
+```
+
+> pattern：表示AWK在数据中查找的内容，就是匹配模式
+>
+> action：在找到匹配内容时所执行的一系列命令
+>
+
+选项参数说明
+
+| 选项参数 | 功能                   |
+| -------- | ---------------------- |
+| -F       | 指定输入文件拆分分隔符 |
+| -v       | 赋值一个用户定义变量   |
+
+## awk内置变量
+
+| 内置变量 | 含义                                                         |
+| -------- | ------------------------------------------------------------ |
+| ARGC     | 命令行参数个数                                               |
+| ARGV     | 命令行参数排列                                               |
+| ENVIRON  | 支持队列中系统环境变量的使用                                 |
+| FILENAME | awk浏览的文件名                                              |
+| FNR      | 浏览文件的记录数                                             |
+| FS       | 设置输入域分隔符，等价于命令行 -F选项                        |
+| NF       | 浏览记录的域的个数, 根据分隔符分割后的列数                   |
+| NR       | 已读的记录数, 也是行号                                       |
+| OFS      | 输出域分隔符                                                 |
+| ORS      | 输出记录分隔符                                               |
+| RS       | 控制记录分隔符                                               |
+| `$n`     | `$0`变量是指整条记录。`$1`表示当前行的第一个域,`$2`表示当前行的第二个域,......以此类推。 |
+| $NF      | $NF是number finally,表示最后一列的信息，跟变量NF是有区别的，变量NF统计的是每行列的总数 |
+
+```shell
+cp /etc/passwd ./
+```
+
+默认每行空格切割数据
+
+```shell
+ echo "abc 123 456" | awk '{print $1"&"$2"&"$3}'
+```
+
+## 打印含有匹配信息的行
+
+搜索passwd文件有root关键字的所有行
+
+```shell
+awk '/root/' passwd
+# '/root/' 是查找匹配模式, 没有action命令, 默认输出所有符合的行数据
+```
+
+## 打印匹配行中第7列数据
+
+搜索passwd文件有root关键字的所有行, 然后以":"拆分并打印输出第7列
+
+```shell
+awk -F: '/root/{print $7}' passwd
+# -F: 以':'分隔符拆分每一个列(域)数据
+```
+
+## 打印文件每行属性信息
+
+统计passwd:  文件名，每行的行号，每行的列数，对应的完整行内容:
+
+```shell
+awk -F ':' '{print "文件名:" FILENAME ",行号:" NR ",列数:" NF ",内容:" $0}' passwd
+# "文件名:" 用于拼接字符串
+```
+
+使用printf替代print,可以让代码阅读型更好
+
+```shell
+awk -F ':' '{printf("文件名:%5s,行号:%2s, 列数:%1s, 内容:%2s\n",FILENAME,NR,NF,$O)}' passwd
+# printf(格式字符串,变量1,变量2,...)
+# 格式字符串: %ns 输出字符串,n 是数字，指代输出几个字符, n不指定自动占长度
+# 格式字符串: %ni 输出整数,n 是数字，指代输出几个数字
+# 格式字符串: %m.nf 输出浮点数,m 和 n 是数字，指代输出的整数位数和小数位数。如 %8.2f 代表共输出 8 位数，其中 2 位是小数，6 位是整数；
+```
+
+## 打印第二行信息
+
+打印/etc/passwd/的第二行信息
+
+```shell
+awk -F ':' 'NR==2{printf("filename:%s,%s\n",FILENAME,$0)}' passwd
+```
+
+## 查找以c开头的资源
+
+awk过滤的使用,  查找当前目录下文件名以c开头的文件列表
+
+```shell
+ls -a | awk '/^c/'
+```
+
+## 打印第一列
+
+按照":" 分割查询第一列打印输出
+
+```shell
+awk -F ':' '{print $1}' passwd
+```
+
+## 打印最后1列
+
+按照":" 分割查询最后一列打印输出
+
+```shell
+awk -F: '{print $NF}' passwd
+```
+
+## 打印倒数第二列
+
+按照":" 分割查询倒数第二列打印输出
+
+```shell
+ awk -F: '{print $(NF-1)}' passwd
+ # $(NF-N) N是几, 就是倒数第几列
+```
+
+## 打印10到20行的第一列
+
+获取第10到20行的第一列的信息
+
+```shell
+awk -F: '{if(NR>=10 && NR<=20) print $1}' passwd
+```
+
+## 多分隔符使用
+
+"one:two/three"字符串按照多个分隔符":"或者"/" 分割, 并打印分割后每个列数据
+
+```shell
+echo "one:two/three" | awk -F '[:/]' '{printf("%s\n%s\n%s\n%s\n",$0,$1,$2,$3)}'
+```
+
+## 添加开始与结束内容
+
+给数据添加开始与结束
+
+```shell
+echo -e  "abc\nabc" | awk 'BEGIN{print "开始..."} {print $0} END{print "结束..."}'
+
+# BEGIN 在所有数据读取行之前执行；END 在所有数据执行之后执行。
+```
+
+## 使用循环拼接分割后的字符串
+
+"abc itheima     itcast   21" 使用空格分割后, 通过循环拼接在一起
+
+```shell
+ echo "abc itheima     itcast   21" | awk -v str="" -F '[ ]+' '{for(n=1;n<=NF;n++){ str=str$n} print str }'
+ 
+ # -v 定义变量
+```
+
+## 操作指定数字运算
+
+将passwd文件中的用户id增加数值1并输出
+
+```shell
+ echo "2.1" | awk -v i=1 '{print $0+i}'
+```
+
+## 切割ip
+
+切割IP
+
+```shell
+ifconfig | awk '/broadcast/{print}' | awk -F " " '{print $2}'
+```
+
+## 显示空行行号
+
+查询sed.txt中空行所在的行号
+
+```shell
+sed 'G' sed.txt | awk '/^$/{print NR}'
+
+```
+## sort
+
+sort命令是在Linux里非常有用，它将文件进行排序，并将排序结果标准输出或重定向输出到指定文件。
+
+```shell
+sort (options) 参数
+```
+
+| 选项            | 说明                                                     |
+| --------------- | -------------------------------------------------------- |
+| ==-n==          | number,依照数值的大小排序                                |
+| ==-r==          | reverse, 以相反的顺序来排序                              |
+| ==-t 分隔字符== | 设置排序时所用的分隔字符, 默认空格是分隔符               |
+| ==-k==          | 指定需要排序的列                                         |
+| -d              | 排序时，处理英文字母、数字及空格字符外，忽略其他的字符。 |
+| -f              | 排序时，将小写字母视为大写字母                           |
+| -b              | 忽略每行前面开始出的空格字符                             |
+| ==-o 输出文件== | 将排序后的结果存入指定的文件                             |
+| -u              | 意味着是唯一的(unique)，输出的结果是去完重了的           |
+| -m              | 将几个排序好的文件进行合并                               |
+
+参数：指定待排序的文件列表
+
+sort.txt文本文件代码
+
+```shell
+张三 30  
+李四 95  
+播仔 85 
+播仔 85
+播仔 86
+AA 85
+播妞 100
+```
+
+## 数字升序
+
+按照“ ”空格分割后的第2列数字升序排序。
+
+```shell
+sort -t " " -k2n,2 sort.txt
+# -t " " 代表使用空格分隔符拆分列
+# -k 2n,2 代表根据从第2列开始到第2列结束进行数字升序, 仅对第2列排序
+```
+
+## 数字升序去重
+
+先按照“ ”空格分割后的,  然后,按照第2列数字升序排序,  最后对所有列去重
+
+```shell
+ sort -t " " -k2n,2 -uk1,2 sort.txt
+```
+
+> 注意: 先排序再去重
+
+## 数字升序去重结果保存到文件
+
+命令
+
+```shell
+sort -t " " -k2n,2 -uk1,2 -o sort2.txt sort.txt
+```
+
+## 数字降序去重
+
+先按照“ ”空格分割后的,  然后,按照第2列数字降序排序,  最后对所有列去重
+
+```shell
+sort -t " " -k2nr,2 -uk1,2 sort.txt
+```
+
+## 多列排序
+
+数据准备sort3.txt
+
+```shell
+公司A,部门A,3
+公司A,部门B,0
+公司A,部门C,10
+公司A,部门D,9
+公司B,部门A,30
+公司B,部门B,40
+公司B,部门C,43
+公司B,部门D,1
+公司C,部门A,30
+公司C,部门B,9
+公司C,部门C,100
+公司C,部门D,80
+公司C,部门E,60
+```
+
+要求:  以","分割先对第一列字符串升序,  再对第3列数字降序
+
+```shell
+sort -t "," -k1,1 -k3nr,3 sort3.txt
+```
+
+## 面试题：查空行
+
+问题：使用Linux命令查询file.txt中空行所在的行号
+
+file1.txt数据准备
+
+```shell
+itheima itheima
+
+itcast
+123
+
+itheima
+```
+
+
+
+答案：
+
+```shell
+awk '/^$/{print NR}' file1.txt
+```
+
+## 面试题：求一列的和
+
+问题：有文件file2.txt内容如下:
+
+```shell
+张三 40
+李四 50
+王五 60
+```
+
+
+
+使用Linux命令计算第二列的和并输出
+
+```shell
+awk '{sum+=$2} END{print "求和: "sum}' file2.txt
+```
+
+## 面试题：检查文件是否存在
+
+问题：Shell脚本里如何检查一个文件是否存在？如果不存在该如何处理？
+
+答: 
+
+```shell
+if [ -e /root/file1.txt ]; then  echo "文件存在"; else echo "文件不存在"; fi
+```
+
+## 面试题：数字排序
+
+问题：用shell写一个脚本，对文本中无序的一列数字排序
+
+cat file3.txt文件内容
+
+```shell
+9
+8
+7
+6
+5
+4
+3
+2
+10
+1
+```
+
+答
+
+```shell
+sort -n file3.txt | awk '{sum+=$1; print $1} END{print "求和: "sum}'
+```
+
+## 面试题：搜索指定目录下文件内容
+
+问题：请用shell脚本写出查找当前文件夹（/root）下所有的文本文件内容中包含有字符”123”的文件名称?
+
+答:
+
+```shell
+grep -r "123" /root | cut -d ":" -f 1| sort -u
+```
+
+## 面试题：批量生成文件名
+
+问题: 批量生产指定数目的文件,文件名采用"纳秒"命名
+
+答: file4.sh
+
+```shell
+#!/bin/bash
+read -t 30 -p "请输入创建文件的数目:" n
+test=$(echo $n | sed 's/[0-9]//g') #检测非数字输入
+if [ -n "$n" -a -z "$test" ] #检测空输入
+then
+        for ((i=0;i<$n;i=i+1 ))
+        do
+                name=$(date +%N)
+                [ ! -d ./temp ] &&  mkdir -p ./temp
+                touch "./temp/$name"
+                echo "创建 $name 成功!"
+        done
+        else
+                echo "创建失败"
+                exit 1
+fi
+```
+
+## 面试题：批量改名
+
+问题: 将/root/temp目录下所有文件名重命名为"旧文件名-递增数字"?
+
+重命名命令
+
+```shell
+rename 旧文件名 新文件名 旧文件所在位置
+```
+
+脚本代码file5.sh
+
+```shell
+#!/bin/bash
+filenames=$(ls /root/temp)
+number=1
+for name in $filenames
+do
+        printf "命令前:%s" ${name}
+        newname=${name}"-"${number}
+        rename $name ${newname} /root/temp/*
+        let number++ #每个改名后的文件名后缀数字加1
+        printf "重命名后:%s \n" ${newname}
+done
+```
+
+## 面试题：批量创建用户
+
+问题: 根据users.txt中提供的用户列表,一个名一行, 批量添加用户到linux系统中
+
+已知users.txt数据准备
+
+```shell
+user1
+user2
+```
+
+
+
+知识点分析1: 添加用户命令
+
+```shell
+useradd 用户名
+```
+
+知识点分析2: 设置每个用户密码默认密码
+
+```shell
+echo "123456" | passwd --stdin 用户名
+```
+
+面试题答案: 脚本代码file6.sh
+
+```shell
+#!/bin/bash
+ULIST=$(cat /root/users.txt)  ##/root/users.txt  里面存放的是用户名，一个名一行
+for UNAME in $ULIST
+do
+        useradd $UNAME
+        echo "123456" | passwd --stdin $UNAME &>/dev/null
+        [ $? -eq 0 ] && echo "$UNAME用户名与密码添加初始化成功!"
+done
+```
+
+## 面试题：筛选单词
+
+问题: 根据给出的数据输出里面单词长度大于3的单词
+
+数据准备
+
+```shell
+I may not be able to change the past, but I can learn from it.
+```
+
+shell脚本file7.sh
+
+```shell
+ echo "I may not be able to change the past, but I can learn from it." | awk -F "[ ,.]" '{for(i=1;i<NF;i++){ if(length($i)>3){print $i}}}'
+```
+
+## 面试题：单词及字母去重排序
+
+问题
+
+```dart
+1、按单词出现频率降序排序！
+2、按字母出现频率降序排序！
+```
+
+file8.txt 文件内容
+
+```shell
+No. The Bible says Jesus had compassion2 on them for He saw them as sheep without a shepherd. They were like lost sheep, lost in their sin. How the Lord Jesus loved them! He knew they were helpless and needed a shepherd. And the Good Shepherd knew He had come to help them. But not just the people way back then. For the Lord Jesus knows all about you, and loves you too, and wants to help you.
+```
+
+按照单词出现频率降序
+
+```shell
+awk -F "[,. ]+" '{for(i=1;i<=NF;i++)S[$i]++}END{for(key in S)print S[key],key}' file8.txt |sort -rn|head
+```
+
+按照字符出现频率降序前10个
+
+```shell
+awk -F "" '{for(i=1;i<=NF;i++)S[$i]++}END{for(key in S)print S[key],key}' file8.txt |sort -rn|head
+```
+
+## 面试题：扫描网络内存活主机
+
+问题:  扫描192.168.56.1到192.168.56.254之间ip的是否存活, 并输出是否在线?
+
+服务器ip存活分析
+
+```shell
+ping ip地址 -c 2
+# 如果ip地址存活发送2个数据包会至少接收返回1个数据包
+```
+
+完整脚本代码
+
+```shell
+#!/bin/bash
+count=0
+for i  in 192.168.56.{1..254}
+do
+    # 使用ping命令发送2个包测试, 并获取返回接收到包的个数
+    receive=$(ping $i -c 2|awk 'NR==6{print $4}')
+    # 接收返回包大于0 说明主机在线
+    if [ ${receive} -gt 0 ]
+    then
+        echo "${i} 在线"
+        ((count+=1))
+    else
+        echo "${i} 不在线"
+    fi
+
+done
+echo "在线服务器有:"$count"个"
+```
+
+## 面试题：MySQL分库备份
+
+```shell
+#!/bin/sh
+user=root      #用户名
+pass=root      #密码
+backfile=/root/mysql/backup #备份路径
+[ ! -d $backfile ] && mkdir -p $backfile #判断是否有备份路径
+cmd="mysql -u$user -p$pass"  #登录数据库
+dump="mysqldump -u$user -p$pass " #mysqldump备份参数
+dblist=`$cmd -e "show databases;" 2>/dev/null |sed 1d|egrep -v "_schema|mysql"` #获取库名列表
+echo "需要备份的数据列表:"
+echo $dblist
+echo "开始备份:"
+for db_name in $dblist #for循环备份库列表
+do
+ printf '正在备份数据库:%s' ${db_name}
+ $dump $db_name 2>/dev/null |gzip >${backfile}/${db_name}_$(date +%m%d).sql.gz #库名+时间备份打包至指定路径下
+ printf ',备份完成\n'
+done
+echo "全部备份完成!!!"
+```
+
+## 面试题：MySQL数据库分库分表备份
+
+```shell
+#!/bin/sh
+user=root      #用户名
+pass=root      #密码
+backfile=/root/mysql/backup #备份路径
+[ ! -d $backfile ] && mkdir -p $backfile #判断是否有备份路径
+cmd="mysql -u$user -p$pass"  #登录数据库
+dump="mysqldump -u$user -p$pass " #mysqldump备份参数
+dblist=`$cmd -e "show databases;" 2>/dev/null |sed 1d|egrep -v "_schema|mysql"` #获取库名列表
+echo "需要备份的数据列表:"
+echo $dblist
+echo "开始备份:"
+for db_name in $dblist #for循环备份库列表
+do
+ printf '正在备份数据库:%s\n' ${db_name}
+ tables=`mysql -u$user -p"$pass" -e "use $db_name;show tables;" 2>/dev/null|sed 1d`
+ for j in $tables
+  do
+    printf '正在备份数据库 %s 表 %s ' ${db_name} ${j}
+    $dump -B --databases $db_name --tables $j 2>/dev/null > ${backfile}/${db_name}-${j}-`date +%m%d`.sql
+    printf ',备份完成\n'
+  done
+
+
+ printf '数据库 %s 备份完成\n' ${db_name}
+done
+echo "全部备份完成!!!"
+```
