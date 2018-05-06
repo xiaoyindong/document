@@ -85,4 +85,25 @@ gitlab-ctl status
 
 9. 设置密码
 
-旧版的```gitlab```首次访问会进入设置密码页面，后面就可以
+旧版的```gitlab```首次访问会进入设置密码页面，后面就可以使用设置的密码登录管理账号。
+
+新版本可以进入```radis```日志修改密码。
+
+```s
+# 进入radis日志
+gitlab-rails console
+
+# 首先查询管理员账号id。
+user = User.where(username:'root').first
+#<User id:1 @root>
+
+# 设置密码为123456789
+user.password = '123456789'
+
+# 确认密码
+user.password_confirmation = '123456789'
+
+# 保存
+user.save!
+
+# Enqueued ActionMailer::Mail
