@@ -127,4 +127,42 @@ u.password='123456789'
 # 保存用户密码
 u.save!
 
-# Enqueued ActionMailer::DeliveryJob (
+# Enqueued ActionMailer::DeliveryJob (Job ID: 99118288-b58b-4d52-94c1-28979bcb63e8) to Sidekiq(mailers) with arguments: "DeviseMailer", "password_change", "deliver_now", gid://gitlab/User/1
+# => true
+
+# 退出
+quit
+```
+
+10. 登录
+
+可以在浏览器中使用```ip```或者域名访问。
+
+## 3. gitlab应用
+
+```gitlab```的后台管理可以针对不用的项目不同用户去定制不同的访问策略，开发与运维的两个角色可以各司其职互不影响的在自己所在的场景下工作。
+
+作为开发人员关注的点肯定是代码的快速发布和审核，一般项目测试之后我们会提交一个```master```分支合并的申请等待领导去审核，决定是否确认合并操作，确认之后开发人员会在另一个```fueture```分支继续工作。
+
+作为运维人员关注的另一个点是保证```gitlab```的维护和管理，例如```CPU```利用率，内存使用情况。
+
+运维人员点击```设置``` -> ```Monitoring``` -> ```System Info```这里面包含了若干系统资源的状态值。
+
+最后，如果你是本地测试而不像校验https时，可以使用```http.sslVerify=false```禁用。
+```s
+git -c http.sslVerify=false clone http://gitlab.example.com/test/test1.git
+```
+
+## 4. 修改域名
+
+如果要是设置域名，可以在运行```yum install -y gitlab-ce```命令的时候通过```EXTERNAL_URL```设置。这个域名可以是真实购买的域名，如果你要把```gitlab```安装到公网比如阿里云上的话。
+
+```s
+external_url="http://gitlab.example.com" yum install -y gitlab-ce
+```
+
+也可以安装之后通过修改```/etc/gitlab/gitlab.rb```修改域名。
+
+```s
+#查看当前绑定的域名或者IP
+grep "^external_url" /etc/gitlab/g
