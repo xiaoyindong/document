@@ -106,4 +106,25 @@ user.password_confirmation = '123456789'
 # 保存
 user.save!
 
-# Enqueued ActionMailer::Mail
+# Enqueued ActionMailer::MailDeliveryJob (Job ID: 5541291d-d7e5-4684-b92d-bc5386a6aea5) to Sidekiq(mailers) with arguments: "DeviseMailer", "password_change", "deliver_now", {:args=>[#<GlobalID:0x00007f539eacbdd8 @uri=#<URI::GID gid://gitlab/User/1>>]}
+# => true
+
+# 退出
+quit
+```
+
+```save```如果报错的话，检查下密码的长度，需要```8```位以上
+
+接着可以使用用户名```root```及密码```123456789```登录了。
+
+除了上面方式还可以```id=1```定位超级管理员，修改密码。
+
+```s
+u= User.where(id: 1).first
+
+u.password='123456789'
+# => "new_password" 
+# 保存用户密码
+u.save!
+
+# Enqueued ActionMailer::DeliveryJob (
