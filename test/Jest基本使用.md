@@ -241,4 +241,149 @@ export default {
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
   // testPathIgnorePatterns: [
   //   "/node_modules/"
-  /
+  // ],
+
+  // The regexp pattern or array of patterns that jest uses to detect test files
+  // testRegex: [],
+
+  // This option allows the use of a custom results processor
+  // testResultsProcessor: undefined,
+
+  // This option allows use of a custom test runner
+  // testRunner: "jest-circus/runner",
+
+  // This option sets the URL for the jsdom environment. It is reflected in properties such as location.href
+  // testURL: "http://localhost",
+
+  // Setting this value to "fake" allows the use of fake timers for functions such as "setTimeout"
+  // timers: "real",
+
+  // A map from regular expressions to paths to transformers
+  // transform: undefined,
+
+  // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
+  // transformIgnorePatterns: [
+  //   "/node_modules/",
+  //   "\\.pnp\\.[^\\/]+$"
+  // ],
+
+  // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
+  // unmockedModulePathPatterns: undefined,
+
+  // Indicates whether each individual test should be reported during the run
+  // verbose: undefined,
+
+  // An array of regexp patterns that are matched against all source file paths before re-running tests in watch mode
+  // watchPathIgnorePatterns: [],
+
+  // Whether to use watchman for file crawling
+  // watchman: true,
+};
+```
+
+这里面的内容不需要都了解，用到的时候查一下，改一下就可以了。比如testMatch是匹配哪些测试文件，如果需要修改就放开修改就可以了。同样testPathIgnorePatterns是忽略哪些文件的测试。[文档在这(https://jestjs.io/docs/configuration)](https://jestjs.io/docs/configuration)。
+
+当然除了配置文件还可以通过命令行的参数指定一些简单的命令，也就是jest cli选项。[文档在这(https://jestjs.io/docs/cli)](https://jestjs.io/docs/cli)。
+
+```s
+jest my-test #or
+jest path/to/my-test.js
+```
+
+## 3. 监视模式
+
+监视模式有两种方式，一种是--watchAll会在监视文件更改之后去重新运行所有的测试文件，即便其他文件没有改也会跑一遍。
+
+```js
+npx jest --watchAll
+```
+
+第二种是--watch，需要git支持，会监视git仓库中的文件更改，并重新运行与已更改文件相关的测试。
+
+```js
+npx jest --watch
+```
+
+监视模式使用测试时jest提供了一些辅助命令，这些命令在测试运行起来之后控制台也会有提示。按不同的按键会有不同的功能。比如敲击回车会重新跑一遍测试用例。按f只运行失败的测试，在这种模式下还要运行一下f才能退出看到其他的测试。按o只运行与更改文件相关的测试。按q会退出测试模式。按p会以文件名正则表达式的模式进行过滤，可以输入，并且是以绝对路径的方式进行检测，如果文件夹与名称匹配会将所有文件作为测试运行。按t以测试名称正则表达式进行测试，就是过滤test函数中的第一个参数字符串。
+
+## 4. 使用ES6模块
+
+如果想要在jest测试模块中使用ES6需要额外配置，首先需要安装@babel/jest，@babel/core，@babel/preset-env。
+
+```s
+npm install -D @babel/jest @babel/core @babel/preset-env
+```
+
+babel.config.js
+
+```js
+module.exports = {
+    preset: [
+        ['@babel/preset-env'], 
+        {
+            targets: { node: 'current' }
+        }
+    ]
+}
+```
+
+jest在运行测试测时候会自动找到Babel将ES6代码转换为ES5执行。jest结合Babel的运行原理，运行测试之前，结合Babel先把代码做一次转换，模块被转换为CommonJS后再运行转换后的测试用例代码。
+
+```js
+import { sum } from './demo';
+test('sum', () => {
+    expect(sum(1, 2)).toBe(3);
+})
+```
+
+## 5. 全局API
+
+在测试文件中jest会将所有方法和对象放入全局环境中，无需要求或导入任何内容即可使用，当然如果喜欢显式导入也是可以的。
+
+```js
+import { describe, expect, test } from 'jest';
+```
+
+### 1. test
+
+test是测试用例，每个测试文件都至少要有一个测试用例，函数别名是it，接收三个参数it(name, fn, timeout);
+
+```js
+it('global-api test', () => {
+    console.log('global api');
+})
+
+it.only('global-api test', () => { // 仅运行这一个，其他的都不运行，当多个用例在一个文件中时
+
+})
+```
+
+### 2. expect
+
+测试用例中同样需要检查值是否满足某些条件，expect可以访问多个匹配器验证不同的内容。
+
+```js
+test('two plug two is four', () => {
+    expect(2 + 2).toBe(4);
+
+    expect({ name: 'jack' }).toEqual({ name: 'jack' });
+
+    expect('Christoph').toMatch(/stop/);
+
+    expect(4).toBeGreaterThan(3);
+
+    expect(4).toBeGreaterThan(5);
+})
+```
+
+### 3. describe
+
+创建一个将几个相关测试组合在一起的块，可以简单的理解为分组。
+
+```js
+const myBeverage = {
+    deliciout: true,
+    sour: false,
+}
+
+describ
