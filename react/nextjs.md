@@ -150,4 +150,146 @@ import styles from './list.moduls.css'
 
 // 导出一个异步函数
 export async function getStaticProps() {
-    // 从文件系统，API，数据库中
+    // 从文件系统，API，数据库中获取数据
+    const data = ...
+    // props属性的值将会传递给组件
+    return {
+        props: ... // 返回的数据
+    }
+}
+
+export default function List(props) {
+    // props中获取到getStaticProps中返回的props
+    rteurn <>
+        <Head>
+            <title>Index Page</title>
+        </Head>
+        <div className={styles.demo}>test</div>
+    </>
+}
+```
+
+2. 服务端渲染
+
+服务端渲染就是构建的时候不去生成html，在页面请求的时候才去动态的生成html返回给浏览器器，这里需要用到getServerSideProps。
+
+同样的写法如果采用服务器端渲染, 需要在组件中导出 getServerSideProps 方法。方法中的context会携带客户端请求带过来的参数。
+
+```js
+export async function getServerSideProps(context) {
+    return {
+        props: {
+            data: context.query
+        }
+    }
+}
+
+export default function List(props) {
+    // props中获取到getStaticProps中返回的props
+    console.log(props);
+    rteurn <>
+        <Head>
+            <title>Index Page</title>
+        </Head>
+        <div className={styles.demo}>test</div>
+    </>
+}
+```
+
+3. 基于动态路由的静态渲染
+
+基于参数为页面组件生成HTML页面，有多少参数就生成多少HTML页面，在构建应用时, 先获取用户可以访问的所有路由参数, 再根据路由参数获取具体数据, 然后根据数据生成静态 HTML。
+
+创建基于动态路由的页面组件文件, 命名时在文件名称外面加上[], 比如[id].js。这里叫id那么返回值中的params对应的值也要叫id
+
+导出异步函数 getStaticPaths, 用于获取所有用户可以访问的路由参数。
+
+```js
+export async function getStaticPaths() {
+    // 获取所有用户可以访问的路由参数
+    // props属性的值将会传递给组件
+    return {
+        // 返回固定格式的路由参数
+        paths: [{params: {id: 1}}, {params: {id: 2}}],
+        // 当用户访问的路由参数没有在当前函数中返回时，是否显示404，false是显示，true是不显示
+        fallback: false
+    }
+}
+```
+
+如果fallback设置为true需要给页面一个等待状态，否则构建会不通过。
+
+```js
+// 判断服务端是否执行静态生成
+import { useRouter } from 'next/router';
+
+export default function List(props) {
+    const router = useRouter();
+    // 如果值为true就是正在静态生成
+    if (router.isFallback) {
+        return <div>loading</div>
+    }
+    rteurn <>
+        <Head>
+            <title>Index Page</title>
+        </Head>
+        <div className={styles.demo}>test</div>
+    </>
+}
+```
+
+最后导出异步函数getStaticProps, 用于根据路由参数获取具体的数据。
+
+这里getStaticPaths 和 getStaticProps 只运行在服务器端, 永远不会运行在客户端, 甚至不会被打包到客户端 JavaScript 中, 意味着这里可以随意写服务器端代码, 比如查询数据库。
+
+```js
+export async function getStaticProps({params}) {
+    // params => id: 1
+    // 此处根据路由参数获取具体数据
+    return {
+        // 将数据传递到组件中进行静态页面的生成
+        props: {}
+    }
+}
+```
+
+4. 自定义404页面
+
+要创建自定义 404 页面, 需要在 pages 文件夹中创建 404.js 文件。
+
+```js
+export default function Custom404() {
+    return <h1>404</h1>
+}
+```
+
+## API Routes
+
+API Routes 可以理解为接口, 客户端向服务器端发送请求获取数据的接口.
+
+Next.js 应用允许 React 开发者编写服务器端代码创建数据接口.
+
+在 pages/api 文件夹中创建 API Routes 文件. 比如 user.js
+
+在文件中默认导出请求处理函数, 函数有两个参数, req 为请求对象, res 为响应对象.
+
+当前 API Routes 可以接收任何 Http 请求方法.
+
+```js
+export default function(req, res) {
+    res.status(200).send({id: 1, name: 'yd'})
+}
+```
+
+不要在 getStaticPaths 或 getStaticProps 函数中访问 API Routes, 因为这两个函数就是在服务器端运行的,  可以直接写服务器端代码.
+
+API Routes可以理解为中间层代理，我们将针对服务的请求发送到node中间层，中间层再去请求服务请求到之后再返回给前端。
+
+```js
+localhost:3000/api/user
+
+{
+    id: 1,
+    name: 'yd'
+}
+```
