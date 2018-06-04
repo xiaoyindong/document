@@ -167,4 +167,122 @@ yarn rollup --config rollup.config.js
         hi: 'Hey Guys, I am yd~'
     };
 
-    var name = "roll
+    var name = "rollup_p";
+    var version = "1.0.0";
+
+    const msg = message.hi;
+    log(msg);
+
+    log(name);
+    log(version);
+
+}());
+```
+
+## 5. 使用Babel和TS
+
+```json
+"devDependencies": {
+    "@babel/core": "^7.15.5",
+    "@babel/preset-env": "^7.15.6",
+    "@babel/preset-typescript": "^7.15.0",
+    "rollup-plugin-babel": "^4.4.0",
+    "typescript": "^4.4.3"
+}
+```
+
+```.babelrc```
+
+```json
+{
+    "presets": [
+        "@babel/preset-env",
+        "@babel/preset-typescript"
+    ]
+}
+```
+
+别忘了初始化```ts```的配置文件```tsconfig.json```。
+
+```rollup```配置文件中```plugins```加入```babel```插件。
+
+```js
+const babel = require('rollup-plugin-babel');
+const extensions = ['.js', '.ts'];
+
+export default {
+    input: {
+        utils: 'src/index.ts',
+    },
+    output: {
+        dir: 'dist',
+        format: 'iife'
+    },
+    plugins: [
+        babel({
+          exclude: 'node_modules/**',
+          extensions,
+        }),
+    ]
+}
+
+```
+
+## 6. 编译less
+
+```json
+"devDependencies": {
+    "rollup-plugin-less": "^1.1.2",
+    "rollup-plugin-postcss": "^3.1.1"
+}
+```
+
+```rollup```配置文件中```plugins```加入```postcss```插件。
+
+```js
+import postcss from 'rollup-plugin-postcss';
+
+export default {
+    input: {
+        utils: 'src/index.ts',
+    },
+    output: {
+        dir: 'dist',
+        format: 'iife'
+    },
+    plugins: [
+        postcss({
+            extensions: [ '.less' ],
+        }),
+    ]
+}
+```
+
+## 7. 压缩代码
+
+```js
+import { uglify } from 'rollup-plugin-uglify';
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+export default {
+    input: {
+        utils: 'src/index.ts',
+    },
+    output: {
+        dir: 'dist',
+        format: 'iife'
+    },
+    plugins: [
+        !isDev && uglify()
+    ]
+}
+
+```
+
+## 8. 加载NPM模块
+
+```rollup```默认只能按照文件路径的方式去加载本地的文件模块，对于```node_modules```中的第三方的模块并不能够像```webpack```一样直接去通过模块的名称导入对应的模块。为了抹平这个差异```rollup```官方给出了```rollup-plugin-node-resolve```插件。使用这个插件可以在代码当直接使用模块名称导入对应的模块。
+
+```s
+yarn add rollup-plugin-node-
