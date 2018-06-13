@@ -305,4 +305,139 @@ p.then(function(value) {
 在```then```方法之后再去```return```一个新的```Promise```，原本的逻辑放在新创建的```Promise```内部即可，因为他是立即执行的一个函数。这里定义一个```promise2```接收新创建的```Promise```，在函数底部返回出去。
 
 ```js
-Primsie.prototype.then = functi
+Primsie.prototype.then = function(onFulfilled, onRejected) {
+    var self = this;
+    const promise2 = new Promise(function (resolve, reject) {
+        if (self.status === 'resolved') {
+            onFulfilled(self.value);
+        }
+
+        if (self.status === 'rejected') {
+            onRejected(self.reason);
+        }
+        if (self.status === 'pending') {
+            self.onResolvedCallbacks.push(function () {
+                onFulfilled(self.value);
+            });
+            self.onRejectedCallbacks.push(function() {
+                onRejected(self.reason);
+            });
+        }
+    })
+    return promise2;
+}
+```
+
+还需要拿到```then```方法执行的结果，前一个```then```方法的返回值会传递给下一个then。
+
+```js
+...
+const x = onFulfilled(self.value);
+...
+const x = onRejected(self.reason);
+...
+```
+
+如果```x```是一个普通值可以直接调用```promise2```的```resolve```方法，将这个值传递出去，这样下一个```then```就可以获取的到，所以执行```resolve(x)```。
+
+```js
+Primsie.prototype.then = function(onFulfilled, onRejected) {
+    var self = this;
+    const promise2 = new Promise(function (resolve, reject) {
+        if (self.status === 'resolved') {
+            const x = onFulfilled(self.value);
+            resolve(x);
+        }
+
+        if (self.status === 'rejected') {
+            const x = onRejected(self.reason);
+            resolve(x);
+        }
+        if (self.status === 'pending') {
+            self.onResolvedCallbacks.push(function () {
+                const x = onFulfilled(self.value);
+                resolve(x);
+            });
+            self.onRejectedCallbacks.push(function() {
+                const x = onRejected(self.reason);
+                resolve(x);
+            });
+        }
+    })
+    return promise2;
+}
+```
+
+如果失败需要执行```reject```方法，这里使用```try...catch```捕获错误。
+
+```js
+Primsie.prototype.then = function(onFulfilled, onRejected) {
+    var self = this;
+    const promise2 = new Promise(function (resolve, reject) {
+        if (self.status === 'resolved') {
+            try {
+                const x = onFulfilled(self.value);
+                resolve(x);
+            } catch(e) {
+                reject(e);
+            } 
+        }
+
+        if (self.status === 'rejected') {
+            try {
+                const x = onRejected(self.reason);
+                resolve(x);
+            } catch(e) {
+                reject(e);
+            } 
+        }
+        if (self.status === 'pending') {
+            self.onResolvedCallbacks.push(function () {
+                try {
+                    const x = onFulfilled(self.value);
+                    resolve(x);
+                } catch(e) {
+                    reject(e);
+                } 
+            });
+            self.onRejectedCallbacks.push(function() {
+                try {
+                    const x = onRejected(self.reason);
+                    resolve(x);
+                } catch(e) {
+                    reject(e);
+                } 
+            });
+        }
+    })
+    return promise2;
+}
+```
+
+然后```onFulfilled(self.value)```返回的值不一定是一个常量，还可能是个```promise```，需要写一个方法来判断，如果返回值是```promise```就调用```promise```，否则才继续向```resolve```传递。
+
+这里定义一个```resolvePromise```方法，在函数中判断返回值x和promse2的关系以及后续的处理，所以需要传递```promise2```参数，```x```参数，```resolve```参数和```reject```参数。
+
+这```4```个参数是不能直接传递至```resolvePromise```中的，文档中要求他们不能在当前的上下文，所以要在```try...catch```代码块外层添加```setTimeout```在异步线程中添加。
+
+```js
+
+function resolvePromise (promise2, x, resolve, reject) {
+
+}
+
+Primsie.prototype.then = function(onFulfilled, onRejected) {
+    var self = this;
+    const promise2 = new Promise(function (resolve, reject) {
+        if (self.status === 'resolved') {
+            setTimeout(function() {
+                try {
+                    const x = onFulfilled(self.value);
+                    resolvePromise(promise2, x, resolve, reject);
+                } catch(e) {
+                    reject(e);
+                } 
+            }, 0)
+        }
+
+    
