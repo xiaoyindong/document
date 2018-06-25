@@ -66,4 +66,47 @@ export function reactive (target) {
 
 在依赖收集的过程会创建三个集合，分别是targetMap,depsMap以及dep。
 
-其中targetMap是用来记录目标对象和字典他使用的是weakMap，key是目标对象，targetMap的值是dep
+其中targetMap是用来记录目标对象和字典他使用的是weakMap，key是目标对象，targetMap的值是depsMap, 类型是Map，这里面的key是目标对象的属性名称，值是一个Set集合,集合中存储的元素是Effect函数。因为可以多次调用同一个Effect在Effect访问同一个属性，这个时候这个属性会收集多次依赖对应多个Effect函数。
+
+一个属性可以对应多个Effect函数，触发更新的时候可以通过属性找到对应的Effect函数，进行执行。
+
+我们这里分别来实现一下effect和track两个函数。
+
+effect函数接收一个函数作为参数，我们首先在外面定一个变量存储callback, 这样track函数就可以访问到callback了。
+
+```js
+
+let activeEffect = null;
+export function effect (callback) {
+    activeEffect = callback;
+    // 访问响应式对象属性，收集依赖
+    callback();
+    // 依赖收集结束要置null
+    activeEffect = null;
+}
+```
+
+track函数接收两个参数目标对象和属性, 他的内部要将target存储到targetMap中。需要先定义一个这样的Map。
+
+```js
+
+let targetMap = new WeakMap()
+
+export function track (target, key) {
+    // 判断activeEffect是否存在
+    if (!activeEffect) {
+        return;
+    }
+    // depsMap存储对象和effect的对应关系
+    let depsMap = targetMap.get(target)
+    // 如果不存在则创建一个map存储到targetMap中
+    if (!depsMap) {
+        targetMap.set(target, (depsMap = new Map()))
+    }
+    // 根据属性查找对应的dep对象
+    let dep = depsMap.get(key)
+    // dep是一个集合，用于存储属性所对应的effect函数
+    if (!dep) {
+        // 如果不存在，则创建一个新的集合添加到depsMap中
+        depsMap.set(key, (dep = new Set()))
+    }
