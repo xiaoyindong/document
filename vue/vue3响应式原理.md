@@ -37,4 +37,14 @@ export function reactive (target) {
             return convert(result)
         },
         set (target, key, value, receiver) {
-            const oldValue = Reflect.get(target, key, r
+            const oldValue = Reflect.get(target, key, receiver)
+            let result = true;
+            // 需要判断当前传入的新值和oldValue是否相等，如果不相等再去覆盖旧值，并且触发更新
+            if (oldValue !== value) {
+                result = Reflect.set(target, key, value, receiver)
+                // 触发更新...
+            }
+            // set方法需要返回布尔值
+            return result;
+        },
+    
