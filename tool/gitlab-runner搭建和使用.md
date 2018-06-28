@@ -58,4 +58,30 @@ gitlab-runner status
 
 ## 4. 注册
 
-注册将```runner```与一个或多个```GitL
+注册将```runner```与一个或多个```GitLab```实例绑定的过程，实例是指```整个gitlab```，```group组```，```某个仓库```。
+
+通过重复执行```register```命令，可以在同一台主机上注册多个运行程序，每个运行程序具有不同的配置。也就是可以生成多个```runner```。
+
+```s
+sudo gitlab-runner register
+```
+
+#### 1. Please enter the gitlab-ci coordinator URL
+
+输入要注册的```gitla```b网站的地址，必须是```http```或者```https```路径。可以是域名也可以是```ip```。
+
+#### 2. Please enter the gitlab-ci token for this runner
+
+输入```token```，可以是具体某个工程的```token```，也可以是某个组的```token```或者整个```gitlab```的```token```。
+
+- gitlab全仓库token需要administrator账号登录，Admin -> Overview -> Runners找到
+
+- group runner 可在组Settings -> CI/CD -> expand -> Runners找到
+
+- project runner，可在项目Settings > CI/CD -> expand -> Runners找到
+
+#### 3. Please enter the gitlab-ci description for this runner
+
+输入runner的描述信息，随便填写或者不填写都可以，主要用于标识。
+
+#### 4. Please enter the gitlab-ci tags for this runner
