@@ -24,4 +24,11 @@ curl -sSl https://get.docker.com/ | sh
 
 ```Gitlab CI```对```Runner```并没有什么严格的要求，可以是一台```linux```实体机，也可以是个```Docker```容器。
 
-针对不同的```Runner```，可以在注册时划分不同的固有角色（https://docs.gitlab.com/runner/executors/index.html），以及打上不同的
+针对不同的```Runner```，可以在注册时划分不同的固有角色（https://docs.gitlab.com/runner/executors/index.html），以及打上不同的自定义标签，以便于```GitLab CI```在调度时灵活分配任务，多个```Runner```并行执行任务等等。
+
+```GitLab```针对免费用户，提供了每个月```2000```分钟的免费构建时间，在不超过这个时间时，可以直接使用```GitLab```提供的共享```Runner```。但是使用别人的服务器来进行构建任务，总是会暴露一些敏感信息出去，所以自建```GitLab Runner```，就是最佳选择了。
+
+```s
+
+# 添加yum源
+curl 
