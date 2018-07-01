@@ -49,4 +49,15 @@
 ## 超链接
 
 文字链接: [markdown](/tools/MarkDown.html);
-```文字链接: [markdown
+```文字链接: [markdown](/tools/MarkDown.html)```;
+
+## 锚点
+
+跳转到[目录](#index)
+```跳转到[目录](#index)```;
+
+自动链接<https://www.madaozhijian.com/>
+
+## 插入图片
+
+![图片alt](//cdn.myweimai.com/images/297133e32ea39
