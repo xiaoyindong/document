@@ -165,4 +165,61 @@ module.exports = {
 }
 ```
 
-配置对象中目前有```4```个配置选项，```JavaScript```在不同的运行环境中有不同的```API```可以被调用，这些```API```很多时候都是以全局的成员方式提供，例如在浏览器环境可以直接去使用```window```和```document```对象。```env```的选项作用就是标记代码最终的运行环境，```eslint```会根据环境信息来判断某一个全局成员是否是可用的，从而去避免代码当中去使用到那些不存在的成员。```browser```为
+配置对象中目前有```4```个配置选项，```JavaScript```在不同的运行环境中有不同的```API```可以被调用，这些```API```很多时候都是以全局的成员方式提供，例如在浏览器环境可以直接去使用```window```和```document```对象。```env```的选项作用就是标记代码最终的运行环境，```eslint```会根据环境信息来判断某一个全局成员是否是可用的，从而去避免代码当中去使用到那些不存在的成员。```browser```为```true```就表示代码会运行在浏览器环境中。
+
+生成```eslint```配置的时候如果选择的是```standard```风格，最终这里的配置也会继承```standard```配置，在```standard```风格中做了一些具体的配置```document```和```window```在任何的环境中都可以使用。
+
+那```env```具体可以设置以下环境
+
+| 环境 | 说明 |
+| --- | --- |
+| browser | 浏览器环境中的全局变量 |
+| node | nodejs全局变量和作用域 |
+| commonjs | CommonJs全局变量和CommonJs作用域(用于 Browserify/webpack打包的只有浏览器中运行的代码) |
+| shared-node-browser | NodeJs和Browser通用全局变量。 |
+| es6 | 启用除了modules以外的所有ECMAScript6特性，该选项会自动设置ecmaVersion解析器选项为6 |
+| worker | Web Workers 全局变量 |
+| amd | 将require和define定义为像amd一样的全局变量。 |
+| mocha | 添加所有 Mocha 测试全局变量 |
+| jasmine | 添加所有jasmine版本1.3和2.0的测试全局变量。 |
+| jest | Jest 全局变量 |
+| phantomjs | PhantomJs全局变啦 |
+| protractor | protractor全局变量 |
+| qunit | QUnit 全局变量 |
+| jquery | JQuery 全局变量 |
+| prototypejs | Prototype-js 全局变量 |
+| shelljs | shelljs 全局变量 |
+| meteor | Meteor 全局变量 |
+| mongo | MongoDB 全局变量 |
+| applescript | AppleScript 全局变量 |
+| nashorn | Java 8 Nashorn 全局变量 |
+| serviceworker | Service Worker全局变量 |
+| atomtest | Atom 测试全局变量 |
+| embertest | Ember全局变量 |
+| webextensions | WebExtensions全局变量 |
+| greasemonkey | Greasemonkey全局变量 |
+
+这些环境并不是互斥的，可以同时开启多个不同的环境。
+
+```js
+module.exports = {
+    env: {
+        browser: true,
+        node: true,
+        es2020: true
+    },
+    extends: [
+        'standard'
+    ],
+    parserOptions: {
+        ecamVersion: 11
+    },
+    rules: {
+
+    }
+}
+```
+
+```extends```选项是用来继承一些共享的配置，如果需要在多个项目当中共享一个```eslint```配置，可以定义一个公共的配置文件然后在这里继承就可以了。这个属性值是一个数组，数组中的每一项都是一个配置。
+
+```parserOptions```的作用是设置语法解析器的，```ECMAScript```近几年发布了很多版本，这个配置的作用就是是否允许
