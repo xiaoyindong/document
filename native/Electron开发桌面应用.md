@@ -60,4 +60,48 @@ app.whenReady().then(() => {
     createWindow();
 
     app.on('activate', () => {
-        console.l
+        console.log('激活的时候')
+    })
+})
+
+app.on('window-all-closed', () => {
+    console.log('所有窗口都关闭');
+    // 关闭应用
+    app.quit(); 
+})
+```
+
+## 3. 生命周期
+
+### 1. ready: app初始化完成
+
+```js
+app.on('ready', () => {
+    const mainWin = new BrowserWindow({
+        width: 800,
+        height: 400
+    })
+})
+```
+
+### 2. dom-ready: 一个窗口中的文本文件加载完成
+
+```webContents```用于控制当前窗口的内容，每个窗口都有一个```webContents```。
+
+```js
+mainWin.webContents.on('dom-ready', () => {
+    
+})
+```
+
+### 3. did-finsh-load: 导航完成时触发，dom-ready之后
+
+```js
+mainWin.webContents.on('did-finsh-load', () => {
+    
+})
+```
+
+### 4. window-all-closed: 所有窗口都关闭时触发，如果没有监听会直接退出
+
+```
