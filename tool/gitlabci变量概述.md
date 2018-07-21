@@ -56,4 +56,15 @@
 | CI_PROJECT_URL | 8.10 | 0.5 | 项目的访问地址（http形式） |
 | CI_REGISTRY | 8.10 | 0.5 | 如果启用了Container Registry，则返回GitLab的Container Registry的地址 | 
 | CI_REGISTRY_IMAGE | 8.10 | 0.5 | 如果为项目启用了Container Registry，它将返回与特定项目相关联的注册表的地址 |
-| CI_REGISTRY_PASSWORD | 9.0 | all | 用于push
+| CI_REGISTRY_PASSWORD | 9.0 | all | 用于push containers到GitLab的Container Registry的密码 |
+| CI_REGISTRY_USER | 9.0 | all | 用于push containers到GItLab的Container Registry的用户名 |
+| CI_SERVER | all | all | 标记该job是在CI环境中执行 |
+| CI_SERVER_NAME | all | all | 用于协调job的CI服务器名称 |
+| CI_SERVER_REVISION | all | all | 用于调度job的GitLab修订版 |
+| CI_SERVER_VERSION | all | all | 用于调度job的GItLab版本 |
+| ARTIFACT_DOWNLOAD_ATTEMPTS | 8.15 | 1.9 | 尝试运行下载artifacts的job的次数 |
+| GET_SOURCES_ATTEMPTS | 8.15 | 1.9 | 尝试运行获取源的job次数 |
+| GITLAB_CI | all | all | 用于指示该job是在GItLab CI环境中运行 |
+| GITLAB_USER_ID | 8.12 | all | 开启该job的用户ID |
+| GITLAB_USER_EMAIL | 8.12 | all | 开启该job的用户邮箱 |
+| GITLAB_USER_NAME | 8.1
