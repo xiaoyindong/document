@@ -26,4 +26,12 @@
 
 ```name space```包含所有的```name space```, 比如说```user-name-space```, ```net-name-space```, 其实主要还是```network name space```。
 
-具有相同的```network name space```组合，容器可能有一个也可能
+具有相同的```network name space```组合，容器可能有一个也可能有多个，如果是多个的话他们是共享一个```network space```。
+
+```Docker```，```kubelet```，```kube-proxy```, ```fluentd```。 
+
+```docker```是容器组件，```kubelet```是```master```节点控制```node```节点的代理桥梁。```kube-proxy```和网络有关主要做端口的代理和转发，负载均衡等功能。```fluentd```主要是日志的采集，存储和查询。
+
+## 2. 安装
+
+```minikube```可以快速在本地搭建一个只有一个节点的集群，这个节点既是```mast
