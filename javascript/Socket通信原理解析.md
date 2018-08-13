@@ -96,4 +96,25 @@ const server = net.createServer(sock=> {
         // 删除第一行和最后一行，没啥用
         lines = lines.slice(1, lines.length - 2);
         // 将所有请求头通过'分号空格'切开
-      
+        const headers = {};
+        lines.forEach(line => {
+            const [key, value ] = line.split(': ');
+            // 将请求头变成小写
+            headers[key.toLowerCase()] = val;
+        })
+        console.log(headers);
+        if (headers['upgrade'] != 'websocket') {
+            console.log('其他协议，暂不支持');
+            sock.end();
+        } else if (headers['sec-websocket-version'] != 13) {
+            console.log('不兼容不是13的版本');
+            sock.end();
+        } else {
+            const key = headers['sec-websocket-key'];
+            // 13版本的源码是258E，可以百度的到
+            const mask = '258EAFA5-47DA-95CA-C5AB0DC85B11';
+            // 需要把key和mask加在一起，然后用sha1加密，再变成base64，还给客户端
+            // sha1(key + mask) -> base64 -> client;
+            const hash = crypto.createHash('sha1');
+            hash.update(key + mask);
+            co
