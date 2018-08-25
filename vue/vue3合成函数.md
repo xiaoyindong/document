@@ -55,4 +55,14 @@ const app = createApp({
 })
 ```
 
-- rea
+- reactive
+
+setup中定义的position并不是响应式的，不过他的返回值却可以在methods等中使用。vue3提供reactive方法来将数据变成响应式。这里不使用observerable是为了避免和rxjs重名出现混淆。
+
+```js
+import { createApp, reactive } from './node_modules/vue/dist/vue.esm-browser.js'
+
+....
+    setup() {
+        const position = reactive({
+            x: 0,
