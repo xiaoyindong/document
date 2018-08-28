@@ -18,4 +18,16 @@ yarn plop component
 yarn add plop --dev
 ```
 
-安装后在项目跟目录新建```plopfile.js```文件，这个文件是```plop```工作的一个入口文件，需要导
+安装后在项目跟目录新建```plopfile.js```文件，这个文件是```plop```工作的一个入口文件，需要导出一个函数，而且这个函数可以接收一个叫```plop```的对象，对象提供了一系列工具函数，用于创建生成器的任务。
+
+```js
+module.exports = plop => {
+    plop.setGenerator('component', {});
+}
+```
+
+```plop```有个成员叫```setGenerator```, 接收两个参数，第一个参数是生成器的名字，第二个参数是生成器的一些选项。配置选项中需要指定生成器的参数。
+
+```js
+{
+    description: '生成器的
