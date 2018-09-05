@@ -225,4 +225,98 @@ gatsby-transformer-json插件不需要配置，直接写上名字就可以了。
 ```js
 modules.exports = {
     plugins: [
-   
+        {
+            resolve: "gatsby-source-filesystem",
+            options: {
+                name: "json",
+                path: `${__dirname}/data.json`
+            }
+        },
+        "gatsby-transformer-json"
+    ]
+}
+```
+
+重新构建项目之后我们就可以在组件中通过graphql查询到数据了。
+
+## 图像优化
+
+之所以要进行图像优化是因为图像文件和数据文件不在源代码中的同一位置，图像文件在static文件夹中，数据文件在json中，我们希望他们能在同一个位置，因为他们是有关联关系的。
+
+第二个问题是图像路径基于构建站点的绝对路径, 而不是相对于数据的路径, 难以分析出图片的真实位置。
+
+第三个问题是图像没有经过任何优化操作，比如说压缩体积，响应式图片等等。
+
+要对图像优化需要用到几个插件。
+
+第一个就是gatsby-source-filesystem他是用于将本地文件信息添加至数据层当中，第二个是gatsby-plugin-sharp:他是用于提供本地图像的处理功能(调整图像尺寸, 压缩图像体积 等等)，第三个是gatsby-transformer-sharp是将 gatsby-plugin-sharp 插件处理后的图像信息添加到数据层。最后我们要用到gatsby-image，这是一个React 组件, 优化图像显示, 他是基于 gatsby-transformer-sharp 插件转化后的数据。
+
+通过这些插件我们对图片做了生成多个具有不同宽度的图像版本, 为图像设置 srcset 和 sizes 属性, 因此无论您的设备是什么宽度都可以加载到合适大小的图片。大屏显示器就显示大图片，小屏显示器就显示小图片。
+
+使用"模糊处理"技术, 其中将一个20px宽的小图像显示为占位符, 直到实际图像下载完成为止。
+
+```s
+npm install gatsby-plugin-sharp gatsby-transformer-sharp gatsby-image
+```
+
+安装之后我们创建一个json文件夹，将json数据放在这个文件夹中，别忘记修改gatsby-source-filesystem插件中对应的位置。接着我们再把images文件夹从static文件夹中移动到json文件夹中。让图片和数据放在一起。
+
+我们在json中添加一个图片数据，别忘了找一张图片放在images文件夹中，假设文件名为1.jpg
+
+json/data.json
+```js
+[
+    {
+        "title": "图片",
+        "url": "./images/1.jpg"
+    }
+]
+```
+
+我们需要在plugins中添加两个插件。
+
+```js
+modules.exports = {
+    plugins: [
+        {
+            resolve: "gatsby-source-filesystem",
+            options: {
+                name: "json",
+                path: `${__dirname}/json/data.json`
+            }
+        },
+        "gatsby-transformer-json",
+        "gatsby-plugin-sharp",
+        "gatsby-transformer-sharp"
+    ]
+}
+```
+
+重启项目就生效了。在allDataJson中就可以找到数据和图片。
+
+```s
+allDataJson.nodes.url.childImagesSharp
+```
+
+```js
+import React from 'react';
+import { graphql } from 'gatsby';
+import Img from 'gatsby-image'
+
+export default function Product({ data }) {
+    console.log(data.allDataJson.nodes);
+    const node = data.allDataJson.nodes[0];
+    return <div>
+        <Img fluid={node.url.childImageSharp.fluid}/>   
+    </div>
+}
+
+export const query = graphql`
+    query {
+        allProductsJson {
+            nodes {
+                title
+                url {
+                    childImageSharp {
+                        fluid {
+                            as
