@@ -98,4 +98,128 @@ bb.__ proto__.constructor = B; // true;
 console.log(Object.prototype.__ proto__); // null;
 ```
 
-![image.png](https://upload-images.jianshu.io/upload_images/14
+![image.png](https://upload-images.jianshu.io/upload_images/14119996-071378e3a37098af.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+## 4. Function对象
+
+我们知道，函数也是对象，任何函数都可以看作是由构造函数```Function```实例化的对象，所以```Function```与其原型对象之间也存在如下关系
+
+![image.png](https://upload-images.jianshu.io/upload_images/14119996-661a7ae7754cc1c6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+如果将```Foo```函数看作实例对象的话，其构造函数就是```Function()```，原型对象自然就是Function的原型对象；同样```Object```函数看作实例对象的话，其构造函数就是```Function()```，原型对象自然也是```Function```的原型对象。
+
+![image.png](https://upload-images.jianshu.io/upload_images/14119996-750c436199405a44.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+如果```Function```的原型对象看作实例对象的话，如前所述所有对象都可看作是```Object```的实例化对象，所以```Function```的原型对象的```__ proto __```指向```Object```的原型对象。
+
+![image.png](https://upload-images.jianshu.io/upload_images/14119996-41333643103a6340.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+到这里```prototype```、```__ proto __```、```constructor```三者之间的关系我们就说完了。
+
+## 5. 实现继承
+
+```js
+function Animal() {
+    this.type = '动物';
+}
+Animate.prototype.eat = function() {
+  console.log('吃食物');
+}
+```
+
+上面定义了一个动物类，作为父类
+
+```
+function Cat(name) {
+    this.name = name || ‘小猫’;
+}
+```
+
+定义了一个猫作为子类，这里我们要继承动物类的```eat```方法和```type```属性
+
+```js
+function Cat(name){
+  Animal.call(this);
+  this.name = name || '小猫';
+}
+```
+
+在实例化```Cat```时通过```call```执行了```Animal```类, 这样```Animal```中的```this```就被修改为当前```Cat```的```this```。所有的属性也会加在```Cat```上。
+
+```js
+(function(){
+  // 创建一个没有实例方法的类
+  var Super = function(){};
+  Super.prototype = Animal.prototype;
+  //将实例作为子类的原型
+  Cat.prototype = new Super();
+})();
+```
+
+通过寄生方式，砍掉父类的实例属性，这样，在调用两次父类的构造的时候，就不会初始化实例方法/属性。而父类的方法仍旧可以赋值给子类。
+
+```Cat.prototype = new Super()```; 可以实现方法的继承，是因为，根据前面的知识我们知道 ```new Cat()```的```__ proto __```是指向 ```Cat```的原型的。
+
+```js
+(new Cat()).__ proto __ === Cat.prototype; // true
+```
+
+```new Cat()```所有的方法都是从原型上取到的。
+
+我们通过 ```Cat.prototype = new Super()```; 公式变成了。
+
+```(new Cat()).__ proto __ = Cat.prototype = new Super()```；
+
+所以现在```(new Cat()).__proto__ ```指向了 ```Super```的```prototype```。也就是```new Cat```的方法是继承自```Super.prototype```。
+
+```Super.prototype```又在前一句等于```Animal.prototype```。所以实现了```Cat```继承```Animal```。
+
+这里我们就实现了```js```属性和方法的继承。不过还在最后一个小问题。
+
+我们知道``` prototype``` 和 ````constructor```` 是相互指向的。
+
+```Cat.prototype.constructor``` 应该等于 ```Cat```;
+
+但是随着我们的修改了```Cat.prototype = Super.prototype```;
+
+现在```Cat.prototype.constructor```是等于```Super```的。
+
+所以我们还应该纠正这个问题，一句话搞定。
+
+```js
+Cat.prototype.constructor = Cat; // 需要修复下构造函数
+```
+
+以上就是```js```的原型继承，完整代码如下。
+
+```js
+// 创建一个父类
+function Animal() {
+    this.type = '动物';
+}
+// 给父类添加一个方法
+Animate.prototype.eat = function() {
+  console.log('吃食物');
+}
+
+// 创建一个子类
+function Cat(name){
+  // 继承Animal的属性
+  Animal.call(this);
+  this.name = name || '小猫';
+}
+
+// 继承 Animal 的方法
+
+(function(){
+  // 创建一个没有实例方法的类
+  var Super = function(){};
+  Super.prototype = Animal.prototype;
+  //将实例作为子类的原型
+  Cat.prototype = new Super();
+})();
+// 修正构造函数
+Cat.prototype.constructor = Cat; 
+```
+
+好啦，```js```的继承原理和```prototype```,```__proto__```, ```constructor```之间的关系我们就说完了，```ES6```底层的实现方式原理基本相同。
