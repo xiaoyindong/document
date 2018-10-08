@@ -36,4 +36,13 @@ const upload = () => {
        password: 'xxxx',
        port:22
    }).then(function () {
-       // 上传网站的发布包至服务器中的位置，(__dirname + '/dist.zip' 为
+       // 上传网站的发布包至服务器中的位置，(__dirname + '/dist.zip' 为本地文件位置， '/home/dist.zip'：服务器中的位置)
+       ssh.putFile(__dirname + '/dist.zip', '/home/dist.zip').then(status => {
+               console.log('上传文件成功');
+               console.log('开始执行远端脚本');
+               // 上传成功后触发远端脚本，此处执行服务器脚本，代码参考步骤4
+         }).catch(err=>{
+            console.log('文件传输异常:',err);
+            process.exit(0);
+         });
+   }).catch(err=
