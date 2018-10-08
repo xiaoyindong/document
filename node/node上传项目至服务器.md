@@ -24,4 +24,10 @@ npm install archiver node-ssh --save-dev
 const path = require('path');
 const archiver =require('archiver');
 const fs = require('fs');
-const node_ssh = r
+const node_ssh = require('node-ssh');
+const ssh = new node_ssh();
+
+// 上传服务器代码
+const upload = () => {
+    // 链接远程服务器
+    ssh.co
