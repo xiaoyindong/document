@@ -30,4 +30,10 @@ const ssh = new node_ssh();
 // 上传服务器代码
 const upload = () => {
     // 链接远程服务器
-    ssh.co
+    ssh.connect({
+       host: '192.xxx.x.xxx',
+       username: 'root',
+       password: 'xxxx',
+       port:22
+   }).then(function () {
+       // 上传网站的发布包至服务器中的位置，(__dirname + '/dist.zip' 为
