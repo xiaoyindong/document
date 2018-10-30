@@ -73,4 +73,39 @@ server.use(static(path.resolve('www'));
 
 ```js
 const betterBody = require('koa-better-body');
-const conv
+const convert = require('koa-convert');
+server.use(r1.routes());
+server.use(convert(betterBody({
+    uploadDir: path.resolve('./upload'),
+    keepExtensions: true
+}))); // 使用convert将老的中间件，支持最新的功能
+r1.get('/api/:name', async (ctx, next) => {
+    console.log(ctx.params);
+})
+```
+ctx.request.fields; // 既有普通参数，又有附件参数
+ctx.request.files; // 只有附件信息
+
+## 5. cookie
+
+```koa```自带```cookie```，直接可以使用```ctx.cookies```。
+
+```ctx.cookies.get('key')```获取```cookie```
+
+```ctx.cookies.set('b', 5, {})```设置```cookie```
+
+## 6. session
+
+需要手动安装```koa-session```插件
+
+```js
+const session = require('koa-session');
+// session 必须加要一组keys，防止被劫持
+server.keys = ['fsdfsfsdfdfds', 'vbcbfgbdvdfbfdb', 'nnhgnhtfsfsdfsd'];
+// 需要参数，并且还要吧server实例传入进去
+server.use(session({}, server));
+server.use(async (ctx) => {
+    if (ctx.session['count']) {
+        ctx.session['count']++;
+    } else {
+        ctx.session = 1;
