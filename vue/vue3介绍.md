@@ -44,4 +44,43 @@ Vue2在开发中小型项目的时候已经很好用了，但是使用Vue2开发
 
 Vue2开发的组件使用的是Options API，使用一个包含描述组件选项的对象来创建组件，这种方式经常使用，创建组件的时候经常设置data, methods, props，生命周期等，这些选项组成了对象来描述组件。如果看他人开发的组件可能会难以看懂，因为同一个功能的代码会涉及data, methods等多个配置。多个功能就会导致配置凌乱。
 
-Composition API是vue3新增的一组API，是一组基于函数的API，让我们可以更灵活的组织组件的逻辑。这样的好处是
+Composition API是vue3新增的一组API，是一组基于函数的API，让我们可以更灵活的组织组件的逻辑。这样的好处是查看某个逻辑的时候只需要关注某个函数即可。比如下面的postion只需要关注usePosition函数, 不需要关注其他逻辑。
+
+```js
+import { reactive, onMounted, onUnmonted } from 'vue';
+function useMousePosition () {
+    const position = reactive({ x: 0, y: 0 });
+    const update = (e) => {
+        position.x = e.pageX;
+        position.y = e.pageY;
+    }
+    onMounted(() => {
+        window.addEventListener('mousemove', update);
+    })
+    onUnmounted(() => {
+        window.removeEventListener('mousemove', update)
+    })
+    return position;
+}
+
+export default {
+    setup() {
+        const position = useMousePosition();
+        return {
+            position
+        }
+    }
+}
+```
+
+在Option API中，同一逻辑的代码被拆分到了很多的位置不方便阅读，Composition API可以保证统一逻辑的代码聚集在同一个位置，还可以提供给其他组件使用。
+
+Vue3中两种API都是支持的。
+
+## 5. 性能提升
+
+Vue3中的性能提升可以从下面3个方面来说
+
+1. 响应式系统升级
+
+Vue2中响应式系统
