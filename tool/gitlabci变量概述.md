@@ -67,4 +67,53 @@
 | GITLAB_CI | all | all | 用于指示该job是在GItLab CI环境中运行 |
 | GITLAB_USER_ID | 8.12 | all | 开启该job的用户ID |
 | GITLAB_USER_EMAIL | 8.12 | all | 开启该job的用户邮箱 |
-| GITLAB_USER_NAME | 8.1
+| GITLAB_USER_NAME | 8.12 | all | 开启该job的用户名称 |
+| RESTORE_CACHE_ATTEMPTS | 8.15 | 1.9 | 尝试运行存储缓存的job的次数 |
+
+
+### 8.x被移除的变量
+
+| 8.x name | 9.0+ name |
+| ---- | ---- |
+| CI_BUILD_ID | CI_JOB_ID |
+| CI_BUILD_REF | CI_COMMIT_SHA |
+| CI_BUILD_TAG | CI_COMMIT_TAG |
+| CI_BUILD_REF_NAME | CI_COMMIT_REF_NAME |
+| CI_BUILD_REF_SLUG | CI_COMMIT_REF_SLUG |
+| CI_BUILD_NAME | CI_JOB_NAME |
+| CI_BUILD_STAGE | CI_JOB_STAGE |
+| CI_BUILD_REPO | CI_REPOSITORY_URL |
+| CI_BUILD_TRIGGERED | CI_PIPELINE_TRIGGERED |
+| CI_BUILD_MANUAL | CI_JOB_MANUAL |
+| CI_BUILD_TOKEN | CI_JOB_TOKEN |
+
+## 3. 自定义变量
+
+```GitLab Runner0.5```或更高版本，并且```GitLab CI 7.14```更高版本支持自定义变量。
+
+```.gitlab-ci.yml```中可以添加自定义变量，这个变量在构建环境中设置。
+
+如果将变量设置为全局下，则它将用于所有执行的命令脚本中。
+
+```s
+variables:
+  DATABASE_URL: "postgres://postgres@postgres/my_database"
+```
+
+```YAML```中定义的变量也将应用到所有创建的服务容器中，因此可以对它进行微调。
+
+变量可以定义为全局，同时也可以定义为job级别。若要关闭全局定义变量，请定义一个空```{}```
+
+```s
+job_name:
+  variables: {}
+```
+
+变量定义中可以使用其他变量
+
+```s
+variables:
+  LS_CMD: 'ls $FLAGS $$TMP_DIR'
+  FLAGS: '-al'
+script:
+  - 'eval $LS_CMD'  # will execute 'ls -al 
