@@ -16,4 +16,34 @@
 
 ```ansible```是```Python```开发的，所以需要先安装```Python```。首先要保证这里安装的```Python```只会提供给```ansible```使用，而不会给其他工具使用，这样保证安全问题。
 
-推
+推荐使用```pythonenv```去隔离```python3.6```环境，可以单独划分一个```python```给```ansible2.5```使用。
+
+### 1. 关闭防火墙
+
+```s
+systemctl stop firewalld
+# 禁止开机启动
+systemctl disable firewalld
+```
+
+### 2. 关闭强制访问安全策略。
+
+```s
+vi /etc/sysconfig/selinux
+
+SELINUX=disabled # enforcing -> disabled
+# 重启
+reboot
+# 查看是否禁用成功
+getenforce
+```
+
+### 3. 下载并安装python
+
+需要保证系统已经安装了```gcc```和```zlib```，没有的话先安装。
+
+```s
+# 安装gcc
+yum install -y gcc
+# 安装zlib
+yum
