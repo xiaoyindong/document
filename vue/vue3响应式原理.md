@@ -110,3 +110,151 @@ export function track (target, key) {
         // 如果不存在，则创建一个新的集合添加到depsMap中
         depsMap.set(key, (dep = new Set()))
     }
+    dep.add(activeEffect)
+}
+```
+
+track是依赖收集的函数。需要在reactive函数的get方法中调用。
+
+```js
+get (target, key, receiver) {
+    // 收集依赖
+    track(target, key)
+    const result = Reflect.get(target, key, receiver)
+    // 如果属性是对象则需要递归处理
+    return convert(result)
+},
+```
+
+这样整个依赖收集就完成了。接着就要实现触发更新，对应的函数是trigger，这个过程和track的过程正好相反。
+
+trigger函数接收两个参数，分别是target和key。
+
+```js
+export function trigger (target, key) {
+    const depsMap = targetMap.get(target)
+    // 如果没有找到直接返回
+    if (!depsMap) {
+        return;
+    }
+    const dep = depsMap.get(key)
+    if (dep) {
+        dep.forEach(effect => {
+            effect()
+        })
+    }
+}
+```
+
+trigger函数要在reactive函数中的set和deleteProperty中触发。
+
+```js
+set (target, key, value, receiver) {
+    const oldValue = Reflect.get(target, key, receiver)
+    let result = true;
+    // 需要判断当前传入的新值和oldValue是否相等，如果不相等再去覆盖旧值，并且触发更新
+    if (oldValue !== value) {
+        result = Reflect.set(target, key, value, receiver)
+        // 触发更新...
+        trigger(target, key)
+    }
+    // set方法需要返回布尔值
+    return result;
+},
+deleteProperty (target, key) {
+    // 首先要判断当前target中是否有自己的key属性
+    // 如果存在key属性，并且删除要触发更新
+    const hasKey = hasOwn(target, key)
+    const result = Reflect.deleteProperty(target, key)
+    if (hasKey && result) {
+        // 触发更新...
+        trigger(target, key)
+    }
+    return result;
+}
+```
+
+## 3. ref
+
+ref接收一个参数可以是原始值也可以是一个对象，如果传入的是对象并且是ref创建的对象则直接返回，如果是普通对象则调用reactive来创建响应式对象，否则创建一个只有value属性的响应式对象。
+
+```js
+export function ref (raw) {
+    // 判断raw是否是ref创建的对象，如果是直接返回
+    if (isObject(raw) && raw.__v__isRef) {
+        return raw
+    }
+
+    // 之前已经定义过convert函数，如果参数是对象就会调用reactive函数创建响应式
+    let value = convert(raw);
+
+    const r = {
+        __v__isRef: true,
+        get value () {
+            track(r, 'value')
+            return value
+        },
+        set value (newValue) {
+            // 判断新值和旧值是否相等
+            if (newValue !== value) {
+                raw = newValue
+                value = convert(raw)
+                // 触发更新
+                trigger(r, 'value')
+            }
+        }
+    }
+
+    return r
+}
+```
+
+## 4. toRefs
+
+toRefs接收reactive函数返回的响应式对象，如果不是响应式对象则直接返回。将传入对象的所有属性转换成一个类似ref返回的对象将准换后的属性挂载到一个新的对象上返回。
+
+```js
+export function toRefs (proxy) {
+    // 如果是数组创建一个相同长度的数组，否则返回一个空对象
+    const ret = proxy instanceof Array ? new Array(proxy.length) : {}
+
+    for (const key in proxy) {
+        ret[key] = toProxyRef(proxy, key)
+    }
+
+    return ret;
+}
+
+function toProxyRef (proxy, key) {
+    const r = {
+        __v__isRef: true,
+        get value () { // 这里已经是响应式对象了，所以不需要再收集依赖了
+            return proxy[key]
+        },
+        set value (newValue) {
+            proxy[key] = newValue
+        }
+    }
+    return r
+}
+```
+
+toRefs的作用其实是将reactive中的每个属性都变成响应式的。reactive方法会创建一个响应式的对象，但是如果将reactive返回的对象进行解构使用就不再是响应式了，toRefs的作用就是支持解构之后仍旧为响应式。
+
+## 5. computed
+
+接着再来模拟一下computed函数的内部实现
+
+computed需要接收一个有返回值的函数作为参数，这个函数的返回值就是计算属性的值，需要监听函数内部响应式数据的变化，最后将函数执行的结果返回。
+
+```js
+export function computed (getter) {
+    const result = ref()
+
+    effect(() => (result.value = getter()))
+
+    return result
+}
+```
+
+computed函数会通过effect监听getter内部响应式数据的变化，因为在effect中执行getter的时候访问响应式数据的属性会去收集依赖，当数据变化会重新执行effect函数，将getter的结果再存储到result中。
