@@ -151,4 +151,69 @@ https://cssnext.github.io/playground
 ```
 
 ```css
-:root { // 
+:root { // 全局变量
+    --fontSize: 1rem; // 变量
+    --mainColor: #12345678;
+    --highlightColor: hwb(190, 35%, 20%)
+}
+
+body {
+    color: var(--mainColor)
+}
+
+:root {
+    --centered: {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+.centered {
+    @apply --centered;
+}
+```
+
+```calc```代表```css```表达式。
+
+```css
+calc(15px * 2);
+
+image-set (
+    url(img/test.png) 1x,
+    url(img/test-2x.png) 2x
+)
+```
+
+```filter```滤镜
+
+
+
+```css
+// css正则
+[frame=hsides i] { // 忽略hsides大小写
+
+}
+```
+
+使用```webpack```的```css-loader```编译添加```modules```。
+
+使用```postcss```进行编译```css```。
+
+使用```postcss-preset-env```编译```cssnext```语法。
+
+postcss插件集
+
+```postcss-custom-properties```运行时变量。
+
+```postcss-simple-vars```与```scss```一致的变量实现。
+
+```postcss-mixins```实现类似```sass```的```@mixin```的功能。
+
+```postcss-extend```实现类似```sass```的继承功能。
+
+```postcss-import```实现类似```sass```的```import```。
+
+```cssnext```面向未来，```cssgrace```修复过去，兼容```ie6```。
+
+```s
+h
