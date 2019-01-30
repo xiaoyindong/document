@@ -133,4 +133,42 @@ import { Link } from 'gatsby';
 我们可以通过: localhost:8000/___graphql 访问。
 
 ```s
-localhost:8000/
+localhost:8000/___graphql
+```
+
+1. 页面组件
+
+如果是页面组件可以通过graphql方法来查询，这个方法在gatsby中直接导入就可以。
+
+在组件文件中直接导出查询命令就可以了, 框架执行查询并将结果传递给组件的 prop 对象. 存储在 props 对象的 data 属性中。
+
+```js
+import { graphql } from 'gatsby';
+
+function PageComponent({data}) {
+    return <div>{data.site.siteMetadata.title}</div>
+}
+
+export const query = graphql`
+    query {
+        site {
+            siteMetadata {
+                title
+            }
+        }
+    }
+`
+```
+
+2. 非页面组件
+
+如果是非页面组件，是不可以直接导出查询命令的，需要手动的执行查询命令才能得到结果，需要依赖useStaticQuery执行查询命令，返回结果是查询结果。
+
+```js
+import { graphql, useStaticQuery } from 'gatsby'
+
+const data = useStaticQuery(graphql`
+    query {
+        site {
+            siteMetadata {
+                titl
