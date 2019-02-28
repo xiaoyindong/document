@@ -101,4 +101,25 @@ yarn grunt async-task
 
 ## 2. 标记任务失败
 
-如果在构建
+如果在构建任务的逻辑代码当中发生错误，例如需要的文件找不到了，此时就可以将这个任务标记为一个失败的任务。具体实现可以通过在函数体当中```return false来```实现。
+
+```js
+module.exports = grunt => {
+    grunt.registerTask('bad', () => {
+        console.log('bad working~')
+        return false
+    })
+}
+```
+
+如果这个任务是在任务列表当中那这个任务的失败会导致后续任务不在被执行。例如这里有多个任务通过```default```连在一起，正常情况他们会依次执行，但是当```bad```失败的时候```bar```也就不执行了。
+
+```js
+module.exports = grunt => {
+    grunt.registerTask('bad', () => {
+        console.log('bad working~')
+        return false
+    })
+    grunt.registerTask('foo', () => {
+        console.log('foo task~')
+        return false
