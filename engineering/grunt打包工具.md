@@ -161,4 +161,106 @@ module.exports = grunt => {
 这里注册一个叫做```foo```的任务，在任务中通过```grunt```提供的```config```方法获取这个配置，```config```方法接收一个字符串参数，这个参数就是```initConfig```中指定的字符串名字。
 
 ```js
-module.exports = grunt => 
+module.exports = grunt => {
+    grunt.initConfig({
+        foo: 'bar'
+    })
+
+    grunt.registerTask('foo', () => {
+        const result = grunt.config('foo');
+        console.log(result);
+    })
+}
+```
+
+在执行任务的时候就会获取到```initConfig```的内容。如果```foo```是对象的话，在```config```可以通过```.```的方式获取到属性值。
+
+```js
+module.exports = grunt => {
+    grunt.initConfig({
+        foo: {
+            bar: 123
+        }
+    })
+
+    grunt.registerTask('foo', () => {
+        const result = grunt.config('foo.bar');
+        console.log(result);
+    })
+}
+```
+
+```s
+grunt foo
+```
+
+## 4. 多目标任务
+
+多目标形式任务可以理解为子任务的概念，这种形式的任务在通过```grunt```实现各种构建任务时非常有用。多目标任务需要通过```grunt```中的```registerMultiTask```方法定义，这个方法同样接收两个参数，第一个是任务名字，第二个是函数。
+
+```js
+module.exports = grunt => {
+    grunt.registerMultiTask('build', function() {
+        console.log('task');
+    })
+}
+```
+
+```s
+grunt build
+```
+
+使用这种多任务需要配置任务目标，配置方式通过```initConfig```去配置，需要指定一个与任务名称同名的属性也就是build，并且属性值必须是个对象，对象中每个属性的名字就是目标名称。
+
+这相当于为```build```任务添加了两个目标，一个是```css```一个是```js```。此时在运行的时候会执行两个任务，也就是```build```任务有两个目标一个```js```一个```css```。
+
+
+```js
+module.exports = grunt => {
+    grund.initConfig({
+        build: {
+            css: '1',
+            js: '2'
+        }
+    })
+
+    grunt.registerMultiTask('build', function() {
+        console.log('task');
+    })
+}
+```
+
+```s
+grunt build
+```
+
+如果需要执行指定目标的时候可以通过````build:css````。
+
+```s
+grunt build:css
+```
+
+在这个任务函数中可以通过```this.target```拿到当前执行的目标名字，还可以通过```this```中```data```拿到这个```target```对应的数据。
+
+```js
+module.exports = grunt => {
+    grund.initConfig({
+        build: {
+            css: '1',
+            js: '2'
+        }
+    })
+
+    grunt.registerMultiTask('build', function() {
+        console.log(`${this.target} ${this.data}`);
+    })
+}
+```
+
+需要注意的是在```build```中指定的每一个属性的键都会成为一个目标，除了指定的```options```以外，在```options```当中指定的信息会作为任务的配置选项出现。可以通过```this.options()```拿到配置选项。
+
+```js
+module.exports = grunt => {
+    grund.initConfig({
+        build: {
+      
