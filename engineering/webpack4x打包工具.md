@@ -760,4 +760,157 @@ __webpack_require__.r(__webpack_exports__);
 /******/ 	__webpack_require__.m = modules;
 /******/
 /******/ 	// expose the module cache
-/******
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__webpack_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __webpack_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__webpack_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "dist/";
+/******/
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ })
+
+```
+
+````webpack````在打包时遇到图片文件，根据配置文件中的配置，拼配到对应的文件加载器，此时文件加载器开始工作，先是将文件拷贝到输出的目录，然后再将文件拷贝到输出目录的路径作为当前模块的返回值返回，这样对于应用来说，所需要的资源就被发布出来了，同时也可以通过模块的导出成员拿到资源的访问路径。
+
+## 8. url加载器
+
+除```file-loader```这种通过```copy```文件的形式处理文件资源外还有一种通过```Data URLs```的形式表示文件。```Data URLs```是一种特殊的```url```协议，可以直接表示文件，传统的```url```要求服务器上有对应的文件，然后通过地址，得到服务器上对应的文件。而```Data URLs```本身就是文件内容，在使用这种```url```的时候不会再去发送任何的```http```请求，比如常见的```base64```格式。
+
+```s
+data:[mediatype][;base64],\<data>
+```
+
+```data:```表示协议，```[mediatype][;base64]```表示媒体类型和编码，```\<data>```则是具体的文件内容。例如下面给出的```Data URLs```，浏览器可以根据这个```url```解析出```html```类型的文件内容，编码是```url-8```，内容是一段包含```h1```的```html```代码。
+
+```s
+data:text/html;charset=UTF-8,<h1>html content</h1>
+```
+
+如果是图片或者字体这一类无法通过文本表示的```2```进制类型的文件，可以通过将文件的内容进行```base64```编码，以编码后的结果也就是字符串表示这个文件内容。这里```url```就是表示了一个```png```类型的文件，编码是```base64```，再后面就是图片的```base64```编码。
+
+```s
+data:image/png;base64,iVBORw0KGgoAAAANSUhE...SuQmCC
+```
+
+当然一般情况下```base64```的编码会比较长，这就导致编码过后的资源体积要比原始资源大，不过优点是浏览器可以直接解析出文件内容，不需要再向服务器发送请求。
+
+```webpack```在打包静态资源模块时，就可以使用这种方式去实现，通过```Data URLs```以代码的形式表示任何类型的文件，需要用到一个专门的加载器```url-loader```。
+
+```s
+yarn add url-loader --dev
+```
+
+```webpack```配置文件中找到之前的```file-loader```将其修改为```url-loader```。
+
+```js
+const path = require('path');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            },
+            {
+                test: /.png$/,
+                use: 'url-loader'
+            }
+        ]
+    }
+}
+```
+
+此时```webpack```打包时，再遇到```.png```文件就会使用```url-loader```将其转换为```Data URLs```的形式。打开```bundle.js```可以发现在最后的文件模块中导出的是一个完整的```Data URLs```。
+
+```js
+/* 6 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = ("data:image/png;base64,iVBORw0KGgoAAAANSUh...AAAABJRU5ErkJggg==");
+
+/***/ })
+```
+
+因为```Data URLs```中已经包含了文件内容，所以```dist```中也就不存在独立的```.png```物理文件了。
+
+这种方式十分适合项目当中体积比较小的资源，如果体积过大会造成打包结果非常大从而影响运行速度。最佳的实践方式是对项目中的小文件通过```url-loader```转换成```Data URLs```然后在代码中嵌入，从而减少应用发送请求次数。对于较大的文件仍然通过传统的```file-loader```方式以单个文件方式存放，从而提高应用的加载速度。
+
+```url-loader```支持通过配置选项的方式设置转换的最大文件，将```url-loader```字符串配置方式修改为对象的配置方式，对象中使用```loader```定义```url-loader```，然后额外添加```options```属性为其添加一些配置选项。这里为```url-loader```添加```limit```的属性，将其设置为 ```10kb(10 * 1024)```，单位是字节。
+
+这样```url-loader```只会将```10kb```以下的文件转换成```Data URLs```，超过```10kb```的文件仍然会交给```file-loader```去处理。
+
+```js
+const path = require('path');
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.join(__dirname, 'dist'),
+        publicPath: 'dist/'
+    },
+    module: {
+        rules: [
+            {
+                test: /.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+  
