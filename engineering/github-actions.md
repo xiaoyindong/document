@@ -28,4 +28,8 @@ on:
             - 'src/**'
 ```
 
-jobs是任务，steps是步骤，可自定义，也可使用第三方。每个任务要指定一个runs-on也就是指定操作系统，这里指定的是ubun
+jobs是任务，steps是步骤，可自定义，也可使用第三方。每个任务要指定一个runs-on也就是指定操作系统，这里指定的是ubuntu-latest。
+
+steps是步骤，在第一个test中第一个steps中有多个，有几个-就是有几个steps，uses: actions/checkout@v2就是git pull。这里用的第三方的actions。
+
+第二句- name: Use Node.js编辑了step的名称，uses: actions/setup-node@v1是安装了nodejs，通过wi
