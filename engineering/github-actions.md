@@ -24,4 +24,8 @@ on:
             - dev
         paths:
             - '.github/workflows/**'
-         
+            - '__test__/**'
+            - 'src/**'
+```
+
+jobs是任务，steps是步骤，可自定义，也可使用第三方。每个任务要指定一个runs-on也就是指定操作系统，这里指定的是ubun
