@@ -236,4 +236,101 @@ export const render = (element, dom) => {
 
 ## 实现任务的调度逻辑
 
-接下来我们要实现任务的调度逻辑，在render方法中我们要调用requestIdleCallback这个api在浏览器空
+接下来我们要实现任务的调度逻辑，在render方法中我们要调用requestIdleCallback这个api在浏览器空闲的时候去执行任务。
+
+```js
+const render = (element, dom) => {
+    // 1. 向任务队列中添加任务
+    taskQueue.push({
+        dom, // 父级
+        props: {
+            children: element // 子级
+        }
+    })
+    // 2. 指定在浏览器空闲时执行任务
+    requestIdleCallback(performTask)
+}
+```
+
+requestIdleCallback再被调用的时候需要传递一个函数作为参数，当浏览器空闲的时候就会去调用这个函数，这个函数我们命名为performTask。我们先定义一下这个方法。
+
+这个方法只负责调度任务并不执行任务，我们创建一个workLoop方法来执行任务。将deadline参数传递进去。
+
+```js
+const performTask = deadline => {
+    workLoop(deadline)
+}
+```
+
+这时我们还需要定义workLoop方法, 这才是真正干活的方法，首先我们需要判断任务是否存在。首先我们要定义一个subTask来存储当前的任务，默认值为空，这样在workLoop中我们首先要判断subTask是否存在。如果不存在我们调用getFirstTask方法获取一个任务。
+
+```js
+let subTask = null;
+
+const getFirstTask = () => {
+    
+}
+
+const workLoop = deadline => {
+     if (!subTask) {
+        subTask = getFirstTask()
+     }
+}
+```
+
+如果任务存在我们就执行这个任务。因为有多个任务，所以我们这里要使用循环来处理。循环中判断subTask存在并且浏览器的空余时间大于1ms再执行任务。执行任务的代码我们放在executeTask函数中来单独处理。executeTask接收的对象其实就是一个Fiber。
+
+executeTask执行结束之后需要返回一个新的任务。
+
+```js
+
+const executeTask = fiber => {
+
+}
+
+const workLoop = deadline => {
+    if (!subTask) {
+        subTask = getFirstTask()
+    }
+
+    while (subTask && deadline,timeRemaining() > 1) {
+        subTask = executeTask(subTask);
+    }
+}
+```
+
+
+我们知道requestIdleCallback是会被打断的，如果有更优先的任务执行这里就断掉了，这个方法就会退出，也就是执行到performTask中，所以我们这里要去判断一下subTask是否有值，如果有值就是任务没有执行完，同时我们也要判断任务队列中是否有值。[源码地址](https://github.com/xiaoyindong/fiber/tree/a8034fa0197bd55dee9dda9ef2e1a9aabc5cc6ed)
+
+```js
+const performTask = deadline => {
+    workLoop(deadline);
+    if (subTask || !taskQueue.isEmpty()) {
+        requestIdleCallback(performTask)
+    }
+}
+```
+
+## 任务执行 - 构建Fiber对象
+
+在任务执行之前我们首先需要明确要执行的是什么任务，这个任务应该怎样被执行。
+
+我们要执行的任务就是根据虚拟DOM独享为每一个节点构建Fiber对象。具体执行的方式也很简单，比如下面的对象为例。首先先构建最外层的div对象，然后再构建里面的两个div，当这三个节点构建完成之后就要去设定他们之间的对应关系。
+
+这里需要注意对于parent这个div来说，只有第一个div是他的子节点，剩余的都是child这个div的兄弟节点。当他们三个的关系建立完毕之后，再去找父级的第一个子级节点child，看这个节点是否有子级，这里有个p。当p构建完毕，这条链路就构建完了。既没有子级也没有同级。这个时候继续向父级查找，看父级是否有兄弟节点，如果存在兄弟节点，判断是否已经构建如果已经构建完了再检查这个节点的子节点。如果没有构建就构建之后再检查子节点。
+
+```html
+<div class="parent">
+    <div class="child">
+        <p></p>
+    </div>
+    <div class="sibling">
+        <p></p>
+    </div>
+</div>
+```
+
+我们来实现一下上面的流程。在这个jsx中root是父节点，div是子节点，这里我们已经通过render方法传递进去了。
+
+```jsx
+im
