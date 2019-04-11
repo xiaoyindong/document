@@ -30,4 +30,12 @@ vue3.0在构建的时候和vue2.0类似都构建了不同的版本，和vue2不�
 
 cjs就是commonjs的模块化方式，包含vue.cjs.js开发版和vue.cjs.prod.js的压缩生产版，他们都是完整的vue，区别只是是否压缩。
 
-global是全局版，可以在浏览器中通
+global是全局版，可以在浏览器中通过script标签导入，导入js之后会增加一个全局的vue对象。
+
+browser是浏览器的原生版，可以在浏览器中通过script的type为module的方式导入。
+
+bundler版本没有打包所有的代码，需要配合打包工具来使用，使用es modules的方式打包。通过脚手架默认导入的就是vue.runtime.esm-bundler.js版本，有点是体积最小，在项目打包的时候可以根据开发者使用的功能按需打包。
+
+## 4. Composition API
+
+Comp
