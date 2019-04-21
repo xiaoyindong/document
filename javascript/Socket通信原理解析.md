@@ -117,4 +117,55 @@ const server = net.createServer(sock=> {
             // sha1(key + mask) -> base64 -> client;
             const hash = crypto.createHash('sha1');
             hash.update(key + mask);
-            co
+            const tokey = hash.digest('base64');
+            // 数据以HTTP发回客户端，因为验证的过程还是http阶段, 状态值为101(正在切换协议，协议升级 Switching Protocols)
+            sock.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + tokey + '\r\n'); // Upgrade: websocket告诉浏览器升级为websocket，冒号要有空格
+            // 至此，握手已经结束了。因为握手的过程只有一次，所以不要用on处理，用once处理
+            // 从这里开始，才是真正的数据，以后所有的数据都走这里，所以用on处理
+            sock.on('data', data=> {
+
+            })
+        }
+    }); // 有数据过来
+}).listen(8080);
+
+```
+
+握手阶段记得用```once```处理，后续数据接收用```on```处理，```on```之所以写在```once```里面，是因为写在外面第一次也会执行。握手的时候不需要执行```on```。
+
+```s
+GET / HTTP/1.1
+Host: localhost:8080
+Connection: Upgrade
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade: websocket
+Origin: file://
+Sec-WebSocket-Version: 13
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like
+Gecko) Chrome/65.0.3315.4 Safari/537.36
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,es;q=0.6,fr;q=0.5,pt;q=0.4
+Sec-WebSocket-Key: +0jgXtYyVeG28Gn1CLUKIg==
+Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+```
+
+1. 第一行删掉
+
+```s
+Host: localhost:8080
+Connection: Upgrade
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade: websocket
+Origin: file://
+Sec-WebSocket-Version: 13
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like
+Gecko) Chrome/65.0.3315.4 Safari/537.36
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,es;q=0.6,fr;q=0.5,pt;q=0.4
+Sec-WebSocket-Key: +0jgXtYyVeG28Gn1CLUKIg==
+Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+```
+
+2. 每行数据用": "
