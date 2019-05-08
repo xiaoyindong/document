@@ -316,3 +316,110 @@ docker container commit
 docker commit
 ```
 
+使用```docker run -it centos```去交互的运行```centos```。这样就有了一个```container```。
+
+```s
+docker run -it centos
+```
+
+在这个```container```里面去做一些变化，去安装一个vim。
+
+```s
+yum install -y vim
+```
+
+安装完成之后退出```exit```，退出之后通过```docker container ls -a```找到刚刚运行的```container```。
+
+可以通过```docker commit```命令将这个```container```打包成一个```Image```，这个```Image```基于```centos```并且里面安装好了```vim```。
+
+接收的第一个参数是要```commit```的```container```，第二个参数要```Image```的```REPOSITORY```和```TAG```。
+
+```s
+# docker commit container列表中的name 新Image的名字。
+docker commit hardcore_ishizaka yindong/centos-vim
+```
+
+这个新出现的```Image```大小要比之前的```centos```大一些，可以使用```docker history id```来对比一下```yindong/centos-vim```和```centos```，可以发现他们有很多相同的```layer```。
+
+这是因为```yindong/centos-vim```是基于```centos```的，所以会直接复用```centos```的```Layer```，在最后一层中大概有```150MB```的大小，这是因为安装了```vim```的原因。
+
+这种创建```Image```的方式并不十分提倡，因为如果把这个```Image```发布出去别人拿到这个```Image```并不会知道这个```Image```怎么产生的，这就会有问题，因为这个```Image```很可能包含不安全的内容。
+
+大部分情况下还是建议通过```Dockerfile```的方式创建```Image```。
+
+
+
+首先创建一个```docker-centos-vim```的目录在这个目录里面创建一个```Dockerfile```。
+
+```s
+mkdir docker-centos-vim
+cd docker-centos-vim
+vim Dockerfile
+```
+
+在这个```Dockerfile```中首先使用```FROM```是```centos```。运行```yum```命令安装```vim```，需要使用```RUN```来执行。
+
+```s
+FROM centos
+RUN yum install -y vim
+```
+
+然后使用```docker build```命令构建Image。
+
+```s
+docker build -t yindong/centos-vim-new .
+```
+
+这里会产生两层，第一层是引用的```centos```，第二层会创建一个临时的```container```用来安装```vim```，然后在将这个临时的```container```生成```Image```，完成之后```removing```掉这个临时的```container```，这样就创建了一个新的```Image```。
+
+## 5. Dockerfile
+
+
+```Dockerfile```定义了很多的关键字。
+
+### 1. FROM
+
+用于指定在哪个```Image```之上去```build```的```Image```。
+
+可以选择```scratch```表示从头去只做一个```Image```。
+
+```s
+FROM scratch
+```
+
+对于```FROM```来讲尽量使用官方的```Image```作为```base Image```。
+
+### 2. LABEL
+
+定义```Image```的```Metadata```信息，比如说版本，作者，描述等信息。
+
+```s
+LABEL maintainer="yindong@126.com"
+LABEL version="1.0"
+LABEL description="This is description"
+```
+
+```LABEL```定义的```Metadata```不可缺少，因为对于```Image```来讲是必须存在一些帮助信息，他像是代码里面的注释，来帮助别人使用。
+
+### 3. RUN
+
+```RUN```是非常常用的，因为很多时候需要运行一些命令，一般需要安装一些软件的时候也经常会使用到```RUN```，每运行一次```RUN```对于```Image```来讲都会新生成一层，所以对于```RUN```来说他的最佳实践中要求为了避免无用分层，合并多条命令成一行。
+
+比如说```yum install``` 和 ```yum update```推荐通过```&&```合并成一层。为了美观如果```&&```导致行变得越来越长可以通过反斜线```\```换行，增加美观。
+
+```s
+# 使用反斜线换行
+RUN yum update && yum install -y vim \
+    python-dev
+
+# 注意清理cache
+RUN apt-get update && apt-get install -y perl \
+    pwgen --no-install-recommends && rm -rf \
+    /var/lib/apt/lists/*
+
+RUN /bin/bash -c 'source $HOME/.bashrc; echo $HOME'
+```
+
+### 4. WORKDIR
+
+设定当前工作目录，这个有点像```linux```里面通过```cd```去改变目录，在当前的目
