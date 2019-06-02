@@ -169,4 +169,135 @@ REP代表响应状态码，值长度也是1个字节，有以下几种类型
 
 RSV：保留字，值长度为1个字节
 
-ATYP：代表
+ATYP：代表请求的远程服务器地址类型，值长度1个字节，有三种类型
+
+IP V4 address： 0x01
+
+DOMAINNAME： 0x03
+
+IP V6 address： 0x04
+
+BND.ADDR：表示绑定地址，值长度不定。
+
+BND.PORT： 表示绑定端口，值长度2个字节
+
+响应的服务端地址默认是1，也就是ip v4，地址与端口可以直接就写0x00。
+
+```js
+sock.once('readable', () => {
+    const data = sock.read();
+    const remoteAddr = Buffer.from(data.slice(4, data.length - 2)).toString().trim().replace(/\u0000|\u0001|\u0002|\u0003|\u0004|\u0005|\u0006|\u0007|\u0008|\u0009|\u000a|\u000b|\u000c|\u000d|\u000e|\u000f|\u0010|\u0011|\u0012|\u0013|\u0014|\u0015|\u0016|\u0017|\u0018|\u0019|\u001a|\u001b|\u001c|\u001d|\u001e|\u001f/g, '');
+    const remotePort = data.readUInt16BE(data.length - 2);//最后两位为端口值
+    console.log(`连接到 ${remoteAddr}:${remotePort}`);
+    // 响应给客户端
+    sock.write(Buffer.from([0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+});
+```
+
+代理部分很简单，创建一个TCP客户端请求，将请求信息转发给解析出来的IP与端口就行了。
+
+```js
+const remoteSock = net.createConnection(remotePort, remoteAddr, () => {
+    sock.write(Buffer.from([0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), (err) => {
+        if (err) {
+            console.log(`写入数据失败,失败信息:${err.message}`);
+            sock.destroy();
+        }
+        // remoteSock.pipe(sock);
+        // sock.pipe(remoteSock);
+        remoteSock.pipe(through2(function (chunk, enc, callback) {
+            // console.log(chunk, 111111);
+            callback(null, chunk);
+        })).pipe(sock);
+        sock.pipe(through2(function (chunk, enc, callback) {
+            // console.log(chunk, 222222);
+            callback(null, chunk);
+        })).pipe(remoteSock);
+    });
+});
+remoteSock.on('error', function (err) {
+    console.log(`连接到远程服务器 ${remoteAddr}:${remotePort} 失败,失败信息:${err.message}`);
+    remoteSock.destroy();
+    sock.destroy();
+    return;
+});
+```
+
+SOCKS5 协议的目的其实就是为了把来自原本应该在本机直接请求目标服务的流程，放到了服务端去代理客户端访问。
+其运行流程总结如下：
+
+本机和代理服务端协商和建立连接；本机告诉代理服务端目标服务的地址；代理服务端去连接目标服务，成功后告诉本机；本机开始发送原本应发送到目标服务的数据给代理服务端，由代理服务端完成数据转发。
+
+完整代码：
+
+这里引入了through2，是准备修改请求，代码还没写，欠着吧。
+
+```js
+const net = require('net');
+const through2 = require('through2');
+
+const config = {
+    port: 1081,
+}
+
+const server = net.createServer((sock) => {
+    sock.on('error', (err) => {
+        console.log(`远程到代理服务器的连接发生错误，错误信息：${err.message}`);
+        sock.destroy();
+    });
+    console.log(`接受连接：${sock.remoteAddress}:${sock.remotePort}`);
+
+    sock.once('readable', () => {
+        const data = sock.read();
+        if (!data && data[0] !== 0x05) {
+            sock.destroy();
+            return;
+        }
+        sock.write(Buffer.from([0x05, 0x00]), (err) => {
+            if (err) {
+                console.log(`写入数据失败,失败信息:${err.message}`);
+                socket.destroy();
+            }
+            sock.once('readable', () => {
+                const data = sock.read();
+                const remoteAddr = Buffer.from(data.slice(4, data.length - 2)).toString().trim().replace(/\u0000|\u0001|\u0002|\u0003|\u0004|\u0005|\u0006|\u0007|\u0008|\u0009|\u000a|\u000b|\u000c|\u000d|\u000e|\u000f|\u0010|\u0011|\u0012|\u0013|\u0014|\u0015|\u0016|\u0017|\u0018|\u0019|\u001a|\u001b|\u001c|\u001d|\u001e|\u001f/g, '');
+                const remotePort = data.readUInt16BE(data.length - 2);//最后两位为端口值
+                console.log(`连接到 ${remoteAddr}:${remotePort}`);
+                const remoteSock = net.createConnection(remotePort, remoteAddr, () => {
+                    sock.write(Buffer.from([0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), (err) => {
+                        if (err) {
+                            console.log(`写入数据失败,失败信息:${err.message}`);
+                            sock.destroy();
+                        }
+                        remoteSock.pipe(through2(function (chunk, enc, callback) {
+                            callback(null, chunk);
+                        })).pipe(sock);
+                        sock.pipe(through2(function (chunk, enc, callback) {
+                            callback(null, chunk);
+                        })).pipe(remoteSock);
+                    });
+                });
+                remoteSock.on('error', function (err) {
+                    console.log(`连接到远程服务器 ${remoteAddr}:${remotePort} 失败,失败信息:${err.message}`);
+                    remoteSock.destroy();
+                    sock.destroy();
+                    return;
+                });
+            });
+        });
+    });
+});
+
+server.listen(config.port, () => {
+    server.on('error', function (err) {
+        console.log(`代理服务器发生错误，错误信息：${err.message}`);
+        server.close();
+    });
+    console.log(`代理服务器启动，监听0.0.0.0:${config.port}...`);
+})
+```
+
+### 参考来源
+
+- [1] [你也能写个 Shadowsocks](https://github.com/gwuhaolin/blog/issues/12 "gwuhaolin"
+- [2] [NodeJS实现简单的Socks5代理服务](https://www.jianshu.com/p/b3b4941f7723 "关爱单身狗成长协会"
