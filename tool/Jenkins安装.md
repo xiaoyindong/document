@@ -20,4 +20,9 @@
 # 安装wget
 yum install wget -y
 # 设置镜像源
-wget -o 
+wget -o /etc/yum.repos.d/jenkins.repo http://pkg.jenkins.io/redhat-stable/jenkins.repo
+# 导入yum的key验证安全性
+rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+```
+
+### 3. 安装java
