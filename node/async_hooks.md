@@ -47,4 +47,46 @@ console.log('triggerAsyncId:', async_hooks.triggerAsyncId()); // triggerAsyncId:
 const fs = require('fs');
 fs.open('./test.js', 'r', (err, fd) => {
     console.log('fs.open.asyncId:', async_hooks.executionAsyncId()); // 7
-    console.log('fs.open.
+    console.log('fs.open.triggerAsyncId:', async_hooks.triggerAsyncId()); // 1
+});
+```
+
+## 3. 异步函数的生命周期
+
+当然实际应用中的```async_hooks```并不是这样使用的，他正确的用法是在所有异步任务创建、执行前、执行后、销毁后，触发回调，所有回调会传入```asyncId```。
+
+我们可以使用```async_hooks.createHook```来创建一个异步资源的钩子，这个钩子接收一个对象作为参数来注册一些关于异步资源生命周期中可能发生事件的回调函数。每当异步资源被创建/执行/销毁时这些钩子函数会被触发。
+
+```js
+const async_hooks = require('async_hooks');
+
+const asyncHook = async_hooks.createHook({
+  init(asyncId, type, triggerAsyncId, resource) { },
+  destroy(asyncId) { }
+})
+
+```
+
+目前 ```createHook``` 函数可以接受五类 ```Hook Callbacks``` 如下：
+
+### 1.init(asyncId, type, triggerAsyncId, resource)
+
+### 2. init 回调函数一般在异步资源初始化的时候被触发。
+
+### 3. asyncId: 每一个异步资源都会生成一个唯一性标志
+
+### 4. type: 异步资源的类型，一般都是资源的构造函数的名字。
+
+```txt
+FSEVENTWRAP, FSREQCALLBACK, GETADDRINFOREQWRAP, GETNAMEINFOREQWRAP, HTTPINCOMINGMESSAGE,
+HTTPCLIENTREQUEST, JSSTREAM, PIPECONNECTWRAP, PIPEWRAP, PROCESSWRAP, QUERYWRAP,
+SHUTDOWNWRAP, SIGNALWRAP, STATWATCHER, TCPCONNECTWRAP, TCPSERVERWRAP, TCPWRAP,
+TTYWRAP, UDPSENDWRAP, UDPWRAP, WRITEWRAP, ZLIB, SSLCONNECTION, PBKDF2REQUEST,
+RANDOMBYTESREQUEST, TLSWRAP, Microtask, Timeout, Immediate, TickObject
+```
+
+triggerAsyncId: 表示触发当前异步资源被创建的对应的 ```async scope``` 的 ```asyncId```
+
+#### 1. resource
+
+代表被初始化的异步资源对
