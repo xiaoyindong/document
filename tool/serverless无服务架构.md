@@ -230,4 +230,251 @@ const app = express();
 
 app.use(express.json());
 
-app.use(express.urlen
+app.use(express.urlencoded({ extended: false }));
+
+const indexRouter = require("./routers/index");
+
+const todoRouter = require("./routers/todo");
+
+app.use("/", indexRouter);
+
+app.use("/todo", todoRouter);
+
+module.exports = app;
+```
+
+新建两个文件```node-app/routers/index.js```和```node-app/routers/todo.js```。
+
+```routers\index.js```。
+
+```js
+const express = require('express');
+
+const router = express.Router();
+
+router.get('/', (req, res)=>{
+    res.send('index router');
+})
+
+module.exports = router;
+```
+
+```node-app/routers/todo.js```。
+
+```js
+const express = require('express');
+
+const router = express.Router();
+
+router.get('/',(req, res)=>{
+    res.send('todo router');
+})
+
+module.exports = router;
+```
+
+代码实现之后，在本地请求```/```根路径和```todo```路径，测试完成后，部署云函数，然后再进行对应的测试。基础的业务路由配置好之后，回到业务代码的编写中，在```TodoList```案例中先来实现增删改查的相关操作。
+
+```node-app/routers/todo.js```。
+
+```js
+const express = require('express')
+const router = express.Router();
+// 获取任务 
+router.get('/',(req,res)=>{
+  res.send('get todo router')
+})
+// 添加任务 
+router.post('/',(req,res)=>{
+  res.send('add  todo router')
+})
+// 修改任务 
+router.put('/',(req,res)=>{
+  res.send('change todo router')
+})
+// 删除任务 
+router.delete('/',(req,res)=>{
+  res.send('del todo router')
+})
+module.exports = router;
+```
+
+## 10. 云数据连接
+
+在使用云数据库之前，需要先理清楚它的一些基本概念，腾讯云提供的云数据库是一种文档型数据库，提供基础读写、聚合搜索、数据库事务、实时推送等功能。
+
+数据库中有数据库实例、集合、记录这三个基本概念，每个云开发环境下有且只有一个数据库实例，数据库实例中，可以创建多个集合，可以将集合理解为一个文本文件，每个文件中可以存放多个类似```JSON```格式的对象，被称为记录。[官方手册](https://docs.cloudbase.net/database/introduce.html)。
+
+云数据库可以在客户端调用也可以在服务端调用，云函数就是服务端调用的方式。服务端调用时，需要在 SDK 初始化参数中，填入应用的```envid```，同时需要填入腾讯云密钥(```SecretID```和```SecretKey```)，手册上并没有说，但是一定注意，除了腾讯云密钥还需要```env```，也就是云环境```ID```。
+
+首先需要在本地安装```sdk```。
+
+```s
+npm install cloudbase/node-sdk
+```
+
+```secretId```和```secretKey```需要在账号的访问管理里面进行创建获取。```env```在环境总览里面获取。
+
+```js
+const nodeSdk = require("@cloudbase/node-sdk");
+const cloudDb = nodeSdk.init({
+  env:'yindong01-3gcch2hafXXXXXXXXXX',
+  secretId:'AxxxXXXXXXXKpWw6zbXXXXXXXXXXX',
+  secretKey:'kFXdOOXXxxxp22AwiXXXXXXXXXXX'
+})
+```
+
+在网页控制台中找到数据库选项，每个云环境有且只有一个数据库实例，可以点击创建集合进行创建名字叫做```todo```。每个集合下面有多个记录，记录就是数据。记录是以文档形式进行添加的，```id```可以不用管。添加类型就可以。类型中```_id```是默认```id```可以用可以不用。
+
+配置好基本信息之后，就可以连接数据库了，执行对应操作了，但是，数据库的操作以集合为单位的，所以，在操作之前需要先创建集合，用```cloudDb.collection```获取集合引用后，再执行对用操作就可以了。
+
+### 1. 获取数据
+
+```js
+// 获取数据库引用
+const app = cloudDb.database();
+
+// 链接数据库
+const db = app.collection('todo');
+
+// 获取todo里面的全部数据
+router.get('/',async (req,res)=>{
+
+  res.send(await db.get());
+
+})
+```
+
+### 2. 添加数据
+
+注意云函数和实际时间有```8```小时时间差。
+
+```js
+router.post('/', async (req, res) => {
+  
+  const todo = {
+    title: req.body.title,
+    createTime: Date.now(),
+    done: false,
+  }
+
+  const backdata = await db.add(todo);
+
+  res.send(backdata);
+})
+```
+
+### 3. 修改
+
+```js
+router.put('/', async (req, res) => {
+
+  if (req.query.id == undefined) {
+    res.send('缺少id');
+  }
+
+  if (req.body.done == undefined) {
+    return;
+  }
+
+  let done = false;
+
+  if (req.body.done == 1) {
+    done = true;
+  }
+
+  const todo = {
+    title: req.body.title,
+    done: done
+  }
+
+  // doc条件限制
+  const backdata = await db.doc(req.query.id).update(todo);
+
+  res.send(backdata);
+})
+```
+
+### 4. 删除
+
+```js
+router.delete('/', async (req, res) => {
+
+  if (req.query.id === undefined) {
+    res.send('缺少id');
+  }
+
+  const backdata = await db.doc(req.query.id).remove();
+
+  res.send(backdata)
+})
+```
+
+## 11. 客户端接口调用
+
+这里选择使用普通的```Vue```框架作为客户端，按照传统的方式创建，安装好```Element-ui```及```Axios```请求库，就可以直接向云函数发送请求获取数据了。这里简单的写了一个请求的示例，发送请求后，渲染到页面中。
+
+```vue
+<template>
+  <div>
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>Todo List</span>
+      </div>
+      <div v-for="(todo, key) in cloudData" :key="key" class="text item">
+        <el-checkbox >  {{ todo.title }} </el-checkbox>
+         <el-divider></el-divider>
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script>
+  import Axios from "axios";
+  export default {
+    data() {
+      return {
+        cloudData: [],
+      };
+    },
+    methods: {
+      async getData() {
+        const backdata = await Axios({
+          url: "https://yindong02-8gsxxxxxx5-111119081.ap-shanghai.app.tcloudbase.com/express-todo/todo",
+        });
+        console.log(backdata);
+        this.cloudData = backdata.data.data;
+      },
+    },
+    mounted(){
+      this.getData()
+    }
+  };
+</script>
+```
+
+这里可能会出现跨域的问题，可以在服务器里面添加跨域允许的响应头或者直接使用完整路径的```url```进行访问。正常情况下是不需要管云函数的跨域问题的，他默认是允许跨域访问的。不过这样的开发方式，非常不```Serverless```。
+
+前面在应用中创建了一个云函数，并将云函数与```Express```进行整合，配合云数据库写好了增删改查的接口，但是这样的开发方式并不是```Serverless```的最佳实践方法，在代码中是将整个后端应用的全部业务能力写进了一个函数中，这样做的好处是方便管理，毕竟在一个应用下只有一个云函数。
+
+但是单个云函数的并发是有限的，并行的函数实例个数由云厂商决定，超过限制后事件队列就需要等待其他函数实例执行完毕后，再生成新的函数实例。可能就有人会问，```Serverless```是弹性伸缩的，不是说会根据业务处理的需求自动调配资源嘛？为什么还会有函数的并发限制？要搞清楚这一点，需要了解```FaaS```的运行机制。
+
+## 12. FaaS 运行机制
+
+在```FaaS```平台中，函数默认是不运行的，也不会分配任何资源。甚至```FaaS```中都不会保存函数代码。只有当```FaaS```接收到触发器的事后，才会启动并运行函数。前面就是使用```HTTP```的触发器来执行函数代码的，整个函数的运行过程实际上可以分为四个阶段。
+
+### 1.代码下载
+
+```FaaS```平台本身不会存储代码，而是将代码放在对象存储中，需要执行函数的时候，再从对象存储中将函数代码下载下来并解压，因此```FaaS```平台一般都会对代码包的大小进行限制，通常代码包不能超过```50MB```。
+
+### 2. 启动容器
+
+代码下载完成后，```FaaS```会根据函数的配置启动对应容器，```FaaS```使用容器进行资源隔离。
+
+### 3. 初始化运行环境
+
+分析代码依赖、执行用户初始化逻辑、初始化入口函数之外的代码等。
+
+### 4. 运行代码
+
+当函数第一次执行时，会经过完整的四个步骤，前三个过程统称为```冷启动```，最后一步称为```热启动```。整个冷启动流程耗时可能达到百毫秒级别。函数运行完毕后，运行环境会保留一段时间，这个时间在几分钟到几十分钟不等，这和具体云厂商有关。如果这段时间内函数需要再次执行，则```FaaS```平台就会使用上一次的运
