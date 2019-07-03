@@ -12,25 +12,4 @@ describe('添加任务', () => {
 })
 
 describe('删除任务', () => {
-    test('点击任务项中的删除按钮，任务应该被删除', () => {
-
-    })
-})
-```
-
-将需求转换为测试用例是有助于对需求的了解的。接着就要去编写真正的测试细节。比如第一个测试用例。
-
-首先要将挂载器导入进来。
-
-```js
-import { mount, createLocalVue } from '@vue/test-utils';
-import TodoApp from '@/components/TodoApp/index.vue';
-import VueRouter from 'vue-router';
-
-const localVue = createLocalVue();
-localVue.use(VueRouter);
-const router = new VueRouter({
-    linkActiveClass: 'selected'
-})
-
-describe('添加任务'
+    test('点击任务项中的删除按钮，任务应该被删除'
