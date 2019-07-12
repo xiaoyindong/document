@@ -63,4 +63,20 @@ import Head from 'next/head';
 
 2. CSS样式
 
-为元素添加样式有多中，在Next.js中内置了styled-jsx, 他是一个css-in-
+为元素添加样式有多中，在Next.js中内置了styled-jsx, 他是一个css-in-js库，允许在React组件中编写css，css仅作用域组件内部。
+
+```jsx
+<div>
+    <div className="demo">test</div>
+    <style jsx>{`
+        .demo {
+            color: red;
+        }
+    `}
+    </style>
+</div>
+```
+
+还有一种是css模块的方式，通过使用css模块功能，允许将组件的css样式编写在单独的css文件中，css模块约定样式文件的名称必须为组件文件名称.modules.css
+
+index.m
