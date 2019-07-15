@@ -176,4 +176,91 @@ ctx.beginPath()
 ctx.lineWidth = 1
 ctx.strokeStyle = '#666'
 for (let i = 1; i < Math.floor(ht * 1.5 / step); i++) {
-    ctx.moveTo(pad, (ht * 1.5 - bottomPad) - (i
+    ctx.moveTo(pad, (ht * 1.5 - bottomPad) - (i * step))
+    ctx.lineTo(pad + 10, (ht * 1.5 - bottomPad) - (i * step))
+}
+ctx.stroke()
+ctx.closePath()
+}
+
+drawAxis({
+    ht: ht,
+    wd: wd,
+    pad: pad,
+    bottomPad: bottomPad,
+    step: step,
+    ctx: ctx
+})
+
+// 绘制直方图
+ctx.beginPath()
+for (var i = 1; i < Math.floor(wd * 1.5 / step); i++) {
+    const height = Math.random() * 300 + 50
+    ctx.fillStyle = '#' + parseInt(Math.random() * 0xFFFFFF).toString(16)
+    ctx.fillRect((i * step), ht * 1.5 - bottomPad - height, 40, height)
+}
+ctx.closePath()
+```
+
+## 7. 绘制圆形
+
+```js
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+ctx.beginPath();
+ctx.lineWidth = 5;
+// 边框颜色
+ctx.strokeStyle = 'red';
+// 填充颜色
+ctx.fillStyle = 'green';
+// 起点坐标，半径，起点弧度，终点弧度, 顺时针还是逆时针
+ctx.arc(100, 100, 100, 0, Math.PI * 2, false);
+// 填充
+ctx.fill();
+// 描边
+ctx.stroke();
+ctx.closePath();
+```
+
+## 8. 饼图绘制
+
+![屏幕快照 2021-06-26 20.57.54.png](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/567ee6cb630445029b7282c6a5bafb3d~tplv-k3u1fbpfcp-watermark.image)
+
+```js
+// 提前设置相关属性
+const ht = canvas.clientHeight
+const wd = canvas.clientWidth
+const pad = 20
+const bottomPad = 20
+const step = 100
+
+const drawAxis = (options) => {
+const { ht, wd, pad, bottomPad, step, ctx } = options
+// 绘制坐标轴
+ctx.beginPath()
+ctx.lineWidth = 2
+ctx.strokeStyle = 'lightblue'
+ctx.moveTo(pad, pad)
+ctx.lineTo(pad, ht * 1.5 - bottomPad)
+ctx.lineTo(wd * 1.5 - pad, ht * 1.5 - bottomPad)
+ctx.stroke()
+ctx.closePath()
+
+// 绘制 X 轴方向刻度
+ctx.beginPath()
+ctx.lineWidth = 1
+ctx.strokeStyle = '#666'
+for (let i = 1; i < Math.floor(wd * 1.5 / step); i++) {
+    ctx.moveTo(pad + i * step, ht * 1.5 - bottomPad)
+    ctx.lineTo(pad + i * step, ht * 1.5 - bottomPad + 10)
+}
+ctx.stroke()
+ctx.closePath()
+
+// 绘制 Y 轴方向刻度
+ctx.beginPath()
+ctx.lineWidth = 1
+ctx.strokeStyle = '#666'
+for (let i = 1; i < Math.floor(ht * 1.5 / step); i++) {
+    ctx.moveTo(pad, (ht * 1.5 - bottomPad) - (i * step))
+    ctx.lineTo(pad + 10, (ht * 1.5 - bottomPad) - 
