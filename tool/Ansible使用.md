@@ -283,4 +283,236 @@ cat test.txt
 
 利用上面的介绍编写一个完整的```ansible playbooks```脚本文件。
 
-`
+```yml
+- name: create a file
+  file: 'path=/root/foo.txt state=touch mode=0755 owner=foo group=foo'
+- name: copy a file
+  copy: 'remote_src=no src=reles/testbox/files/foo.sh' dest=/root/foo.sh mode=0644 force=yes
+- name: check if foo.sh exists
+  stat: 'path=/root/foo.sh'
+  register: script_stat
+- debug: msg=foo.sh exists
+  when: script_stat.stat.exists
+- name: run the script
+  command: "sh /root/foo.sh"
+- name: write the nginx config file
+  template: src=roles/testbox/templates/nginx.conf.j2 dest=/etc/nginx/nginx/conf
+- name: ensure nginx is at the latest version
+  yum: pkg=nginx state=latest
+- name: start nginx service
+  service: name=nginx state=started
+```
+
+命令行连接至```ansible```服务器当中，连接至```deploy```用户中。启动```py3.6```的虚拟环境。加载```ansible2.5```版本。
+
+```s
+su -deploy
+
+source .py3-a2.5-env/bin/activate
+
+source .py3-a2.5-env/ansible/hacking/env-setup -q
+
+ansible-playbook --version
+```
+
+首先需要进入到目标主机进行基本的模块配置，保证随后的任务可以正常运行。
+
+创建两个用户```foo```和```deploy```，创建一个```nginx```目录。
+
+```s
+useradd foo
+useradd deploy
+mkdir /etc/nginx
+```
+
+安装```nginx```，```yum```源，保证可以安装。
+
+```s
+rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
+```
+
+在```ansible```主机中，进入到```test_playbooks```文件夹。编辑```roles/testbox/tasks/main.yml```这个文件
+
+```s
+vi roles/testbox/tasks/main.yml
+```
+
+在文件中继续添加模块任务。
+
+```yml
+- name: Print server name and user to remote testbox
+  shell: "echo 'Currently {{ user }} is logining {{ server_name }}' > {{ output }}"
+- name: create a file
+  file: 'path=/root/foo.txt state=touch mode=0755 owner=foo group=foo'
+```
+
+执行这个任务, 测试刚刚编写的任务。
+
+```s
+ansible-playbook -i inventory/testenv ./deploy.yml
+```
+
+执行之后可以在目标服务器找到这个文件。接着演示```file```
+
+```s
+mkdir roles/testbox/files/
+vi roles/testbox/files/foo.sh
+```
+
+添加内容
+
+```sh
+echo "this is a test script"
+```
+
+```s
+vi roles/testbox/tasks/main.yml
+```
+
+```yml
+- name: Print server name and user to remote testbox
+  shell: "echo 'Currently {{ user }} is logining {{ server_name }}' > {{ output }}"
+- name: create a file
+  file: 'path=/root/foo.txt state=touch mode=0755 owner=foo group=foo'
+- name: copy a file
+  copy: 'remote_src=no src=reles/testbox/files/foo.sh' dest=/root/foo.sh mode=0644 force=yes
+```
+
+执行这个任务, 测试刚刚编写的任务。
+
+```s
+ansible-playbook -i inventory/testenv ./deploy.yml
+```
+
+接着演示```exists```
+
+```yml
+- name: Print server name and user to remote testbox
+  shell: "echo 'Currently {{ user }} is logining {{ server_name }}' > {{ output }}"
+- name: create a file
+  file: 'path=/root/foo.txt state=touch mode=0755 owner=foo group=foo'
+- name: copy a file
+  copy: 'remote_src=no src=reles/testbox/files/foo.sh' dest=/root/foo.sh mode=0644 force=yes
+- name: check if foo.sh exists
+  stat: 'path=/root/foo.sh'
+  register: script_stat
+- debug: msg=foo.sh exists
+  when: script_stat.stat.exists
+```
+
+```s
+ansible-playbook -i inventory/testenv ./deploy.yml
+```
+
+接着添加一个模块任务，在添加模块任务之前，需要添加几个参数到```testenv```这个文件中
+
+```s
+vi inventory/testenv
+```
+
+
+```s
+[testservers]
+test.example.com
+
+[testservers:vars]
+server_name=test.example.com
+user=root
+output=/root/test.txt
+server_name=test.example.com
+port=80
+user=deploy
+worker+processes=4
+max_open_file=65505
+root=/www
+```
+
+接着需要在```roles```下面的```testbox```中添加```templates```目录。
+
+```s
+mkdir roles/testbox/templates
+
+vi roles/testbox/templates/nginx.conf.j2
+```
+ 
+```s
+# For more information on configuration, see:
+user    {{ user }};
+worker_processes    {{ worker_processes }};
+
+error_log  /var/log/nginx/error.log;
+
+pid  /var/run/nginx.pid;
+
+evnets {
+  worker_connections    {{ max_open_file }};
+}
+
+http {
+  include   /etc/nginx/mime.types;
+  default_type    application/octet-stream;
+
+  log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+  access_log /var/log/nginx/access.log main;
+
+  sendfile on;
+
+  keepalive_timeout 65;
+
+  server {
+    listen  {{ port }} default_server;
+
+    location / {
+      root  {{ root }};
+      index   index.html index.htm;
+    }
+
+    error_page 404  /404.html;
+    location = /404.html {
+      root    /usr/share/nginx/html;
+    }
+
+    error_page    500 502 503 504 /50x.html;
+    location = /50x.html {
+      root    /usr/share/nginx/html
+    }
+  }
+}
+```
+
+```s
+vi roles/testbox/tasks/main.yml
+```
+
+使用```template```将本地模板编译传送至远程，然后在使用```yum```安装```nginx```，使用```service```任务启动远程的```nginx```服务。
+
+```yml
+- name: Print server name and user to remote testbox
+  shell: "echo 'Currently {{ user }} is logining {{ server_name }}' > {{ output }}"
+- name: create a file
+  file: 'path=/root/foo.txt state=touch mode=0755 owner=foo group=foo'
+- name: copy a file
+  copy: 'remote_src=no src=reles/testbox/files/foo.sh' dest=/root/foo.sh mode=0644 force=yes
+- name: check if foo.sh exists
+  stat: 'path=/root/foo.sh'
+  register: script_stat
+- debug: msg=foo.sh exists
+  when: script_stat.stat.exists
+- name: write the nginx config file
+  template: src=roles/testbox/templates/nginx.conf.j2 dest=/etc/nginx/nginx/conf
+- name: ensure nginx is at the latest version
+  yum: pkg=nginx state=latest
+- name: start nginx service
+  service: name=nginx state=started
+```
+
+```s
+ansible-playbook -i inventory/testenv ./deploy.yml
+```
+使用远程查看命令。
+
+```s
+ssh root@test.example.com ps -ef | grep nginx
+```
