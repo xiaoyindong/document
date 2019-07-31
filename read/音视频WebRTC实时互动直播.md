@@ -318,4 +318,101 @@ new MediaRecorder(stream, [, options]);
 
 格式有很多比如谷歌的音视频格式```video/webm```,```audio/webm```， 还可以指定视频的编码```video/webm;codecs=vp8```,```video/webm;codecs=h264```, 音频编码```audio/webm;codecs=opus```。
 
-```audi
+```audioBitsPerSecond```是音频的码率，码率根据编码决定有的是```64k```有的是```128k```，```videoBitsPerSecond```视频码率设置的越多清晰度越高比如```720```可能就是```2M```，```bitsPerSecond```是整体码率。
+
+``MediaRecorder``的```api```也比较多```MediaRecorder.start(timeslice)```是开启录制，```timeslice```是可选参数，如果不设置会存储在一个大的```buffer```中，如果设置了这个参数就会按照时间段存储数据，比如说```10s```存储一块数据。
+
+```MediaRecorder.start()```是关闭录制，当停止录制时会触发```dataavailable```事件，获取得到最终的```blob```数据，```MediaRecorder.pause()```是暂停录制，```MediaRecorder.resume()```是恢复录制，```MediaRecorder.isTypeSupported()```是检查录制支持的文件格式。
+
+```ondatavailable```当数据有效会触发，获取```e.data```。这个事件跟随```timeslice```执行，如果没有指定则记录整个数据。如果指定了会定时触发。
+
+```onerror```在出现错误的时候触发录制会自动停止。
+
+```js```中有```4```种数据存储方式```字符串```，```blob```是一个高效的存储区域，```buffer```，```arraybuffer```就是```blob```依赖的底层，可以说```blob```是对```arraybuffer```的封装。```arraybufferview```是各种各样类型的```buffer```。
+
+一般常用```blob```，如果更底层一点可以使用```arraybuffer```。
+
+## 10. 录制案例
+
+这里来演示开始录制，播放录制的视频，下载录制的视频。
+
+```html
+<video playsinline id="player"></video>
+<video playsinline id="recplayer" controls=“true”></video>
+<button id="record">开始录制</button>
+<button id="recplay">开始播放</button>
+<button id="download">下载</button>
+```
+
+点击开始录制按钮的时候，需要判断是否已经开始录制，定义一个```textContent```状态来判断。如果是播放就暂停，如果是暂停就播放。
+
+当开始录制时创建一个```startRecord```函数，并且调用，在```startRecord```函数中首先重置存储录制数据的数组，这是为了避免上一次录制的数据干扰，然后使用```new MediaRecorder```创建录制对象。在录制对象的``ondatavailable``事件中可以不断的获取到录制的视频流，通过```handleDataAvailable```来接收，然后将它拼接在```buf```的采集数组中。
+
+```new MediaRecorder```传入的第一个参数是```getUserMedia```中的```stream```。
+
+在```stopRecord```函数中只需要调用```mediaRecorder.stop```就可以了。
+
+```js
+// 初始化一个mediaRecorder录制对象
+var mediaRecorder;
+// 创建一个存储数据流的数组。
+var buf = [];
+
+btnRecord.onclick = () => {
+    if (this.textContent === 'start record') {
+        startRecord();
+        this.textContent = 'stop record';
+    } else {
+        stopRecord();
+        this.textContent = 'start record'
+    }
+}
+
+function startRecord() {
+    // 开始录制时重置数组
+    buf = [];
+    // 约束视频格式
+    const options = {
+        mimeType: 'video/webm;codecs=vp8'
+    }
+    // 判断是否是支持的mimeType格式
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        console.error('不支持的视频格式');
+        return;
+    }
+    // 从window中获取stream
+    try {
+        mediaRecorder = new MediaRecorder(window.stream, options);
+        // 处理采集到的事件
+        mediaRecorder.ondatavailable = handleDataAvailable;
+        // 开始录制
+        mediaRecorder.start(10);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// 处理采集到的数据
+function handleDataAvailable(e) {
+    if (e && e.data && e.data.size > 0) {
+        // 存储到数组中
+        buf.push(e.data);
+    }
+}
+
+function stopRecord() {
+    mediaRecorder.stop();
+}
+
+if (navigator.mediaDevices || navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({
+        video: {
+            width: 640,
+            height: 480,
+            frameRate: 60,
+            facingMode: 'environment'
+        },
+        audio: true,
+    }).then(((stream) => { // 存储stream到window上
+        window.stream = stream;
+    }).catc
