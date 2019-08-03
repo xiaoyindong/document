@@ -132,4 +132,48 @@ const ctx = canvas.getContext('2d');
 ctx.beginPath();
 ctx.lineWidth = 5;
 // 边框颜色
-ctx.strokeSt
+ctx.strokeStyle = 'red';
+// 填充颜色
+ctx.fillStyle = 'green';
+// 起点坐标，宽，高
+ctx.rect(100, 100, 300, 200);
+// 填充
+ctx.fill();
+// 描边
+ctx.stroke();
+ctx.closePath();
+```
+
+## 6. 直方图绘制
+
+![屏幕快照 2021-06-26 20.57.30.png](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1b424f81588f466c9d81346914912e74~tplv-k3u1fbpfcp-watermark.image)
+
+```js
+// 绘制坐标轴
+ctx.beginPath()
+ctx.lineWidth = 2
+ctx.strokeStyle = 'lightblue'
+ctx.moveTo(pad, pad)
+ctx.lineTo(pad, ht * 1.5 - bottomPad)
+ctx.lineTo(wd * 1.5 - pad, ht * 1.5 - bottomPad)
+ctx.stroke()
+ctx.closePath()
+
+// 绘制 X 轴方向刻度
+ctx.beginPath()
+ctx.lineWidth = 1
+ctx.strokeStyle = '#666'
+for (let i = 1; i < Math.floor(wd * 1.5 / step); i++) {
+    ctx.moveTo(pad + i * step, ht * 1.5 - bottomPad)
+    ctx.lineTo(pad + i * step, ht * 1.5 - bottomPad + 10)
+}
+ctx.stroke()
+ctx.closePath()
+
+
+// 绘制 Y 轴方向刻度
+ctx.beginPath()
+ctx.lineWidth = 1
+ctx.strokeStyle = '#666'
+for (let i = 1; i < Math.floor(ht * 1.5 / step); i++) {
+    ctx.moveTo(pad, (ht * 1.5 - bottomPad) - (i
