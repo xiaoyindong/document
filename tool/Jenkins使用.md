@@ -58,4 +58,14 @@ git config --system http.sslVerify false
 
 编辑描述信息，随便输入点什么就可以了。```this is first test freestyle job```。
 
-同样在```general```中添加参数配置，在配置页面勾选参数化构建过程，添加一个选项参数和文本参数。选项参数名称为```deploy_env```, 选项为```dev```(```换行```)```pro
+同样在```general```中添加参数配置，在配置页面勾选参数化构建过程，添加一个选项参数和文本参数。选项参数名称为```deploy_env```, 选项为```dev```(```换行```)```prod```, 描述随便写，```choose deploy environment```。文本参数的名称填写```version```，默认值填写```1.0.0```，描述随便写，```build version```。
+
+配置源代码管理选项打开，将```git```上的代码```clone```到```jenkins```本地，进行随后的项目部署工作。输入```gitlab```的```url```地址，这里使用```https```的地址，```credentials```选择刚刚创建的账号密码。```branch```选中```master```。
+
+最后通过添加一个```shell```模块，完成```build```配置。在构建选项中，点击增加构建步骤，选择执行```shell```。在编辑栏中添加任务脚本。声明脚本格式。
+
+这里面的```deploy_env```和```version```就是前面添加的参数配置，这里会将选中的值传递进来。
+
+```s
+#!/bin/sh
+e
