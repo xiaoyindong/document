@@ -380,4 +380,163 @@ editBuilder.replace(selection, result);
         ],
         [
             "[","]"
-   
+        ],
+        [
+            "(",")"
+        ],
+        [
+            "\"","\""
+        ],
+        [
+            "'","'"
+        ]
+    ]
+}
+```
+
+这个设置已经提供了一些语言相关信息的模板了。
+
+第一个是代码注释```comments```的格式。```VS Code```允许提供两种不同格式的注释—单行注释和多行注释。提供这两个信息后，在编辑器里使用```Toggle Comment```命令时，```VS Code```会根据选择的内容的行数来决定使用哪个格式的注释。
+
+```brackets```是指这个语言支持的括号类型。要注意的是，这里输入的括号类型，只支持单个字符，比如```Ruby```的```def/end```就不能在这里使用了。
+
+```autoClosingPairs```是括号自动配对，比如输入了```{```，编辑器会自动补上```}```。```autoClosingPairs```的书写格式有两种。第一种是类似于```[“{”, “}”]```的数组形式，其中第一个元素就是开括号，第二个则是关括号。第二种书写格式则是输入一个对象。
+
+```json
+{ "open": "/**", "close": " */", "notIn": ["sring"] }
+```
+
+通过```open```和```close```属性来指定开关括号。这里的```括号```则是一个相对抽象的概念，并不一定真的是一对括号，比如在上面的例子里，```open```属性的值是```/```，而 close 属性则是```*/```，那么当输入```/```后， 编辑器就会立刻替你补上```*/```。可以通过这个来实现注释的自动补全。
+
+与此同时，这种写法还支持一个新的属性```notIn```。意思是在哪种代码里不进行自动补全。 比如在写注释的时候，可能就不希望将引号自动补全，不然的话，当输入```it’s```这种单词时，输入完单引号后，如果编辑器自作主张帮忙输入了另一个单引号，可就多此一举了。此时可以通 过```notIn```巧妙地避开了这一功能。
+
+```json
+{ "open": "'", "close": "'", "notIn": ["sring", "comment"] }
+```
+
+```notIn```可以填入的值有```string```和```comment```。
+
+```surroundingPairs```里的字符对适用于对选中的字符串进行自动包裹。比如当选中了```abc```这三个单词，然后按下双引号，此时，```VS Code```就会把```abc```直接变成```“abc”```，而不是将```abc```替换成双引号。这个功能就叫做```auto surround```。可以通过这个属性来决定语言里面，哪些字符对可以直接```auto surround```。
+
+
+除了上面这几个外，在```language-confguration.json```里，可以使用的属性有```WordPattern```、```Folding```和```Indentation```。这三个属性，分别定义了在这门语言中，一个单词长什么样、可被折叠的代码段的开头和结尾各长什么样以及如何根据一行的内容来控制缩进。
+
+```json
+"folding": {
+    "markers": {
+        "sart": "^\\s*//#region",
+        "end": "^\\s*//#endregion"
+    }
+},
+"wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\ {\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)",
+"indentationRules": {
+    "increaseIndentPattern": "^\\s*((begin|class| (private|protected)\\s+def|def|else|elsif|ensure|for|if|module|rescue|unless|until|when|while|case)| ([^#]*\\sdo\\b)|([^#]*=\\s*(case|if|unless)))\\b([^#\\{;]|(\"|'|\/).*\\4)*(#.*)?$",
+    "decreaseIndentPattern": "^\\s*(}\\]]?\\s*(#|$)|\\.[a-zA-Z_]\\w*\\b)| (end|rescue|ensure|else|elsif|when)\\b)"
+}
+```
+
+这三个属性的键都还是很好理解的，不过要注意，它们的值都是正则表达式。```VS Code```在读取了这些正则表达式后，就会拿它们对代码进行匹配。比如用鼠标双击代码，编辑器就会尝试着选中当前的单词，而这个单词就可以由```wordPattern```来决定。再比如默认情况下，```VS Code```会认为空格符并不是单词的一部分，但是有些语言则不然，空格也能成为合法的变量名称，这种时候，就可以在```wordPattern```中添加空格符以达到这一目的。
+
+```folding```设置里的```start```和```end```告诉编辑器哪一行代码是可折叠代码的开始和结束，而这些语法规则就是来自```folding```里的```start```和```end```。
+
+```indentationRules```这条规则则是来自于```TextMate```，感兴趣的同学可以阅读```TextMate```相关的文档```Appendix — TextMate 1.x Manual```。
+
+## 7. Language Server Protocol
+
+```language-confguration.json```和```tmLanguage```，一个控制了语言的```Folding```、括号、单词等基础信息，另一个控制了语言的语法```tokenization```规则。有了这两个文件，就可以获得语法高亮和 基于文本的各类编辑器功能了。
+
+不过，如果想在编辑器内提供一定的自动补全或者代码跳转，还要写一点代码。在```VS Code```的插件```API```里包含了```Language Server Protocol```的```API```。也就是说，通过书写简单的```JavaScript```代码，可以为```VS Code```提供语言服务，不理解```Language Server Protocol```也没关系，因为每个```API```都可以单独拿出来使用。
+
+下面来实现一个自动补全的插件。可以沿用之前的插件模板，这个插件只有一个代码文件```extension.js```。
+
+不过这一次不是注册一个命令，而是要注册一个自动补全提供者(```provider```)。先输入```vscode.languages.```，然后看看自动补全都提示了什么。
+
+```languages```下能够注册各种不同的语言功能，比如自动补全 (```CompletionItemProvider```)、代码跳转(```DefnitionProvider```)、格式化 (```DocumentFormattingEditProvider```)等等。一个完整的```Language Server```，其实就将这些方法通通实现，只不过```Language Server```是运行在另一个独立的进程里。而使用插件```API```时，选择只实现某些```API```。这里选择```CompletionItemProvider```，需要提供三个参数。
+
+第一个是```DocumentSelector```。控制在哪些文件中提供自动补全。类型可以是字符串，也可以是```DocumentFilter```。先试用```plaintext```。
+
+第二个是```CompletionItemProvider```了。这个对象至少要拥有下面这个函数属性。
+
+```js
+provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken, context: CompletionContext): ProviderResult<CompletionItem[] | CompletionLis>;
+```
+
+```VS Code```在调用这个函数时，会提供当前的文档```document```， 光标所在的位置```position```，用于监测用户取消建议操作的```CancellationToken```，以及最后一个当前补全项的上下文```context```。
+
+有了```document```和```position```，就能够分析全文代码并且推测当前光标处可能的建议选项了。返回值可以是```CompletionItem[]```或者```CompletionLis```。
+
+```js
+export class CompletionItem {
+    label: sring;
+    kind?: CompletionItemKind;
+    detail?: sring;
+    documentation?: sring | MarkdownString;
+    sortText?: sring;
+    flterText?: sring;
+    preselect?: boolean;
+    insertText?: sring | SnippetString;
+    range?: Range;
+    commitCharacters?: sring[];
+    keepWhitespace?: boolean;
+    additionalTextEdits?: TextEdit[];
+    command?: Command;
+    consructor(label: sring, kind?: CompletionItemKind);
+}
+
+export class CompletionLis {
+    isIncomplete?: boolean;
+    items: CompletionItem[];
+    consructor(items?: CompletionItem[], isIncomplete?: boolean);
+}
+```
+
+虽然```CompletionItem```的属性非常多，但实际上除了```label```以外，其他都是```optional```的。```label```就是建议项的名字，用于建议列表里的显示。不过，除了```label```，还必须告诉```VS Code```，当用户从建议列表里选择了这个建议项之后，按下回车，该如何修改光标处的代码。这时候就要使用```insertText```和```range```这两个属性了，它们决定了将哪段代码替换成什么新的文本。
+
+```regiserCompletionItemProvider```的第三个属性，是```triggerCharacters```决定了当用户按下哪个字符之后，编辑器就应该立刻询问```CompletionItemProvider```以提供自动补全建议。比如只在用户按下```.```和```(```时触发自动补全，那么这里要输入的就是```[‘.’, ‘(’]```。
+
+```extension.js```
+
+```js
+cons vscode = require('vscode');
+function activate(context) { 
+    vscode.languages.regiserCompletionItemProvider('plaintext', {
+        provideCompletionItems: (document, position) => {
+            return [
+                {
+                    label: 'mySuggesion', 
+                    insertText: 'mySuggesion'
+                } 
+            ]
+        }
+    }, ['.'])
+}
+
+exports.activate = activate;
+
+function deactivate() {
+
+}
+exports.deactivate = deactivate;
+```
+
+需要将```package.json```里的```activationEvents```改成```*```，
+
+```js
+"activationEvents": [ "*"],
+```
+
+```F5```启动插件运行后，打开一个纯文本，输入```this.```，当输入```.```之后，立刻看到了建议列表。然后按下回车，插件提供的建议就被插入到编辑器里了。
+
+使用上面的样例代码，当将光标移动到```vscode.languages```上时，按下```F12```，```VS Code```就立刻跳转到```VS Code```插件```API```的```typings```文件里。这个文件是所有插件```API```的定义。如果是在```registerCompletionItemProvider```上按```F12```，则是直接跳转到这个```API```的定义处。可以通过跳转定义命令(```F12```)，一个个查询每个类型。
+
+```VS Code```的插件```API```太多了，有了```typings```文件，不离开```VS Code```，就能够了解到它们各自是怎么使用的。
+
+## 8. Decorations 装饰器
+
+首先，使用```JavaScript```插件模板。```extension.js```文件内容如下。
+
+```js
+cons vscode = require('vscode');
+function activate(context) { 
+    vscode.commands.regiserCommand('extension.sayHello', () => {
+        let decor
