@@ -333,4 +333,175 @@ const performTask = deadline => {
 我们来实现一下上面的流程。在这个jsx中root是父节点，div是子节点，这里我们已经通过render方法传递进去了。
 
 ```jsx
-im
+import React, { render } from './react';
+const jsx = <div>
+    <p>Hello Fiber</p>
+</div>
+
+const root = document.getElementById('root');
+
+render(jsx, root)
+```
+
+在render这个方法中我们前面已经写完了任务的调度逻辑，下面我们编写构建Fiber的逻辑，在getFirstTask方法中我们首先要获取一个subTask，从任务队列中获取这个任务。然后构建最外层节点对应的Fiber对象。
+
+这里我首先要获取的是第一个小任务，并不是任务队列中的第一个任务，是任务队列中任务的第一个小任务。我们把任务队列中拿出来的task看成是一个大任务，要从中获取第一个子任务。也就是构建最外层Fiber节点对象。这里返回这个Fiber对象。
+
+```js
+{
+    type: "节点类型",
+    props: "节点属性",
+    stateNode: "节点DOM对象 或 组件实例对象",
+    tag: "节点标记", // host_root  host_component class_component function_component
+    effects: ['存储需要更改的fiber对象'],
+    effectTag: "当前Fiber要被执行的操作", // 新增 删除 修改
+    parent: "当前Fiber的父级Fiber",
+    child: "当前Fiber的子级Fiber",
+    sibling: "当前Fiber的兄弟Fiber",
+    alternate: "Fiber备份用于比对时使用"
+}
+```
+
+对于最外层节点不需要有type属性，所以我们直接省略掉。因为是最外层节点，所以effectTag和parent也是不存在的，sibling和alternate暂时也不需要，child暂时先写成null。
+
+```js
+const getFirstTask = () => {
+    // 从任务队列中获取任务
+    const task = taskQueue.pop();
+    // 返回最外层节点Fiber对象
+    return {
+        props: task.props,
+        stateNode: task.dom,
+        tag: 'host_root',
+        effects: [],
+        child: null,
+    }
+}
+```
+
+getFirstTask函数返回的值会赋值给subTask，当subTask有值并且浏览器有空余时间的时候就会调用循环，执行executeTask函数。父级节点已经构建完了，这个时候我们要开始构建子级节点了。executeTask接收的参数就是subTask。
+
+要构建子节点首先要拿到子节点的虚拟DOM对象，可以通过subTask.props.children, subTask也就是fiber，所以可以从fiber.props.children中获取。
+
+```js
+const executeTask = fiber => {
+    reconcileChildren(fiber, fiber.props.children)
+}
+```
+
+这里我们调用reconcileChildren方法来做这件事，传入fiber和子节点的虚拟DOM对象。因为要建立父子之间的关系，所以两个参数都要传递。
+
+这里的children可能是一个DOM对象也可能是一个数组，在构建子节点之前我们要处理一下。我们统一处理成数组，如果是对象就给对象包裹一层数组。
+
+接着我们要拿到arrifiedChildren中的虚拟DOM将它转换成Fibler，这里用到了循环。这里定义了三个变量，index和number用于循环，element存储当前遍历到的DOM对象。
+
+```js
+const arrified = arg => Array.isArray(arg) ? arg : [arg]
+
+const reconcileChildren = (fiber, children) => {
+    // 将children转换成数组
+    const arrifiedChildren = arrified(children);
+
+    let index = 0;
+
+    let numberOfElements = arrifiedChildren.length;
+
+    let element = null;
+
+    while (index < numberOfElements) {
+        element = arrifiedChildren[index];
+        index++;
+    }
+}
+```
+
+element就是我们需要的子节点，接下来我们就可以构建fiber对象了，我们声明一个newFiber对象。他的值默认为空，当循环的时候获取到对应的Fiber对象。
+
+```js
+const reconcileChildren = (fiber, children) => {
+    // 将children转换成数组
+    const arrifiedChildren = arrified(children);
+
+    let index = 0;
+
+    let numberOfElements = arrifiedChildren.length;
+
+    let element = null;
+    // 当前正在构建的的Fiber
+    let newFiber = null;
+    // 存储前一个节点，用于构建兄弟关系
+    let prevFiber = null;
+
+    while (index < numberOfElements) {
+        element = arrifiedChildren[index];
+        newFiber = {
+            type: element.type,
+            props: element.props,
+            tag: 'host_component',
+            effects: [],
+            effectTag: 'placement', // 新增
+            stateNode: null, // dom对象，暂时没有
+            parent: fiber,
+        }
+        // 如果第一个子节点就赋值到fiber上
+        if (index == 0) {
+            fiber.child = newFiber;
+        } else {
+            // 否则放在前一个的兄弟节点上
+            prevFiber.sibling = newFiber;
+        }
+        prevFiber = newFiber;
+        index++;
+    }
+}
+```
+
+在fiber对象当中有一个属性叫做stateNode, 这个属性的值要取决当前节点的类型，如果当前节点是普通节点，就存储当前节点DOM对象，如果是组件的话就存储组件的实例对象。这里我们要声明一个方法来做这个判断。这个方法接收当前的fiber对象作为参数。
+
+这里依赖createDOMElement方法，实现方法可以参考前一章[手写React源码](https://github.com/xiaoyindong/tinyReact/)，具体实现这里就不啰嗦了。
+
+```js
+// 获取节点对象
+newFiber.stateNode = createStateNode(newFiber);
+
+const createStateNode = fiber => {
+    // 普通节点
+    if (fiber.tag === 'host_component') {
+        return createDOMElement(fiber)
+    }
+}
+```
+
+在Fiber对象中还有一个tag属性，他表示的是当前节点到底是标签节点还是组件节点，这里也需要一个函数来判断。
+
+```js
+
+const getTag = vdom => {
+    if (typeof vdom.type === 'string') {
+        return 'host_component'
+    }
+}
+
+newFiber = {
+    type: element.type,
+    props: element.props,
+    tag: getTag(element),
+    effects: [],
+    effectTag: 'placement', // 新增
+    stateNode: null, // dom对象，暂时没有
+    parent: fiber,
+}
+
+```
+
+这里需要注意的是根节点是不需要调用getTag来获取的，根节点始终都为host_root字符串。
+
+至此外层节点对象和第一个子集节点对象我们就构建完成了，接着我们开始查找节点，继续构建节点对象。之前我们通过reconcileChildren方法构建了外层节点对象和第一个子级节点对象，当第一个子集构建完成之后，代码会重新回到这个函数。我们在这里判断fiber是否有child，如果有就返回。这样executeTask执行结束之后就会返回一个新的任务。
+
+这样executeTask执行完会再次执行executeTask。第二次执行时传入的fiber就是fiber.child，将子级当做父级来执行。继续构建子级的子级。
+
+```js
+const executeTask = fiber => {
+    // 构建子级fiber对象
+    reconcileChildren(fiber, fiber.props.children)
+    if (fiber.child
