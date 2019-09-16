@@ -175,4 +175,65 @@ console.log(jsx);
 接着我们需要引入render将虚拟DOM渲染到页面中引入render方法。
 
 ```js
-imp
+import React, { render } from './react';
+const jsx = <div>
+    <p>Hello Fiber</p>
+</div>
+
+const root = document.getElementById('root');
+
+render(jsx, root)
+```
+
+我们需要定义一下render方法，这个函数接收两个参数，虚拟DOM和要渲染的容器。
+
+在这个函数中需要做两件事，第一件是想任务队列中添加任务，第二个是指定在浏览器空闲时执行任务。所谓的任务就是要做的事，比如通过虚拟DOM构建Fiber对象就是任务，任务队列就是一个数组，因为任务不只一个。所以任务放在任务队列中，队列就是数组。
+
+```js
+const render = (element, dom) => {
+    
+}
+```
+
+我们这里还需要定义一个队列createTaskQueue，可以向队列中添加内容和读取内容。
+
+```js
+const createTaskQueue = () => {
+    const taskQueue = [];
+    return {
+        push: item => { // 向任务队列中添加任务
+            return taskQueue.push(item);
+        },
+        pop: () => { // 从任务队列中获取任务
+            return taskQueue.shift();
+        },
+        isEmpty: () => { // 判断是否存在任务
+            taskQueue.length === 0
+        }
+    }
+}
+
+export default createTaskQueue;
+```
+
+然后在render方法中向队列中添加任务，一个任务就是一个对象，这个对象有父级和子级两个属性，[链接地址](https://github.com/xiaoyindong/fiber/tree/2206c45ca212282b65c0a0e5c4c79e655590b79a)
+
+```js
+import { createTaskQueue } from '../Misc';
+const taskQueue = createTaskQueue();
+
+export const render = (element, dom) => {
+    // 1. 向任务队列中添加任务
+    taskQueue.push({
+        dom, // 父级
+        props: {
+            children: element // 子级
+        }
+    })
+    // 2. 指定在浏览器空闲时执行任务
+}
+```
+
+## 实现任务的调度逻辑
+
+接下来我们要实现任务的调度逻辑，在render方法中我们要调用requestIdleCallback这个api在浏览器空
