@@ -135,4 +135,53 @@ exports.default = () => {
     })
     // 读取到的文件写入到对应文件
     read.pipe(transform).pipe(write);
-   
+    return read;
+}
+```
+
+```gulp```官方的定义就是基于流的构建系统，```gulp```实现的是一种管道的概念。
+
+## 5. 文件操作
+
+```gulp```有自己的读取流和写入流，相比较```node```来说更好用一些。
+
+```js
+const { src, dest } = require('gulp');
+const cleanCss = require('gulp-clean-css');
+const rename = require('gulp-rename');
+
+export.default = () => {
+    return src('src/a.css').pipe(cleanCss()).pipe(rename({ extname: '.min.css'})).pipe(dest('dist'));
+}
+```
+
+这样会将```src/a.css```文件写入到```dist```文件夹下。
+
+```js
+const { src, dest } = require('gulp');
+const cleanCss = require('gulp-clean-css')
+
+export.default = () => {
+    return src('src/*.css').pipe(cleanCss()).pipe(rename({ extname: '.min.css'})).pipe(dest('dist'));
+}
+```
+
+## 6. 样式编译
+
+```js
+const { src, dest } = require('gulp');
+const sass = require('gulp-sass');
+
+const style = () => {
+    return src('src/*.css', { base: 'src'}).pipe(sass({outputStyle: 'expanded'})).pipe(dest('dist'));
+}
+
+module.exports = {
+    style
+}
+```
+
+## 7. 脚本编译
+
+```js
+const { src, des
