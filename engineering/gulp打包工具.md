@@ -184,4 +184,80 @@ module.exports = {
 ## 7. 脚本编译
 
 ```js
-const { src, des
+const { src, dest, parallel, series } = require('gulp');
+
+const del = require('del');
+const sass = require('gulp-sass');
+const babel = require('gulp-babel');
+const swig = require('gulp-swig');
+const imagemin = require('gulp-imagemin');
+
+// 删除dist
+const clean = () => {
+    return del(['dist']);
+}
+// 样式
+const style = () => {
+    return src('src/*.css', { base: 'src'}).pipe(sass({outputStyle: 'expanded'})).pipe(dest('dist'));
+}
+// js
+const script = () => {
+    return src('src/*.js', { base: 'src'}).pipe(babel({presets: ['@babel/preset-env']})).pipe(dest('dist'));
+}
+// html swig中可以使用传入的参数
+const page = () => {
+    return src('src/*.html', { base: 'src'}).pipe(swig({data: { date: new Date()})).pipe(dest('dist'));
+}
+// image
+const image = () => {
+    return src('src/images/**', { base: 'src'}).pipe(imagemin({})).pipe(dest('dist'));
+}
+// font
+const font = () => {
+    return src('src/fonts/**', { base: 'src'}).pipe(imagemin({})).pipe(dest('dist'));
+}
+// extra copy public file
+const extra = () => {
+    return src('public/**', { base: 'public'}).pipe(dest('dist'));
+}
+
+const compile = parallel(style, script, page, image, font);
+
+const build = series(clean, parallel(compile, extra));
+
+module.exports = {
+   build
+}
+```
+
+## 8. 自动加载插件
+
+手动方式载入插件```require```会越来越多不利于后期维护，可以通过```gulp-load-plugin```提供的插件自动载入使用的插件。
+
+```js
+// 自动载入插件
+const loadPlugins = require('gulp-load-plugins');
+const plugins = loadPlugins();
+```
+
+用法很简单，会自动把```gulp-```删除，后面的名称变为驼峰命名，比如```gulp-sass```可以写成```plugins.sass```。
+
+```js
+const { src, dest, parallel, series } = require('gulp');
+
+const del = require('del');
+
+// 自动载入插件
+const loadPlugins = require('gulp-load-plugins');
+const plugins = loadPlugins();
+
+// 删除dist
+const clean = () => {
+    return del(['dist']);
+}
+// 样式
+const style = () => {
+    return src('src/*.css', { base: 'src'}).pipe(plugins.sass({outputStyle: 'expanded'})).pipe(dest('dist'));
+}
+// js
+const script = ()
