@@ -117,4 +117,22 @@ exports.foo = () => {
 
 ```js
 const fs = require('fs');
-const { Transform } = 
+const { Transform } = require('stream');
+exports.default = () => {
+    // 创建文件读取流
+    const read = fs.createReadStream('a.css');
+    // 文件写入流
+    const write = fs.createWriteStream('b.css');
+    // 文件转换
+    const transform = new Transform({
+        transform: (chunk, encoding, callback) => {
+            // chunk是读取到的内容，也就是流
+            // 使用正则删除空格删除注释
+            const input = chunk.toString();
+            const output = input.replace(/\s+/g, '').replace(/\/\*.+?\*\//g, '');
+            callback(output);
+        }
+    })
+    // 读取到的文件写入到对应文件
+    read.pipe(transform).pipe(write);
+   
