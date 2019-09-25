@@ -191,4 +191,96 @@ ansible-playbook -i inventory/testenv ./deploy.yml
 执行完成。可以去目标主机查看状态。创建了一个```test.txt```文件并且将数据写到了文件中。
 
 ```s
-ssh root@test.e
+ssh root@test.example.com
+ls
+cat test.txt
+```
+
+## 2. 常用模块
+
+```ansible```的模块是由```ansible```对特定部署操作脚本打包封装后的成品，可以利用该模块成品直接利用编写```PlayBooks```，这样就大大简化了日常工作中对部署脚本的编写逻辑，从而方便后期去维护管理。
+
+### 1. File模块
+
+用来在目标主机上创建文件或目录，并对其赋予响应的系统权限。```file```调用的是```file```模块，这里定义在目标主机上创建一个```root/foo.txt```文件。```state```表示要创建文件，```mode```表示文件```0755```权限。
+
+```yml
+- name: create a file
+  file: 'path=/root/foo.txt state=touch mode=0755 owner=foo group=foo'
+```
+
+### 1. Copy模块
+
+实现```ansible```服务端到目标主机的文件传送。
+
+```yml
+- name: copy a file
+  copy: 'remote_src=no src=reles/testbox/files/foo.sh' dest=/root/foo.sh mode=0644 force=yes
+```
+
+### 3. State模块
+
+获取远程文件状态信息，并将这个信息保存在环境变量下，用于使用。保存到```script_stat```变量中。
+
+```yml
+- name: check if foo.sh exists
+  stat: 'path=/root/foo.sh'
+  register: script_stat
+```
+
+### 4. Debug模块
+
+用来在```ansibles```输出下打印数据
+
+```yml
+- debug: msg=foo.sh exists
+  when: script_stat.stat.exists
+```
+
+### 5. Command/Shell模块
+
+用来执行```Linux```目标主机命令行，```Shell```会调用```/bin/bash```, 可以使用系统变量。```Command```不可以, 推荐使用```shell```。
+
+```yml
+- name: run the script
+  command: "sh /root/foo.sh"
+
+- name: run the script
+  shell: "echo 'test' > /root/test.txt"
+```
+
+### 6. Template
+
+实现```ansible```服务端到目标主机的```jinja2```模板传统，会利用这个功能编写```app```配置文件，例如```nginx```配置文件。
+
+```yml
+- name: write the nginx config file
+  template: src=roles/testbox/templates/nginx.conf.j2 dest=/etc/nginx/nginx/conf
+```
+
+### 7. Packaging模块
+
+调用目标主机系统包管理工具(```yum```, ```apt```)，根据定义的安装包的名称进行配置安装。
+
+```yml
+- name: ensure nginx is at the latest version
+  yum: pkg=nginx state=latest
+
+- name: ensure nginx is at the latest version
+  apt: pkg=nginx state=latest
+```
+
+### 8. Service模块
+
+管理目标主机的系统服务
+
+```yml
+- name: start nginx service
+  service: name=nginx state=started
+```
+
+## 3. 案例演示
+
+利用上面的介绍编写一个完整的```ansible playbooks```脚本文件。
+
+`
