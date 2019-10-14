@@ -64,4 +64,31 @@
 
 只支持以上两种环境
 
-如果
+如果不安装```service Worker``` 则无法添加图标
+
+## Service Worker
+
+- 不能访问/操作dom
+
+- 会自动休眠，不会随浏览器关闭所失效(必须手动卸载)
+
+- 离线缓存内容开发者可控
+
+- 必须在https或者localhost下使用
+
+- 所有api都基于promise
+
+生命周期:
+
+installing安装阶段
+installed安装完成阶段
+activating激活中
+activated激活完成
+redundant废弃
+
+```script```的代码。
+
+```js
+window.addEventListener('load', function() {
+    // 解决离线缓存的问题 缓存 把缓存取出来
+    if ('serviceWorker' in navigator) { // 判断当前浏览器是否支持serviceWo
