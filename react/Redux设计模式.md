@@ -22,4 +22,8 @@ Redux是一种设计模式同时也是一种项目架构方案，他不依赖任
 
 使用Redux架构来说所有的组件基本不会互相通信了，数据放在一个叫做store的数据仓库中存储。
 
-![](https://p9-juejin.byteimg.com/tos-
+![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/284e30439e644619832e0736bbc3812a~tplv-k3u1fbpfcp-watermark.image)
+
+通过使用Redux我们可以剥离出组件中的数据(state),将所有数据统一存放在Redux数据(store)仓库中,如果组件中哪一个组件需要使用到数据，这个组件可以去数据仓库中自行认领有个高大上的叫法是订阅。如果组件中对store中的数据进行了更新那么store会向订阅了这个数据的所有组件推送最新的数据，这就是Redux的原理。
+
+Redux就是数据仓库，他把数据统一保存起来，在隔离的数据和UI的同时还处
