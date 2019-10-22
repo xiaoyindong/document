@@ -422,4 +422,193 @@ RUN /bin/bash -c 'source $HOME/.bashrc; echo $HOME'
 
 ### 4. WORKDIR
 
-设定当前工作目录，这个有点像```linux```里面通过```cd```去改变目录，在当前的目
+设定当前工作目录，这个有点像```linux```里面通过```cd```去改变目录，在当前的目录下去做一些事情，比如说运行一些程序或者做一些事情，对于```workdir```来说如果通过```workddir```访问一个目录，如果没有这个目录，会自动创建这个目录。
+
+```s
+WORKDIR /root
+WORKDIR /test
+WORKDIR deom
+RUN pwd # /test/demo
+```
+
+工作中建议使用```WORKDIR```不建议使用```RUN cd```。
+
+### 5. ADD 和 COPY
+
+他们的作用很像都是将本地的文件添加到```Image```里面。不过```ADD```不光可以添加还可以解压缩。比如将```test.tar.gz```添加之后会自动的解压缩。
+
+```s
+# 将hello文件添加到/跟目录
+ADD hello /
+```
+
+如果通过```WORKDIR```改变了目录，```ADD```添加的目录是```WORKDIR```改变之后的目录.
+
+```s
+WORKDIR /root
+ADD hello test/ # /root/test/hello
+```
+
+大部分情况```COPY```要比```ADD```优先去使用，添加远程文件或者目录，多数使用```curl```或者```wget```去下载。
+
+### 6. ENV
+
+设定常量，比如设置```MYSQL_VERSION```为```5.6```，那么在下面的代码中就可以使用```MYSQL_VERSION```这个变量了。尽量使用```ENV```增加可维护性。
+
+```s
+ENV MYSQL_VERSION 5.6 # 设置
+RUN apt-get install -y mysql-server="${MYSQL_VERSION}" \ # 引用
+    && rm -rf /var/lib/apt/lists/*
+```
+
+### 7. VOLUME 和 EXPOSE
+
+主要用于存储和网络，后面单独来讲。
+
+### 8. CMD 和 ENTRYPOINT
+
+```RUN```是执行命令并创建新的```Image Layer```。
+
+```CMD```是设置容器启动后默认执行的命令和参数
+
+```ENTRYPOINT```是设置容器启动时运行的命令
+
+这里来对比一下```CMD```和```ENTRYPOINT```，弄懂他们的区别，在此之前需要了解两种格式。第一种称之为```shell```格式，第二种称之为```exec```格式。
+
+```shell```格式将要运行的命令当成一个```shell```命令来执行。
+
+```s
+RUN apt-get install -y vim
+CMD echo "hello docker"
+ENTRYPOINT echo "hello docker"
+```
+
+```exec```和```shell```的区别是要使用特定的格式来指明要运行的命令和命令的参数。
+
+```s
+RUN ["apt-get", "install", "-y", "vim"]
+CMD ["/bin/echo", "hello docker"]
+ENTRYPOINT ["/bin/echo", "hello docker"]
+```
+
+接着来看下下面这两个```Dockerfile```, 首先定义了依赖的```Image```，然后定义了常量```name```，接着使用```ENTRYPOINT```运行了一个```echo```命令，这里的命令传入了一个参数```name```。
+
+```s
+FROM centos
+ENV name Docker
+ENTRYPOINT echo "hello $name"
+```
+
+```s
+FROM centos
+ENV name Docker
+ENTRYPOINT ["/bin/echo", "hello $name"]
+```
+
+实际打包之后运行发现通过```exec```的方式并不会将```$name```替换为常量，这是因为```shell```格式运行命令的时候，他执行的是一个```shell```，所以执行的时候可以识别到```ENV```常量，但是```exec```的格式执行```echo```的时候他执行的是```echo```，并不是```shell```也就无法取得变量。
+
+可以通过指定```exec```是通过```shell```方式去执行的，就是在```exec```中指定```bash```，然后通过```-c```将后面的```echo```和```$name```都作为参数.而且只能是一个命令。
+
+```s
+FROM centos
+ENV name Docker
+ENTRYPOINT ["/bin/base", "-c", "echo hello $name"]
+```
+
+```CMD```是容器启动的时候默认执行的命令，上面的例子中如果将```ENTRYPOINT```改为```CMD```结果是一样的。如果在```docker run```的时候制定了其它命令，```CMD```命令会被忽略掉，如果定义了多个```CMD```，只有最后一个会执行。
+
+```s
+FROM centos
+ENV name Docker
+CMD echo "hello $name"
+
+# 指明运行的命令
+docker run -it [Image] /bin/base
+```
+
+```ENTRYPOINT```是让容器以应用程序或者服务的形式运行，不会被忽略，一定会执行。最佳实践是写一个```shell```脚本作为```entrypoint```。比如说启动一个数据库服务。
+
+比如下面这个```mongod```的脚本，首先他```copy```了一个sh脚本到```bin```中，然后```docker-entrypoint.sh```最为启动脚本。
+
+```s
+COPY docker-entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["docker-entrypoint.sh"]
+EXPOSE 27017
+CMD ["mongod"]
+```
+
+实际上在官方的很多```Dockerfile```中都会使用```ENTRYPOINT```。
+
+## 6. Image分发
+
+可以通过```hub.docker```去拉取别人的```Image```，同样自己的```Image```也可以发布到```hub.docker```上。
+
+```hub.docker```是一个类似```github```的网站，它里面存储了很多```Image```，并且拉取```Image```的时候是不需要登录的。但是当发布```Image```的时候是必须要登录的。所以需要注册```hub.docker```的账号。
+
+如果需要将```Image```发布到```hub.docker```，这个```tag```需要时```hub.docker```的```账号/名字```，否则将会没有权限，因为只能向自己的```hub```中```push Image```。
+
+首先需要使用```docker login```去登录，输入用户名和密码。
+
+```s
+docker login
+
+# Login successed
+```
+
+```push```的方法很简单，就是使用```docker push```命令，参数就是```Image```的名字。会根据```Image```的大小不同```push```的时间也会不同，```push```成功就会会返回一个```id```。这时候去```hub.docker```就可以看到```Image```了。
+
+```s
+docker push yindong/hello-world
+```
+
+发布成功之后任何一个人都可以拉取```push```的这个```Image```。
+
+```s
+docker pull yindong/hello-world
+```
+
+但是这样发布的```Image```是有问题的，他还缺乏文档。所以与其分享```Image```不如分享```Dockerfile```。
+
+可以在```create```里面点击```create automated build```, 这个是要把```docker```账号```link```到```github```上，然后在```github```上创建一个仓库，然后将本地用于```build Image```的```Dockerfile```发布的```github```上，然后```hub.docker```和```github```做一个关联，也就是说```github```有```Dockerfile```他就会自动去```clone```获取到这个```Dockerfile```然后```docker.hub```的后台服务器会```build```，这样既提供了```Dockerfile```，而且```Image```又是```docker```服务器```build```的，安全性有所提升。只需要去维护```Dockerfile```就可以了，```hub.docker```会维护打包```Image```。
+
+## 7. 搭建私有docker hub
+
+如果不想将```Image```发布到```hub.docker```, 想要搭建一个私有的```docker registry```，```docker```提供了一个```Image```叫做```registry```，通过这个```Image```就可以在本地或者```linux```服务器搭建一台自己的类似于```docker hub```，只不过这个```docker hub```是没有```UI```界面的，而且他是只供公司内部或者个人使用的```docker hub```。
+
+搭建这个其实是非常简单的, 只需要运行下面这个命令就可以了。通过```registry Image去```创建一个```container```，这个```container```跑起来之后就相当一个```web```服务器。
+
+```s
+docker run -d -p 5000:5000 --restart always --name registry registry:2
+```
+
+然后就可以使用```docker```的```push``` 或者 ```pull``` 了。
+
+假设有一台```linux```服务器，在这台机器上执行上面的```run```代码。
+
+安装之后可以使用```telnet```尝试访问上面的```linux```, 如果```telnet```不存在可以使用```yum```安装。
+
+```s
+telnet xx.xx.xx.xx 5000
+```
+
+正常是可以访问通的。使用私有的```docker hub```需要将```Image```的```tag```修改，之前的```tagname```部分需要改为私有```docker hub```服务的```ip:port```。
+
+```s
+docker build xx.xx.xx.xx:5000/hello-world .
+```
+
+这样就可以通过```docker push```去提交```xx.xx.xx.xx:5000/hello-world```了。不过在```push```之前需要在```/etc/docker```的目录下创建```daemon.json```文件。这个文件中写入受信任的```ip```和```域名```。
+
+```json
+{"insecure-registries": ["xx.xx.xx.xx:5000"]}
+```
+
+有了这个以后需要在```docker```的```server```文件中添加一行。
+
+```s
+vim /lib/systemd/system/docker.service
+```
+
+```s
+ExecStart=/usr/bin/dockerd
+EnvironmentFile=-/etc/docker/daemon.json # 
