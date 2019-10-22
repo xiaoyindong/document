@@ -239,4 +239,80 @@ docker run yindong/hello-world
 docker container ls
 ```
 
-```docker container ls -a```可以查看所有的容器包括运行的和退出
+```docker container ls -a```可以查看所有的容器包括运行的和退出的。
+
+```s
+docker container ls -a
+```
+
+可以通过```docker run -it```的方式来交互式的运行```Image```。也就是可以在这里运行命令，读写文件之类的。实际上进入到了```Container```里面。并且在执行```exit```退出容器的时候，之前的操作也会清除。
+
+```s
+docker run -it centos
+exit
+docker --help
+```
+
+## 3. 命令
+
+````docker````的命令分为两部分，第一部分是```Management Commands```第二部分是 ```Commands```。
+
+```Management Commands```是对```docker```里面的对象进行管理的。
+
+```s
+docker --help
+# 查看命令
+docker Image
+docker container
+# 查看container列表
+docker container ls -a
+# 删除container，id可以不用写全
+docker container rm id
+```
+
+```Commands```提供的是一些简便的方法，比如使用```docker container ls -a```查看```container```列表。
+
+```s
+docker ps -a
+# 删除一个container，默认docker的rm就是remove container
+docker rm id
+# docker Image ls
+docker Images
+# 删除 Image
+docker Image rm id
+docker rmi id
+```
+
+## 4. 删除container
+
+通过```docker ps -a```会查看到很多的过期```container```，可以使用```docker rm```删除，也可以使用```docker container ls -aq```打印出所有```container id```, 这相当于使用搜索打印第一列。
+
+```s
+docker container ls -aq
+docker container ls -a | awk {'print$1'}
+```
+
+有了这个id可以通过```docker rm $(docker container ls -aq)```删除所有的。
+
+```s
+docker rm $(docker container ls -aq)
+```
+
+如果更复杂的情况比如删除所有已经退出的```container```，通过筛选退出的容器。然后使用```docker rm```删除掉这些```container```。
+
+```s
+# 列出状态为exited的container
+docker container ls -f "status=exited" -q
+# 删除指定调教的container
+docker rm $(docker container ls -f "status=exited" -q)
+```
+
+### 2. docker container commit命令
+
+这个命令是创建一个```container```，然后在这个```container```中发生了一些变化，比如说安装了某个软件，这样的话可以把这个已经改变的```container```生成一个新的```Image```，可以简写成```docker commit```
+
+```s
+docker container commit
+docker commit
+```
+
