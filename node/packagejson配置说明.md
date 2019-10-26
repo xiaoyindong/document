@@ -106,4 +106,62 @@
 
 ```json
 "bugs": { 
-  
+  "url" : "https://github.com/owner/project/issues",
+  "email" : "project@hostname.com"
+}
+```
+
+## 8. license 字段
+
+```license```是当前项目的协议，让用户知道他们有何权限来使用你的模块，以及使用该模块有哪些限制。
+
+```json
+"license" : "BSD-3-Clause"
+```
+
+## 9. author 字段、contributors 字段
+
+```author```是具体一个人，```contributors```表示一群人，他们都表示当前项目的共享者。同时每个人都是一个对象。具有```name```字段和可选的```url```及```email```字段。
+
+```json
+"author": {
+  "name" : "yindong",
+  "email" : "yindong@xx.com",
+  "url" : "https://zhiqianduan.com/"
+}
+```
+
+也可以写成一个字符串
+
+```json
+"author": "yindong yindong@xx.com (https://zhiqianduan.com/)"
+```
+
+## 10. files 字段
+
+```files```属性的值是一个数组，内容是模块下文件名或者文件夹名，如果是文件夹名，则文件夹下所有的文件也会被包含进来（除非文件被另一些配置排除了）
+
+可以在模块根目录下创建一个```.npmignore```文件，写在这个文件里边的文件即便被写在```files```属性里边也会被排除在外，这个文件的写法与```.gitignore```类似。
+
+## 11. main 字段
+
+```main```字段指定了加载的入口文件，```require```导入的时候就会加载这个文件。这个字段的默认值是模块根目录下面的```index.js```。
+
+## 12. bin 字段
+
+```bin```项用来指定每个内部命令对应的可执行文件的位置。如果你编写的是一个```node```工具的时候一定会用到```bin```字段。
+
+当我们编写一个```cli```工具的时候，需要指定工具的运行命令，比如常用的```webpack```模块，他的运行命令就是```webpack```。
+
+```json
+"bin": {
+  "webpack": "bin/index.js",
+}
+```
+
+当我们执行```webpack```命令的时候就会执行```bin/index.js```文件中的代码。
+
+在模块以依赖的方式被安装，如果存在```bin```选项。在```node_modules/.bin/```生成对应的文件，
+```Npm```会寻找这个文件，在```node_modules/.bin/```目录下建立符号链接。由于```node_modules/.bin/```目录会在运行时加入系统的```PATH```变量，因此在运行npm时，就可以不带路径，直接通过命令来调用这些脚本。
+
+所有```node_modules/.bin/```目录下的命令，都可以用```npm run [命令]``
