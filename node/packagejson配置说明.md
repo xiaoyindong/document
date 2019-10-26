@@ -58,4 +58,21 @@
         "webpack-cli": "^4.7.0",
         "webpack-dev-server": "^3.11.2"
     },
-    "
+    "peerDependencies": {
+        "tea": "2.x"
+    },
+    "bundledDependencies": [
+        "renderized", "super-streams"
+    ],
+    "engines": {"node": "0.10.x"},
+	  "os" : [ "win32", "darwin", "linux" ],
+    "cpu" : [ "x64", "ia32" ],
+    "private": false,
+    "publishConfig": {}
+  }
+  
+```
+
+## 2. name 字段
+
+```package.json```文件中最重要的就是```name```和```version```字段，这两项是必填的。名称和版本一起构成一个标识符，该标识符被认为是完全唯一的。对包的更改应该与对版本的更改一起进行。
