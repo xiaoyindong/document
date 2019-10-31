@@ -288,4 +288,96 @@ editBuilder.replace(selection, result);
 
 ```contributes```中的值不再是```commands```，而是```snippets```，它里面指定一个```snippet```文件的相对地址。可以将代码片段放入到```snippets/snippets.json```文件中去，然后就可以通过插件分享给其他人了。
 
-主题的分享就更简单了，依然是通过脚手架来创建模板。首模板类型是```New Color Theme```，接着脚手架询问是否要倒入已经存在的主题文件。可以使用```TextMate```、``
+主题的分享就更简单了，依然是通过脚手架来创建模板。首模板类型是```New Color Theme```，接着脚手架询问是否要倒入已经存在的主题文件。可以使用```TextMate```、```Atom```或者```Sublime```的主题文件，因为大家使用的主题引擎都是一样的。当然从零开始创建一个主题文件也非常简单，选择```No, start fresh```。
+
+创建的最后一个问题是想要创建的主题是深色的，浅色的还是高对比度的，选择后```VS Code```会根据基础主题默认提供一部分颜色，然后就可以基于它再进行拓展。
+
+插件被创建好后，会发现它跟代码片段的模板很接近，只不过多了一个```themes/mytheme- color-theme.json```文件。这个文件就是对编辑器内代码以及工作区的颜色设置。当基于某个现成的主题修改配色后，可以将添加的配置```workbench.colorCustomizations```和```editor.tokenColorCustomizations```拷贝进这个文件中。不过还有一个更简单的方式打开命令面板，搜索```使用当前设置生成主题```并执行。
+
+这个生成出来的文件，可以当作插件进行分享的主题文件。总结来说，要创建一个颜色主题可以先在个人设置中修改工作区或者编辑器内的主题，然后使用命令```使用当前设置生成主题```生成主题文件，并为这个主题文件添加```name```名字，将这个文件分享成插件，最后在```package.json```的```contributes```部分注册这个主题文件。
+
+```json
+"contributes": {
+    "themes": [
+        {
+            "label": "mytheme",
+            "uiTheme": "vs-dark",
+            "path": "./themes/mytheme-color-theme.json"
+        }
+    ]
+}
+```
+
+配置里```label```是主题的名字，```uiTheme```是基础主题，```path```是主题文件的相对地址。
+
+## 6. 自定义语言
+
+在```VS Code```中自定义语言支持并不只是```TypeScript```、```Rust```等语言开发者的特权，任何人都可以借助```VS Code```的插件定义和```API```实现它们，甚至不需要书写```Language Server```，也能达成一样的效果。
+
+首先要做的是创建一个语言支持相关的插件模板。这一次选择```New Language Support```。接着，我脚手架工具需要提供```tmLanguage```。
+
+```tmLanguage```是```TextMate```创造的定义语言语法的文件，```Sublime```、```Atom```以及```VS Code```都是继承自此。如果其他的编辑器已经支持了某个语言，大可将其直接引入。这也是为什么```VS Code```插件```API```一经发布，很快大部分在```Textmate```、```Sublime```上支持的语言就在```VS Code```上得到了支持，都拥有不错的语法高亮。
+
+关于如何书写```tmLanguage```，```TextMate```官方有一个简短但翔实的文档```Language Grammars — TextMate 1.x Manual```。精髓是通过书写正则表达式，对代码进行搜索匹配，最后给每个代码片段标注上类型(```token type```)。暂时可以不提供```tmLanguage```，直接按下回车。
+
+在输入完插件名、描述信息和发布者信息后，```yeoman```提了三个跟语言相关的问题。
+
+第一个是```id```，```id```是这门语言的唯一标识，最重要的是不要和已经存在的主流语言产生冲突。第二个和第三个是语言的名字和后缀。
+
+最后脚手架工具问了一个跟```tmLanguage```有关的问题，就是指定这个语言的```scope name```。暂时叫它```source.mylanguage```好了。回答了全部的问题后就可以创建出模板了。
+
+通过```package.json```中```contributes```的值，可以发现这个插件注册两个信息。一个是```tmLanguage```，用于语法高亮。另一个是```languages```也就是```mylanguage```这个语言的信息。它的信息包含以下几点。
+
+```id```是语言独一无二的标识，```alias```是语言的名字、别称，```extensions```是这个语言相关文件的后缀名，设置了这个值之后，当打开一个后缀为```.mylanguage```的文件，```VS Code```就知道把它识别成什么语言了，```confgurations```是这个语言的配置信息所在文件的相对地址。
+
+前面三个是使用```yeoman```创建插件时提供的，最后这个```language-confguration.json```是干什么的呢?
+
+```json
+{
+    "comments": {
+        // symbol used for single line comment. Remove this entry if your language does not support line comments
+        "lineComment": "//",
+        // symbols used for sart and end a block comment. Remove this entry if your language does not support block comments
+        "blockComment": [
+            "/*",
+            "*/"
+        ]
+    },
+    // symbols used as brackets 
+    "brackets": [
+        [
+            "{","}"
+        ],
+        [
+            "[","]"
+        ],
+        [
+            "(",")"
+        ]
+    ],
+    // symbols that are auto closed when typing 
+    "autoClosingPairs": [
+        [
+            "{","}"
+        ],
+        [
+            "[","]"
+        ],
+        [
+            "(",")"
+        ],
+        [
+            "\"","\""
+        ],
+        [
+            "'","'"
+        ]
+    ],
+    // symbols that that can be used to surround a selection 
+    "surroundingPairs": [
+        [
+            "{","}"
+        ],
+        [
+            "[","]"
+   
