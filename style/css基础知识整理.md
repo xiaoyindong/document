@@ -216,4 +216,79 @@ postcss插件集
 ```cssnext```面向未来，```cssgrace```修复过去，兼容```ie6```。
 
 ```s
-h
+https://cssdb.org
+```
+
+```autoprefixer```已经被继承，不需要用了。
+
+### css-doodle
+
+是一个```webcomonent```，```https://css-doodle.com/```。
+
+```html
+<css-doodle>
+</css-doodle>
+```
+
+## 9. Houdini
+
+在现今的```web```开发中，```js```几乎占据所有版面，除了控制页面逻辑与操作```DOM```对象外，连```css```都直接写在````js````里面了，就算浏览器还没实现的特性，总会有人做出对应的```polyfills```，让你快速的将新```Feature```应用到```Production```环境中，更别提````Babel````等工具帮忙转移。
+
+而```css```就不同了，除了制定了```css```标准规范所需的时间外，各家浏览器的版本，实战进度差异更是旷日持久，顶多利用```postcss```，```sass```等工具来帮转译出浏览器能接受的```css```，开发者们能操作的就是通过```js```去控制```DOM```与```CSSOM```来影响页面的变化，但是对于接下来的```layout```，```paint```与```composite```就几乎没有控制权了。
+
+为了解决上述问题，为了让css的魔力不再被浏览器把持，```houdini```就诞生了。```css houdini```让开发者能够介入浏览器的```css engine```。
+
+允许开发者自由扩展```css```此法分析器```Parser```，```Paint```，```Layout```。
+
+```worklets```的概念和```web worker```类似，允许引入脚本文件并执行特定的```js```代码，这样的```js```代码要满足两个条件，第一可以在渲染流程中调用，第二和主线程独立。
+
+```worklet```脚本严格控制了开发者所能执行的操作类型，这就保证了性能，```worklets```的特点就是轻量以及生命周期较短。
+
+```js
+CSS.paintWorklet.addModule('xxx.js');
+CSS.layoutWorklet.addModule('xxx.js');
+// xxx.js
+registerPaint('xxx', class {
+    static get inputProperties() {}
+    static get inputArguments() {}
+    paint(ctx, geom, props) {}
+})
+
+```
+
+演示```css```。
+
+```css
+.el {
+    --elUnit: 500px;
+    --arcColor: yellow;
+    height: var(--elUnit);
+    width: var(--elUnit);
+    --background-canvas: (ctx, geom) > { // 变量，可以使用函数
+        // geom 当前类 .el 所有的信息
+        // ctx相当于一个canvas
+        ctx.strokeStyle = `var(--arcColor)`;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(200, 200, 50, 0, 2*Math.PI);
+        ctx.stroke();
+        ctx.closePath();
+    };
+    background: paint(--background-canvas);
+}
+```
+
+需要在```js```中进行激活。
+
+```html
+<script>
+CSS.paintWorklet.addModule('./arc.js');
+</script>
+```
+
+```arc.js```
+
+```js
+if (typeof registerPaint !== 'undefined') {
+    registerPaint('background-canvas', class {
+        stati
