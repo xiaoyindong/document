@@ -12,4 +12,29 @@
 
 2. Git
 
-3
+3. Android（JDK，Android Studio, Gradle）
+
+4. Xcode
+
+```s
+npm install ios-sim -g
+npm install ios-deploy -g
+```
+
+环境变量配置
+
+```s
+JAVA_HOME，ANDROID_HOME，ANROID_SDK_ROOT
+```
+
+## 3. 初始化项目
+
+```s
+npm install -g cordova
+
+cordova -v
+```
+
+创建项目
+
+`
