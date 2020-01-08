@@ -247,4 +247,124 @@ write：向```Buffer```中写入数据，有多少写多少，不会重复写入
 
 toString: 从```Buffer```中提取数据
 
-slice
+slice: 截取```Buffer```
+
+indexOf：在```Buffer```中查找数据
+
+copy: 拷贝```Buffer```中的数据
+
+```Buffer```的静态方法。
+
+concat: 将多个```Buffer```拼接成一个新的```Buffer```
+
+isBuffer: 判断当前数据是否是一个```Buffer```
+
+```Buffer```的```split```方法实现。
+
+```js
+Array.Buffer.splice = function(sep) {
+    let len = Buffer.form(sep).length;
+    let ret = [];
+    let start = 0;
+    let offset = 0;
+
+    while(offset = this.indexOf(sep, start) !== -1) {
+        ret.push(this.slice(start, offset))
+        start = offset + len;
+    }
+    ret .push(this.slice(start));
+    return ret;
+}
+```
+
+## 4. fs
+
+在```Node```中```Buffer```和```Stream```随处可见，他们用于操作二进制数据。
+
+```fs```是一个内置的核心模块，所有与文件相关的操作都是通过```fs```来进行实现的，比如文件以及目录的创建，删除，信息的查询或者文件的读取和写入。
+
+如果想要操作文件系统中的二进制数据需要使用```fs```模块提供的```API```，这个过程中```Buffer```和```Stream```又是密不可分的。
+
+介绍```fs```模块之前我们首先需要介绍一下文件系统的基础知识，比如权限位，标识符，文件描述符等。
+
+权限是指当前的操作系统内不同的用户角色对于当前的文件可以执行的不同权限操作，文件的权限操作被分为```r```,```w```,```x```三种, ```r```是读权限，```w```是写权限，```x```是执行权限。如果用8进制的数字进行表示```r```是```4```，```w```是```2```，```x```是```1```，如果不具备该权限就是一个```0```。
+
+操作系统中将用户分为三类分别是文件的所有者，一般指的是当前用户自己，再有就是文件的所属组，类似当前用户的家人，最后是其他用户也就是访客用户。
+
+```Node```中```flag```表示对文件操作方式，比如是否可读可写。
+
+r: 表示可读
+
+w: 表示可写
+
+s: 表示同步
+
++: 表示执行相反操作
+
+x: 表示排他操作
+
+a: 表示追加操作
+
+```fd```就是操作系统分配给被打开文件的标识，通过这个标识符文件操作就可以识别和被追踪到特定的文件。不同操作系统之间是有差异的，```Node```为我们抹平了这种差异。
+
+```Node```每操作一个文件，文件描述符就会递增一次，并且它是从```3```开始的。因为```0```，```1```，```3```已经被输入，输出和错误占用了。后面我们在使用```fs.open```打开文件的时候就会得到这个```fd```。
+
+```fs```任何文件操作```api```都有同步和异步两种方式，这里只演示异步```API```，同步基本也相同
+
+### 1. 文件读写
+
+readFile: 从指定文件中读取数据
+
+```js
+const fs = require('fs');
+const path = require('path');
+
+fs.readFile(path.resolve('aaa.txt'), 'utf-8', (err, data) => {
+    console.log(err);
+    console.log(data);
+})
+
+```
+
+writeFile: 向指定文件中写入数据
+
+```js
+fs.writeFile('bbb.txt', 'hello', {
+    mode: 438, // 操作位
+    flag: 'w+',
+    encoding: 'utf-8'
+}, (err) => {
+    console.log(err);
+})
+```
+
+appendFile: 追加的方式向指定文件中写入数据
+
+```js
+fs.appendFile('bbb.txt', 'hello', {}, (err) => {
+    console.log(err);
+})
+```
+
+copyFile: 将每个文件中的数据拷贝到另一个文件
+
+```js
+fs.copyFile('aaa.txt', 'bbb.txt', (err) => {
+    console.log(err);
+})
+```
+
+watchFile: 对指定文件进行监控
+
+```js
+fs.watchFile('bbb.txt', {
+    interval: 20 // 20ms监控一次
+}, (curr, prev) => {
+    console.log(curr); // 当前信息
+    console.log(prev); // 前一次信息
+    if (curr.mtime !== prev.mtime) {
+        // 文件被修改了
+    }
+})
+
+fs.un
