@@ -89,4 +89,39 @@ function useState (initialState) {
 }
 ```
 
-最后我们还要处理一下设置下标值的改变。每次调用useState的时候让stateIndex加1，同时我们也知道每次调用render的时候useState会重新执行，所以我们在render方法中将stateInd
+最后我们还要处理一下设置下标值的改变。每次调用useState的时候让stateIndex加1，同时我们也知道每次调用render的时候useState会重新执行，所以我们在render方法中将stateIndex重置为0。
+
+```js
+stateIndex++;
+...
+function render() {
+    stateIndex = 0;
+    ReactDOM.render(<App />, document.getElementById('root'));
+}
+```
+
+useState返回的值也需要处理一下，对应为当前的state值和设置state的方法。
+
+```js
+function useState (initialState) {
+    state[stateIndex] = state[stateIndex] ? state[stateIndex] : initialState;
+    setters.push(createSetter(stateIndex));
+    const value = state[stateIndex];
+    const setter = setters[stateIndex];
+    stateIndex++;
+    return [value, setter];
+}
+```
+
+最后这个实现原理我们基本就写完了。
+
+```js
+import React from 'react';
+import ReactDOM from 'react-dom';
+
+const state = [];
+const setters = [];
+let stateIndex = 0;
+
+function createSetter (index) {
+    return fun
