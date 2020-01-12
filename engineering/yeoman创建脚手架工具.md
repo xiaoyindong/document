@@ -60,4 +60,49 @@ my-module --help // 运行
 
 ## 4. 自定义 Generator
 
-不同
+不同的```generator```可以生成不同的项目，可以通过创建自己的```generator```生成自定义的项目结构。
+
+一般```generator```基本结构
+
+```s
+|—— generators   # 生成器目录
+|    app/        # 默认生成器目录
+        index.js # 默认生成器实现
+|—— package.json # 模块包配置文件
+```
+
+首先创建```generators```文件夹，作为生成器的目录，再在里面存放```app```文件夹用于存放生成器对应的代码。如果需要提供多个的```sub generator```可以在```app```的同级目录添加新的生成器目录```app2```模块就有了一个叫做```app2```的子生成器。
+
+除了特定的结构，还有个与普通```npm```不同的是```Yeoman```的```generator```的模块的名称必须是```generator-<name>```这样的一种格式，如果你在具体开发的时候没有去使用这样格式的名称，```Yeoman```在后续工作的时候就没有办法找到你所提供的这个生成器模块。
+
+可以做下具体的演示，首先创建文件夹```generator-simple```作为生成器模块的目录。
+
+```s
+mkdir generator-simple
+```
+
+在目录下通过```yo init```的方式创建一个```package.json```。
+
+```s
+yo init
+```
+
+还需要安装```yeoman-generator```的模块，这个模块提供了生成器的基类，基类中提供了一些工具函数可以在创建生成器的时候更加便捷。
+
+```s
+yarn add yeoman-generator
+```
+
+安装完工具过后通过编辑器打开目录，在目录下按照项目结构要求，创建```generators```文件夹，在这个目录下创建```app```目录，在目录中创建```index.js```作为```generator```的核心入口文件。
+
+```index.js```需要导出一个继承自```Yeoman Generator```的类型，```Yeoman Generator```在工作时会自动调用此类型中定义的一些生命周期方法，可以在这些方法中通过调用父类提供的工具方法实现一些功能，例如文件写入。
+
+```js
+const Generator = require('yeoman-generator');
+
+module.exports = class extends Generator {
+
+    writing() { 
+        // Yeoman自动生成文件阶段调用此方法
+        // 我们尝试往项目目录中写入文件
+        this.fs.write(this.destina
