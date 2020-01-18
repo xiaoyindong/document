@@ -51,26 +51,4 @@ sudo apachectl restart
 
 ## 3. 设置网站跟目录
 
-默认开启```的apache```站点根目录是```/Library/WebServer/Documents/```。修改```/etc/apache2/httpd.conf```文件
-
-```s
-sudo vim /etc/apache2/httpd.conf
-```
-
-去掉下列代码下面代码最前面的```#```。
-
-```s
-#LoadModule authn_core_module libexec/apache2/mod_authn_core.so
-#LoadModule authz_host_module libexec/apache2/mod_authz_host.so
-#LoadModule authz_core_module libexec/apache2/mod_authz_core.so
-#LoadModule dir_module libexec/apache2/mod_dir.so
-#LoadModule userdir_module libexec/apache2/mod_userdir.so
-#LoadModule alias_module libexec/apache2/mod_alias.so
-```
-
-找到如下代码：
-
-```s
-DocumentRoot "/Library/WebServer/Documents"
-...
-<Directory "/Librar
+默认开启```的apache```站点根目录是```/Library/WebServer/Documen
