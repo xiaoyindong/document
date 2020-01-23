@@ -72,4 +72,59 @@ console.log(fun(b, str)); // 4
 
 可以看到```eval```和```Function```实例化都可以用来执行```javascript```字符串，似乎他们都可以来实现```require```模块加载。不过在```node```中并没有选用他们来实现模块化，原因也很简单因为他们都有一个致命的问题，就是都容易被不属于他们的变量所影响。
 
-如下```str```字符串中并没有定义a，但是确可以使用上面定义的```a```变量，这显然是不对的，在模块化机制中，```str```字符串应该具
+如下```str```字符串中并没有定义a，但是确可以使用上面定义的```a```变量，这显然是不对的，在模块化机制中，```str```字符串应该具有自身独立的运行空间，自身不存在的变量是不可以直接使用的。
+
+```js
+const a = 1;
+
+const str = 'console.log(a)';
+
+eval(str);
+
+const func = new Function(str);
+func();
+```
+
+```node```存在一个```vm```虚拟环境的概念，用来运行额外的```js```文件，他可以保证```javascript```执行的独立性，不会被外部所影响。
+
+### 3. vm 内置模块
+
+虽然外部定义了```hello```，但是```str```是一个独立的模块，并不在``hello``变量，所以会直接报错。
+
+```js
+// 引入vm模块， 不需要安装，node 自建模块
+const vm = require('vm');
+const hello = 'yd';
+const str = 'console.log(hello)';
+wm.runInThisContext(str); // 报错
+```
+
+所以```node```执行```javascript```模块时可以采用```vm```来实现。就可以保证模块的独立性了。
+
+## 4. require代码实现
+
+介绍r```equire```代码实现之前先来回顾两个```node```模块的用法，因为下面会用得到。
+
+### 1. path模块
+
+用于处理文件路径。
+
+basename: 基础路径, 有文件路径就不是基础路径，基础路劲是```1.js```
+
+extname: 获取扩展名
+
+dirname: 父级路劲
+
+join: 拼接路径
+
+resolve: 当前文件夹的绝对路径，注意使用的时候不要在结尾添加```/```
+
+__dirname: 当前文件所在文件夹的路径
+
+__filename: 当前文件的绝对路径
+
+
+```js
+const path = require('path', 's');
+console.log(path.basename('1.js'));
+cons
