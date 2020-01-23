@@ -59,4 +59,17 @@ const str = 'const a = 123; console.log(name)';
 eval(str); // yd;
 ```
 
-### 2
+### 2. new Function
+
+```new Function```接收的是一个要执行的字符串，返回的是一个新的函数，调用这个新的函数字符串就会执行了。如果这个函数需要传递参数，可以在```new Function```的时候依次传入参数，最后传入的是要执行的字符串。比如这里传入参数```b```，要执行的字符串```str```。
+
+```js
+const b = 3;
+const str = 'let a = 1; return a + b';
+const fun = new Function('b', str);
+console.log(fun(b, str)); // 4
+```
+
+可以看到```eval```和```Function```实例化都可以用来执行```javascript```字符串，似乎他们都可以来实现```require```模块加载。不过在```node```中并没有选用他们来实现模块化，原因也很简单因为他们都有一个致命的问题，就是都容易被不属于他们的变量所影响。
+
+如下```str```字符串中并没有定义a，但是确可以使用上面定义的```a```变量，这显然是不对的，在模块化机制中，```str```字符串应该具
