@@ -132,4 +132,121 @@ yarn add ejs --dev
 
 ```js
 const fs = require('fs');
-co
+const path = require('path');
+const inquirer = require('inquirer');
+const ejs = require('ejs');
+
+// 工具当前目录
+const tmplDir = path.join(__dirname, 'templates');
+// 命令行所在目录
+const destDir = process.cwd();
+
+inquirer.prompt([
+    {
+        type: 'input',
+        name: 'name',
+        message: 'Project name'
+    }
+]).then(answer => {
+    fs.readdir(tmplDir, (err, files) => {
+        if (err) {
+            throw err;
+        }
+        files.forEach(file => {
+            ejs.renderFile(path.join(tmplDir, file), answer, (err, result) => {
+                if (err) {
+                    throw err;
+                }
+                console.log(result);
+            })
+        })
+    })
+})
+
+```
+
+运行脚手架工具。
+
+```js
+sample-cli
+```
+
+此时打印出来的这个结果其实是已经经过模板引擎工作过后的结果，只需要将这个结果通过文件写入的方式写入到目标目录就可以了，目标目录应该是通过```path.join```把```destDir```以及```file```做一个拼接，内容就是```result```。
+
+```javascript
+files.forEach(file => {
+    ejs.renderFile(path.join(tmplDir, file), answer, (err, result) => {
+        if (err) {
+            throw err;
+        }
+        fs.writeFileSync(path.join(destDir, file), result);
+    })
+})
+
+```
+
+完成过后找到一个新的目录使用脚手架。
+
+```js
+sample-cli
+```
+
+输入项目名称过后，就会发现他会把模板里面的文件自动生成到对应的目录里面，至此就已经完成了一个非常简单，非常小型的一个脚手架应用。其实脚手架的工作原理并不复杂，但是他的意义却是很大的，因为他确实在创建项目环节大大提高了效率。
+
+## 3. 发布
+
+可以将自己的工具发布至```npm```上，提供给更多的人使用。发布```npm```非常的简单，首先需要注册```npm```账号，有两种方式可以注册，一种是登录```npm```官网```https://www.npmjs.com/```，另一种是使用命令```npm adduser```。
+
+```js
+npm adduser
+```
+
+会提示你输入用户名，密码，以及邮箱，注册好后登录```npm```账号。
+
+```js
+npm login
+```
+
+依次输入用户名、密码和邮箱。
+
+登录成功后执行```npm publish```发布命令。
+
+```js
+npm publish
+```
+
+如果报错：```'You do not have permission to publish "samlpe-cli". Are you logged in as the correct user?'```，表示包```samlpe-cli```名字已经在包管理器已经存在被别人用了，需要更该包名称可以前往```package.json```中的```name```中换一个名字。
+
+```json
+{
+  "name": "sample-cli1",
+  "version": "1.0.0",
+  "bin": "cli.js",
+  ...
+}
+```
+
+再次执行```publish```命令出现```+sample-cli1@1.0.0```即表示发布成功。
+
+如果发布时报错：```no_perms Private mode enable, only admin can publish this module:```表示当前不是原始镜像，要切换回原始的npm镜像。
+
+```s
+npm config set registry https://registry.npmjs.org/
+```
+
+如果需要更新工具，只要继续执行```npm publish```就可以更新发布了，不过需要注意，每次发布都需要修改版本号```version```的值，同一个版本不允许发布两次。而且版本号的值最好是递增的。
+
+```json
+{
+  "name": "sample-cli1",
+  "version": "1.0.1",
+  "bin": "cli.js",
+  ...
+}
+```
+
+如果想要撤销本次发布可以执行，只有在发包的```24```小时内才允许撤销发布的包，超过```24```小时就无法撤回了。
+
+```js
+npm unpublish
+```
