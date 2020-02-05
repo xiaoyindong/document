@@ -73,4 +73,36 @@ sudo vim /etc/apache2/httpd.conf
 ```s
 DocumentRoot "/Library/WebServer/Documents"
 ...
-<Directory "/Librar
+<Directory "/Library/WebServer/Documents">
+```
+其中```/Library/WebServer/Documents```即为网站的跟目录，修改为你喜欢的目录，注意使用绝对路径。修改前需要确定修改的目录是存在的。。
+
+被指定的文件夹需设置为共享文件夹。
+
+下面三行去掉前面的```＃```
+
+```s
+#Include /private/etc/apache2/extra/httpd-userdir.conf
+#Include /private/etc/apache2/extra/httpd-vhosts.conf
+
+...
+
+#Include /private/etc/apache2/other/*.conf
+```
+修改后：
+```s
+Include /private/etc/apache2/extra/httpd-userdir.conf
+Include /private/etc/apache2/extra/httpd-vhosts.conf
+
+...
+
+Include /private/etc/apache2/other/*.conf
+```
+
+修改后保存文件，继续修改```/etc/apache2/extra/httpd-vhosts.conf```文件
+
+```s
+sudo vim /etc/apache2/extra/httpd-vhosts.conf
+```
+
+去掉```#Include /private/etc/apache2/users/*.conf```前面的#号```Include /private/etc/apache2/users/
