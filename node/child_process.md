@@ -27,3 +27,12 @@ ls.on('close', (code) => {
 
 ```child_process.spawn()```方法会异步地衍生子进程，且不阻塞```Node.js```事件循环。```child_process.spawnSync()```函数则以同步的方式提供了等效的功能，但会阻塞事件循环直到衍生的进程退出或被终止。
 
+为方便起见，```child_process```模块提供了```child_process.spawn()```和```child_process.spawnSync()```的一些同步和异步的替代方法。 这些替代方法中的每一个都是基于```child_process.spawn()```或```child_process.spawnSync()```实现的。
+
+1. child_process.exec(): 衍生```shell```并且在```shell```中运行命令，当完成时则将```stdout```和```stderr```传给回调函数。
+
+2. child_process.execFile(): 类似于```child_process.exec()```，但是默认情况下它会直接衍生命令而不先衍生```shell```。
+
+3. child_process.fork(): 衍生新的```Node.js```进程，并调用指定的模块，该模块已建立了```IPC```通信通道，可以在父进程与子进程之间发送消息。
+
+4. child_process.execSync():```ch
