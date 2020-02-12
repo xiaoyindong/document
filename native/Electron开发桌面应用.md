@@ -104,4 +104,86 @@ mainWin.webContents.on('did-finsh-load', () => {
 
 ### 4. window-all-closed: 所有窗口都关闭时触发，如果没有监听会直接退出
 
+```js
+app.on('window-all-closed', () => {
+
+})
 ```
+
+### 5. before-quit: 在关闭窗口之前触发
+
+```js
+app.on(' before-quit', () => {
+    
+})
+```
+
+### 6. will-quit: 在窗口关闭并且应用退出时触发
+
+```js
+app.on('will-quit', () => {
+    
+})
+```
+
+### 7. quit: 当所有窗口被关闭时触发
+
+```js
+app.on('quit', () => {
+    
+})
+```
+
+### 8. close: 窗口关闭
+
+```js
+mainWin.on('close', () => {
+    mainWin = null;
+})
+```
+
+自动打包设置
+
+```json
+"scripts": {
+    "start": "nodemon --watch main.js --exec npm run build",
+    "build": "electron ."
+}
+```
+
+## 4. 窗口尺寸
+
+```js
+const mainWin = new BrowserWindow({
+    ...
+})
+
+mainWin.loadFile('index.html')
+// 页面加载完成异步展示 避免页面空白
+mainWin.on('ready-to-show', () => {
+    mainWin.show();
+})
+
+// x: number窗口位置
+// y: number 窗口位置
+// width: number 窗口宽度
+// height:  number 窗口高度
+// show: boolean 默认是否显示窗体
+// maxHeight: number 最大高度
+// minHeight: number 最小高度
+// maxWidth: number 最大宽度
+// minWidth: number 最小宽度
+// resizable: boolean 缩放设置
+// title: string 窗口title， 如果html中设置了title标签则取title标签中的内容
+// icon: string 窗口icon
+// frame: boolean 是否展示标签页菜单栏标题栏
+// transparent: boolean 窗体是否透明
+// autoHideMenuBar: boolean 隐藏菜单
+// webPreferences: {
+//     nodeIntegration: true， // 允许运行node环境
+//     enableRemoteModule: true // 允许使用remote模块
+// } 
+
+```
+
+## 5. 窗口通信
