@@ -124,4 +124,62 @@ const setters = [];
 let stateIndex = 0;
 
 function createSetter (index) {
-    return fun
+    return function (newState) {
+        state[index] = newState;
+        render();
+    }
+}
+
+function useState (initialState) {
+    state[stateIndex] = state[stateIndex] ? state[stateIndex] : initialState;
+    setters.push(createSetter(stateIndex));
+    const value = state[stateIndex];
+    const setter = setters[stateIndex];
+    stateIndex++;
+    return [value, setter];
+}
+
+function render() {
+    stateIndex = 0;
+    ReactDOM.render(<App />, document.getElementById('root'));
+}
+
+const App = () => {
+    const [count, setCount] = useState(0);
+    const [name, setName] = useState('yindong');
+    return <div>
+        {count}
+        <button onClick={() => { setCount(count + 1); }}></button>
+        {name}
+        <button onClick={() => { setName('yd'); }}></button>
+    </div>
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));
+
+```
+
+## useEffect钩子函数实现原理
+
+useEffect这个钩子函数是用来模拟生命周期函数的。调用这个函数的时候他的第一个参数必须是一个函数，第二个参数可以不传也可以传递一个数组，当不传递的时候组件当中任何一个数据发生变化的时候useEffect这个钩子函数每次都会执行，当传递第二个参数数组的时候，数组中定义状态数据，当状态数据改变的时候再执行。
+
+```js
+useEffect(() => {
+
+})
+```
+
+我们先来定义一下这个函数，这个函数接收两个参数。回调函数和依赖数组。
+
+我们首先要判断callback是不是函数，如果不是函数直接报错就可以了。
+
+```js
+function useEffect(callback, depsAry) {
+    // 判断callback是否是函数
+    if (Object.prototype.toString.call(callback) !== '[object Function]') {
+        throw new Error('useEffect 函数的第一个参数必须是函数');
+    }
+}
+```
+
+接着需要判断depsAry是否传递
