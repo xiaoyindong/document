@@ -73,4 +73,20 @@ function useState (initialState) {
 function createSetter (index) {
     return function (newState) {
         state[index] = newState;
-       
+        render();
+    }
+}
+```
+
+我们可以调用createSetter方法来得到设置state的方法并且存储index。
+
+```js
+function useState (initialState) {
+    state[stateIndex] = state[stateIndex] ? state[stateIndex] : initialState;
+    const setState = createSetter(stateIndex);
+    setters.push(setState);
+    return [state, setState]
+}
+```
+
+最后我们还要处理一下设置下标值的改变。每次调用useState的时候让stateIndex加1，同时我们也知道每次调用render的时候useState会重新执行，所以我们在render方法中将stateInd
