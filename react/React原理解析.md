@@ -311,4 +311,63 @@ import mountElement from "./mountElement";
 function createDOMElement(virtualDOM) {
     let newElement = null;
     if (virtualDOM.type === 'text') {
-        // 文
+        // 文本节点 使用createTextNode创建
+        newElement = document.createTextNode(virtualDOM.props.textContent);
+    } else {
+        // 元素节点 使用 createElement 创建
+        newElement = document.createElement(virtualDOM.type);
+    }
+    // 递归创建子节点
+    virtualDOM.children.forEach(child => {
+        mountElement(child, newElement);
+    })
+    return newElement;
+}
+```
+
+## 4. 为DOM添加属性
+
+我们知道属性是存储在虚拟DOM的props中的，我们只需要在创建元素的时候循环这个属性，将这些属性放在真实的元素中就可以了。
+
+在添加属性的时候需要考虑不同的情况，比如说事件和静态属性都是不同的，而且添加属性的方法也是不同的，布尔属性和值属性的设置方式有所不同。还需要判断属性是不是children，因为children并不是属性，是我们自己定义的子元素，属性如果是className还需要转换成class进行添加。
+
+src/tinyReact/createDOMElement.js
+
+我们单独定一个方法来为元素添加属性，在创建元素之后调用这个方法，这里叫做updateNodeElement
+
+```js
+import mountElement from "./mountElement";
+import updateNodeElement from "./updateNodeElement";
+
+function createDOMElement(virtualDOM) {
+    let newElement = null;
+    if (virtualDOM.type === 'text') {
+        // 文本节点 使用createTextNode创建
+        newElement = document.createTextNode(virtualDOM.props.textContent);
+    } else {
+        // 元素节点 使用 createElement 创建
+        newElement = document.createElement(virtualDOM.type);
+        // 调用添加属性的方法
+        updateNodeElement(newElement, virtualDOM)
+    }
+    // 递归创建子节点
+    virtualDOM.children.forEach(child => {
+        mountElement(child, newElement);
+    })
+    return newElement;
+}
+```
+
+首先需要获取节点对象的属性列表，使用Object.keys来获得属性名，然后使用forEach来遍历。
+
+src/tinyReact/updateNodeElement.js
+
+如果属性名以on开头我们就认为他是一个事件, 然后我们截取出事件名称也就是去掉首部的on并且将字符串小写，使用addEventListener来绑定事件。
+
+如果属性名是value或者checked是不能使用setAttribute来设置的，直接属性名等于属性值即可。
+
+最后判断属性名如果是className就转换成class，如果不为children则其它属性全部可以使用setAttribute来设置。
+
+```js
+function updateNodeElement(newElement, virtualDOM) {
+    // 获取节点对
