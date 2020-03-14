@@ -250,4 +250,72 @@ if (navigator.mediaDevices || navigator.mediaDevices.getUserMedia) {
 }
 ```
 
-截取视频中的某一帧，做法也非常的简单，就是利用```canvas```
+截取视频中的某一帧，做法也非常的简单，就是利用```canvas```获取当前播放的帧，最终输出成一张图片就可以了。可以在一个点击事件中做这件事，点击之后，获取```canvas```的```2d```画布，然后通过```drawImage```将视频(```video```标签)绘制到```canvas```中。这时```canvas```中会绘制出当前```video```展示的内容。可以右键另存图片。也可以通过服务端将图片生成下载。
+
+```js
+btn.onclick = function() {
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+}
+```
+
+```mediastream```方法和事件
+
+```MediaStream.addTranck()```: 向流媒体中加入音视频轨。
+
+```MediaStream.removeTrack()```: 从媒体流中移除指定的轨。
+
+```MediaStream.getVideoTracks()```: 获取所有的视频轨。
+
+```MediaStream.getAudioTracks()```: 获取所有音频轨。
+
+```MediaStream.stop()```: 将媒体流关闭，会关闭每一个轨中的```stop```
+
+```MediaStream.onaddtrack```：添加媒体轨的事件。
+
+```MediaStream.onremovetrack```: 移除媒体轨的事件。
+
+```MediaStream.onended```: 当流结束的时候的事件。
+
+```js
+if (navigator.mediaDevices || navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({
+        video: {
+            width: 640,
+            height: 480,
+            frameRate: 60,
+            facingMode: 'environment'
+        },
+        audio: false,
+
+    }).then(((stream) => {
+        document.querySelector('#player').srcObject = stream;
+        // 获取第一个视频轨，一般这里只有一个视频轨
+       const track = stream.getVideoTracks()[0];
+       console.log(track.getSettings()); // 获取视频配置。
+    }) => {
+        
+    }).catch((err) => {
+        console.error(err);
+    })
+} else {
+    console.log('不支持这个特性');
+}
+```
+
+## 9. 录制介绍
+
+录制媒体流实际上就是获取通过```getUserMedia```获取的实时音视频数据。
+
+```MediaRecoder```有很多的事件和方法。使用也非常简单。直接实例化就可以了。
+
+```js
+new MediaRecorder(stream, [, options]);
+```
+
+这里的参数```stream```是通过```getUserMedia```或者```video```或者```audio```或者```canvas```获取的```stream```。
+
+存在很多的选项。主要有```mimeType```指定录制的是音频还是视频，录制的格式是什么。
+
+格式有很多比如谷歌的音视频格式```video/webm```,```audio/webm```， 还可以指定视频的编码```video/webm;codecs=vp8```,```video/webm;codecs=h264```, 音频编码```audio/webm;codecs=opus```。
+
+```audi
