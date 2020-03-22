@@ -18,4 +18,21 @@ rs.on('data', function(chunk) {
     rs.pause(); // 暂停data事件的触发  rs.play(); 继续
 });
 rs.on('end', function() {
-    console.log(Buffer.concat(arr).toString()); //
+    console.log(Buffer.concat(arr).toString()); // 读取完毕
+});
+
+rs.on('error', function(error) {
+    console.log(error);
+})
+```
+
+## 2. 文件压缩zlib
+
+基于```zlib```库和```buffer```进行文件压缩
+
+```js
+const zlib = require('zlib');
+const fs = require('fs');
+const rs = fs.cerateReadStream('jquery.js');
+const ws = fs.cerateWriteStream('jquery.js.gz');
+const
