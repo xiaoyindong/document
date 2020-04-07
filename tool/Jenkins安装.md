@@ -26,3 +26,36 @@ rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
 ```
 
 ### 3. 安装java
+
+```jenkins```依赖```8.0```以上的```java```环境。
+
+```s
+yum -y install java
+
+java -version
+```
+
+### 4. 关闭防火墙
+
+```s
+systemctl stop firewalld
+# 禁止开机启动
+systemctl disable firewalld
+```
+
+### 5. 关闭强制访问安全策略。
+
+```s
+vi /etc/sysconfig/selinux
+
+SELINUX=disabled # enforcing -> disabled
+# 重启
+reboot
+# 查看是否禁用成功
+getenforce
+```
+
+### 6. 安装```jenkins```
+
+```s
+yum install jenkins -y
