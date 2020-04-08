@@ -66,4 +66,36 @@ bb.tan(); // alert('弹出框');
 B.prototype.constructor === B;  // true;
 ```
 
-```bb```和```B```没有直接的关联，虽然```B```是
+```bb```和```B```没有直接的关联，虽然```B```是```bb```的构造函数，这里用虚线表示。```bb```有一个```__ proto__```属性，指向了```B```的```prototype```
+
+```js
+bb.__ proto__ === B.prototype; // true;
+bb.__ proto__.constructor = B; // true;
+```
+
+总之
+
+1，每创建一个函数```B```，就会为该函数创建一个```prototype```属性，这个属性指向函数的原型对象；
+
+2，原型对象会默认去取得```constructor```属性，指向构造函数。
+
+3，当调用构造函数创建一个新实例```bb```后，该实例的内部将包含一个指针```__ proto__```，指向构造函数的原型对象。
+
+## 3. 默认原型
+
+我们知道，所有引用对象都默认继承了```Object```，所有函数的默认原型都是```Object```的实例。
+之前说过构造函数和原型之间具备对应关系，如下：
+
+![image.png](https://upload-images.jianshu.io/upload_images/14119996-751a7f31555084ec.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+既然函数的默认原型都是```Object```的实例，```B```的原型对象也应该是```Object```的实例子，也就是说。```B```的原型的```__ proto__```应该指向```Objct```的原型。
+
+![image.png](https://upload-images.jianshu.io/upload_images/14119996-bbe3c17a6217b5b3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+```Object```的原型对象的原型是最底部了，所以不存在原型，指向```NULL```；
+
+```js
+console.log(Object.prototype.__ proto__); // null;
+```
+
+![image.png](https://upload-images.jianshu.io/upload_images/14
