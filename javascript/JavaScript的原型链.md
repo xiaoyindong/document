@@ -48,4 +48,22 @@ B.prototype.tan = function() {
 
 var bb = new B('实例化的b');
 
-console.log(bb.na
+console.log(bb.name); // 实例化的b;
+
+bb.tan(); // alert('弹出框');
+
+```
+
+上面的代码中，在B的原型上添加了一个```tan```的方法，那么实例化出来的```bb```也具备了这个方法。
+
+这里就简单实现了一个类。用下面一张图，说明一下。实例对象(```bb```), 原型(```prototype```), 构造函数(```constructor```)的关系。
+
+![image.png](https://upload-images.jianshu.io/upload_images/14119996-c61e97c5dfc81be8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+```B```是构造的一个类，称为构造函数。他用```prototype```指向了自己的原型。而他的原型也通过```constructor```指向了它本身。
+
+```js
+B.prototype.constructor === B;  // true;
+```
+
+```bb```和```B```没有直接的关联，虽然```B```是
