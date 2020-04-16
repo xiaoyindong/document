@@ -196,4 +196,192 @@ function Module(id) {
 }
 ```
 
-之前说过``node``模块是运行在一个函数中，这里给```Module```挂载静态属性```wrapper```，里面定义一下这个函数的字符串，```wrapper```是一个数组，数组的第一个元素就是函数的参数部分，其中有```exports```，```module```，```Require
+之前说过``node``模块是运行在一个函数中，这里给```Module```挂载静态属性```wrapper```，里面定义一下这个函数的字符串，```wrapper```是一个数组，数组的第一个元素就是函数的参数部分，其中有```exports```，```module```，```Require```，```__dirname```，```__filename```, 都是模块中常用的全局变量。注意这里传入的```Require```参数是定义的Require。
+
+第二个参数就是函数的结束部分。两部分都是字符串，使用的时候将他们包裹在模块的字符串外部就可以了。
+
+```js
+Module.wrapper = [
+    "(function(exports, module, Require, __dirname, __filename) {",
+    "})"
+]
+
+```
+
+```_extensions```用于针对不同的模块扩展名使用不同的加载方式，比如```JSON```和```javascript```加载方式肯定是不同的。```JSON```使用```JSON.parse```来运行。
+
+```javascript```使用```vm.runInThisContext```来运行，可以看到```fs.readFileSync```传入的是```module.id```也就是```Module```定义时候```id```存储的是模块的绝对路径，读取到的```content```是一个字符串，使用```Module.wrapper```来包裹一下就相当于在这个模块外部又包裹了一个函数，也就实现了私有作用域。
+
+使用```call```来执行```fn```函数，第一个参数改变运行的```this```传入```module.exports```，后面的参数就是函数外面包裹参数```exports```, ```module```, ```Require```, ```__dirname```, ```__filename```。
+
+```js
+Module._extensions = {
+    '.js'(module) {
+        const content = fs.readFileSync(module.id, 'utf8');
+        const fnStr = Module.wrapper[0] + content + Module.wrapper[1];
+        const fn = vm.runInThisContext(fnStr);
+        fn.call(module.exports, module.exports, module, Require,_filename,_dirname);
+    },
+    '.json'(module) {
+        const json = fs.readFileSync(module.id, 'utf8');
+        module.exports = JSON.parse(json); // 把文件的结果放在exports属性上
+    }
+}
+```
+
+```tryModuleLoad```函数接收的是模块对象，通过p```ath.extname```来获取模块的后缀名，然后使用```Module._extensions```来加载模块。
+
+```js
+// 定义模块加载方法
+function tryModuleLoad(module) {
+    // 获取扩展名
+    const extension = path.extname(module.id);
+    // 通过后缀加载当前模块
+    Module._extensions[extension](module);
+}
+```
+
+至此```Require```加载机制基本就写完了。```Require```加载模块的时候传入模块名称，在```Require```方法中使用```path.resolve(__dirname, modulePath)```获取到文件的绝对路径。然后通过new Module实例化的方式创建```module```对象，将模块的绝对路径存储在```module```的```id```属性中，在```module```中创建```exports```属性为一个```json```对象。
+
+使用```tryModuleLoad```方法去加载模块，```tryModuleLoad```中使用```path.extname```获取到文件的扩展名，然后根据扩展名来执行对应的模块加载机制。
+
+最终将加载到的模块挂载```module.exports```中。```tryModuleLoad```执行完毕之后```module.exports```已经存在了，直接返回就可以了。
+
+```js
+// 导入依赖
+const path = require('path'); // 路径操作
+const fs = require('fs'); // 文件读取
+const vm = require('vm'); // 文件执行
+
+// 定义导入类，参数为模块路径
+function Require(modulePath) {
+    // 获取当前要加载的绝对路径
+    let absPathname = path.resolve(__dirname, modulePath);
+    // 创建模块，新建Module实例
+    const module = new Module(absPathname);
+    // 加载当前模块
+    tryModuleLoad(module);
+    // 返回exports对象
+    return module.exports;
+}
+// 定义模块, 添加文件id标识和exports属性
+function Module(id) {
+    this.id = id;
+    // 读取到的文件内容会放在exports中
+    this.exports = {};
+}
+// 定义包裹模块内容的函数
+Module.wrapper = [
+    "(function(exports, module, Require, __dirname, __filename) {",
+    "})"
+]
+// 定义扩展名，不同的扩展名，加载方式不同，实现js和json
+Module._extensions = {
+    '.js'(module) {
+        const content = fs.readFileSync(module.id, 'utf8');
+        const fnStr = Module.wrapper[0] + content + Module.wrapper[1];
+        const fn = vm.runInThisContext(fnStr);
+        fn.call(module.exports, module.exports, module, Require,_filename,_dirname);
+    },
+    '.json'(module) {
+        const json = fs.readFileSync(module.id, 'utf8');
+        module.exports = JSON.parse(json); // 把文件的结果放在exports属性上
+    }
+}
+// 定义模块加载方法
+function tryModuleLoad(module) {
+    // 获取扩展名
+    const extension = path.extname(module.id);
+    // 通过后缀加载当前模块
+    Module._extensions[extension](module);
+}
+```
+
+## 6. 给模块添加缓存
+
+添加缓存也比较简单，就是文件加载的时候将文件放入缓存在，再去加载模块时先看缓存中是否存在，如果存在直接使用，如果不存在再去重新嘉爱，加载之后再放入缓存。
+
+```js
+// 定义导入类，参数为模块路径
+function Require(modulePath) {
+    // 获取当前要加载的绝对路径
+    let absPathname = path.resolve(__dirname, modulePath);
+    // 从缓存中读取，如果存在，直接返回结果
+    if (Module._cache[absPathname]) {
+        return Module._cache[absPathname].exports;
+    }
+    // 创建模块，新建Module实例
+    const module = new Module(absPathname);
+    // 添加缓存
+    Module._cache[absPathname] = module;
+    // 加载当前模块
+    tryModuleLoad(module);
+    // 返回exports对象
+    return module.exports;
+}
+```
+
+## 7. 省略模块后缀名
+
+自动给模块添加后缀名，实现省略后缀名加载模块，其实也就是如果文件没有后缀名的时候遍历一下所有的后缀名看一下文件是否存在。
+
+```js
+// 定义导入类，参数为模块路径
+function Require(modulePath) {
+    // 获取当前要加载的绝对路径
+    let absPathname = path.resolve(__dirname, modulePath);
+    // 获取所有后缀名
+    const extNames = Object.keys(Module._extensions);
+    let index = 0;
+    // 存储原始文件路径
+    const oldPath = absPathname;
+    function findExt(absPathname) {
+        if (index === extNames.length) {
+           return throw new Error('文件不存在');
+        }
+        try {
+            fs.accessSync(absPathname);
+            return absPathname;
+        } catch(e) {
+            const ext = extNames[index++];
+            findExt(oldPath + ext);
+        }
+    }
+    // 递归追加后缀名，判断文件是否存在
+    absPathname = findExt(absPathname);
+    // 从缓存中读取，如果存在，直接返回结果
+    if (Module._cache[absPathname]) {
+        return Module._cache[absPathname].exports;
+    }
+    // 创建模块，新建Module实例
+    const module = new Module(absPathname);
+    // 添加缓存
+    Module._cache[absPathname] = module;
+    // 加载当前模块
+    tryModuleLoad(module);
+    // 返回exports对象
+    return module.exports;
+}
+```
+
+## 8. 整理实现步骤
+
+### 1. 导入相关模块，创建一个Require方法。
+
+### 2. 抽离通过Module._load方法，用于加载模块。
+
+### 3. Module.resolveFilename 根据相对路径，转换成绝对路径。
+
+### 4. 缓存模块 Module._cache，同一个模块不要重复加载，提升性能。
+
+### 5. 创建模块 id: 保存的内容是 exports = {}相当于this。
+
+### 6. 利用tryModuleLoad(module, filename) 尝试加载模块。
+
+### 7. Module._extensions使用读取文件。
+
+### 8. Module.wrap: 把读取到的js包裹一个函数。
+
+### 9. 将拿到的字符串使用runInThisContext运行字符串。
+
+### 10. 让字符串执行并将this改编成exports。
