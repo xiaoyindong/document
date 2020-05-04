@@ -35,4 +35,16 @@ const async_hooks = require('async_hooks');
 ```js
 const async_hooks = require('async_hooks');
 console.log('asyncId:', async_hooks.executionAsyncId()); // asyncId: 1
-console.log('triggerAsyncId:
+console.log('triggerAsyncId:', async_hooks.triggerAsyncId()); // triggerAsyncId: 0
+```
+
+我们这里使用```fs.open```打开一个文件，可以发现```fs.open```的```asyncId```是```7```，而```fs.open```的```triggerAsyncId```变成了```1```，这是因为```fs.open```是由全局调用触发的，全局的```asyncId```是```1```。
+
+```js
+const async_hooks = require('async_hooks');
+console.log('asyncId:', async_hooks.executionAsyncId()); // asyncId: 1
+console.log('triggerAsyncId:', async_hooks.triggerAsyncId()); // triggerAsyncId: 0
+const fs = require('fs');
+fs.open('./test.js', 'r', (err, fd) => {
+    console.log('fs.open.asyncId:', async_hooks.executionAsyncId()); // 7
+    console.log('fs.open.
