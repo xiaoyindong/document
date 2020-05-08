@@ -611,4 +611,643 @@ vim /lib/systemd/system/docker.service
 
 ```s
 ExecStart=/usr/bin/dockerd
-EnvironmentFile=-/etc/docker/daemon.json # 
+EnvironmentFile=-/etc/docker/daemon.json # 添加这条
+ExecReload=/bin/kill -s HUP $MAINPID
+```
+
+最后重启```docker service```。
+
+```s
+service docker restart
+```
+
+这个时候就可以去```push Image```了。也可以将```Image```, ```pull```到本地。
+
+## 8. 停止container
+
+可以使用```stop```停止```container```, ```PORTSID```是运行中的容器```id```。
+
+```s
+docker stop PORTSID
+```
+
+启动```docker```的时候可以使用```--name```命名。
+
+```s
+docker run -d --name=demo Image
+# 使用名字删除
+docker stop demo
+# 启动
+docker start demo
+```
+
+```inspect```会显示出```container```的详细信息,里面包含很多，包括```network```信息，```logs```等非常重要。
+
+```s
+docker inspect PORTSID
+```
+
+通过```docker```构建一个工具，测试```linux```系统的工具。
+
+使用```ENTRYPOINT``` + ```CMD```可以实现参数传递。空的```CMD```就可以将```docker run```最后的参数传递给```ENTRYPOINT```命令中使用。
+
+```s
+ENTRYPOINT ["/usr/bin/stress"]
+CMD []
+```
+
+对容器的资源进行限制，```linux```本身资源是有限的，如果运行太多的容器会占用很多，容器会最大的占用主机资源，所以需要对容器进行限制。
+
+## 9. 资源限制
+
+```docker run```的时候是可以指定```cpu```的个数，内存空间的大小。这里来演示一下。
+
+```s
+# 指定内存200M
+docker run --memory=200M Image
+# 限制cpu权重, 也就是占比
+docker run --cpu-shares=10 Image
+```
+
+## 10. 网络
+
+运行一个```container```，这个```Image```叫做```busybox```是一个很小的```linux```的```Image```。执行一段无限循环的代码。
+
+```s
+docker run -d --name test1 busybox /bin/sh -c "while true; do sleep 3600; done"
+```
+
+使用```docker exec```进入到这个```container```里面，执行```/bin/sh```的命令。
+
+```s
+docker exec -it id /bin/sh
+
+ip a
+```
+
+通过```ip a```查看本地的网络接口，一般会有两个，一个是本地```ip```一个是```newwork```。他有```mac```地址和```ip```地址。这就是一个网络的```namespace```。
+
+```container```中的网络和本地是隔离的，每次创建的```docker```都是网络隔离的。
+
+```container```之间是可以ping通的，也就是网络是想通的。
+
+```s
+# 查看netns列表
+ip netns ls
+# 删除指定netns
+ip netns delete test1
+# 创建netns
+ip netns add test1
+```
+
+```s
+# 查看名称为test1的netnamespace内容。
+ip netns exec test1 ip a
+# 查看net端口
+ip link
+# 让端口up起来。单个端口是没办法up起来的，必须要两个才可以。
+ip netns exec test1 ip link set dev lo up
+```
+
+这里创建两个```test1```和```test2```，然后将他们两个连起来。
+
+首先在机器1上添加```link```
+
+```s
+ip link add veth-test1 type veth peer name veth-test2
+# 查看的时候可以发现会多出一堆veth链接。
+ip link
+```
+
+接着将```veth-test1```这个接口添加到```test1```里面去。
+
+```s
+ip lint set veth-test1 netns test1
+```
+
+然后将```veth-test2```添加到```test2```里面
+
+```s
+ip lint set veth-test2 netns test2
+```
+
+已经将```linux1```机器中的```test1```和```test2```分别添加了```veth-test1```和```veth-test2```, 但是他们的状态都是```down```，并且没有```ip```地址。
+
+接下来分别给他们配置```ip```地址，可以通过下面的命令给他们分配地址。就是在```test1```和```test2```这两个```netspace```中执行后的命令也就是分配地址。
+
+```s
+ip netns exec test1 ip addr add 192.168.1.1/24 dev veth-test1
+
+ip netns exec test2 ip addr add 192.168.1.2/24 dev veth-test2
+```
+
+将这两个端口启动起来，在```test1```里面执行```ip link set dev veth-test1 up```
+
+```s
+
+ip netns exec test1 ip link set dev veth-test1 up
+
+ip netns exec test2 ip link set dev veth-test2 up
+```
+
+现在去查看就可以发现```test1```和```test2```已经```up```起来了，并且有```ip```地址。
+```s
+ip netns exec test1 ip link
+# ping一下test2
+ip netns exec test1 ping 192.168.1.2
+```
+
+可以使用```docker network ls```查看当前机器```中container```的网络。
+
+## 11. 端口的
+
+本地创建一个```nginx```的服务器```container```。
+
+```s
+docker run --name web -d nginx
+
+docker ps
+```
+
+这里创建的```nginx```的```container```，所以并不能访问到这个服务器，```nginx```的这个```container```他的网络空间是一个独立的```netspace```，有自己的```ip```地址，```nginx```默认启动的是```80```端口。
+
+可以看下``nginx``这个```container```的```ip```地址，可以通过下面这几种命令。
+
+```s
+# 默认是链接再bridge上面的
+docker network inspect bridge
+# 在外面是可以ping通里面的ip的，因为外面是有docker0bridge的，默认container是连在bridge上的。
+ping xx.xx.xx.xx
+# 使用telnet访问这个ip加端口，nginx默认是80端口, 是可以访问的。
+telnet xx.xx.xx.xx 80
+# 通过curl这个网站, 这样就会把nginx的界面拉下来。
+curl http://xx.xx.xx.xx
+```
+
+不只希望```container```只在运行的服务上可以访问，希望其他机器也可以访问。可以端口映射出去。也就是把```container```的端口映射到服务器的端口上。这样在访问```127.0.0.1```也可以访问到这个```docker container```。
+
+创建```container```的时候多加一个参数```-p```, 也就是端口映射，参数格式是```容器里:本地```, 比如容器里的```80```映射到这里的```80```
+
+```s
+docker run --name web -d 80:80 -p nginx
+# 可以看到ports里面80映射到了80
+docker ps
+```
+
+这个时候访问本地的```80```端口就可以访问到里面的服务了。
+
+```s
+curl 127.0.0.1
+```
+
+## 12. host network none network
+
+创建```container```的时候使用```--network```为```none```, 创建一个```test1```的```busybox```容器。
+
+```s
+docker run -d --name test1 --network none busybox /bin/sh -c "while true; do sleep 3600; done"
+# 查看
+docker ps
+```
+
+这个容器的```ip```地址，```mac```地址都没有，没有任何网络信息。
+
+```s
+docker network inspect none
+```
+
+进入到这个容器里面去。可以发现他除了本地的```lo```以外没有网络接口。
+
+```s
+docker exec -it test /bin/sh
+ip a
+```
+
+因为他没有网路接口所以他是一个孤立的容器，没有任何方式可以访问到这个容器，除了```exec```，这样的容器安全性比较高。具体怎么使用我也不知道。
+
+创建一个连接到```host```的容器，首先删除其他的容器，这里指定```network```为```host```。
+
+```s
+docker run -d --name test1 --network host busybox /bin/sh -c "while true; do sleep 3600; done"
+# 查看
+docker network inspect host
+```
+
+可以发现这个容器也没有```mac```地址和```ip```地址，进入到这个```docker```里面的时候使用```ip a```可以发现是有网络接口的，而且他的网络接口和主机的接口是相同的。
+
+也就是说通过```host```创建的容器他是没有独立的```net space```的，他共享了主机的```net space```, 这样可能会存在端口冲突。
+
+## 13. 部署复杂的APP
+
+可以将应用拆分部署，比如说```redis```和```mysql```拆分，主应用部署容器，```redis```部署容器，```mysql```也部署容器。因为```redis```和```mysql```不是给外部使用的，所以不需要使用```-p```做端口映射，这样更安全，可以通过容器间网络通信进行访问。
+
+因为```redis```是在容器里面的，外部不知道这个容器的```ip```地址，并且也不需要知道他的```ip```地址，可以通过```link```的方式通过容器的名字访问容器。也就是说```redis```的名字和端口是固定的，只需要告诉新容器这个名字和端口就可以了。
+
+启动第二的时候使用```link```将前一个的名字传入进去。可以使用```-e```给容器传入一个环境变量。
+
+```s
+docker run -d -p 5000:5000 --link redis --name flask-redis -e REDIS_HOST=redis ImageName
+```
+
+比如创建```busybox```的时候创建一个环境变量```YIN```，值为```yindong```
+
+```s
+docker run -d --name test1 -e YIN=yindong busybox /bin/sh -c "while true; do sleep 3600; done"
+```
+
+进入这个容器访问一下这个变量。
+
+```s
+docker exec it test1 /bin/sh
+env # 可以看到设置的YIN=yindong
+
+# os.environ.get('YIN', '127.0.0.1')  py获取变量
+```
+
+## 14. 多机器之间的容器通信
+
+首先两台机器```AB```之间是可以通信的，现在```A```机器上有个```01```的容器，```B```机器上有个```02```的容器，```01```和```02```是不可以通信的，但是知道```A```和```B```是可以通信的，所以可以将```01```的数据放在```A```传输给```B```的数据中，传递给```B```,```B```再传递给```02```，同样```B```给```A```的数据也可以存在```02```的数据，再通过```A```给到```01```，这就实现了通信。这种方式一般称为隧道。```VXLAN```的方式。
+
+来演示一下多机通信。首先有```AB```两台机器，每个机器里面有一个容器```01```和```02```。```docker```除了```bridge```还存在```overlay```，可以通过创建```overlay```的方式进行通信。这里需要依赖一个分布式的存储，因为要确定两台机器中的容器```ip```不能相同，这里就需要一个分布式的存储，来告诉不同的服务相同的东西，这种分布式的工具还是很多的，这里选用```etcd```，开源免费。
+
+需要分别在两台机器上安装```etcd```，安装成功之后将两台机器关联起来，然后开始执行。
+
+在```A```机器上创建```overlay```, 执行之后局可以在本地发现一个```demo```的```overlay```
+
+```s
+docker network create -d overlay demo
+```
+
+这个时候在```B```机器也可以看到```A```机器创建的```demo```，这就是```etcd```做的。
+
+接着要在这网络之上创建一个```container```，链接到这个网络之上。通过```busybox```，然后给他一个名字叫做```test1```，通过```--net```指定网络是```demo```。
+
+```s
+sudo docker run -d --name test1 --net demo busybox sh -c "while true; do sleep 3600; done"
+# 查看容器
+docker ps
+```
+
+在```B```上也创建一个容器
+
+```s
+sudo docker run -d --name test2 --net demo busybox sh -c "while true; do sleep 3600; done"
+# 查看容器
+docker ps
+```
+
+可以查看两个```container```的```ip```。这样两个```container```是可以互相```ping```通的。
+
+```s
+docker netword inspect demo
+```
+
+## 15. Docker的持久化存储和数据共享
+
+### 1. Data Volume
+
+一般来讲有些容器会产生一些自己的数据，这些数据不想随着```container```的消失而消失，需要保证数据的安全，这种场景一般用在数据库，比如使用数据库的容器，数据库会产生一些数据，如果```container```删除了数据库丢失了，那就有问题了，针对这种问题使用```Data Volume```。
+
+之前在讲```dockerfile```的时候里面有个关键字是```volume```，这个关键字就是制定容器某一个目录产生的数据要挂载到主机上的某个目录中，并且会创建一个叫做```docker volume```的对象。
+
+官方```docker hub```的```mysql```的```dockerfile```中就存在```volume```关键字。当启动```mysql```容器的时候就会在```linux```的```/var/lib/mysql```存放，不会随着```container```消失而消失。
+
+```s
+VOLUME /var/lib/mysql
+```
+
+创建一个```mysql```的```container```, 这里传入参数是不使用密码
+
+```s
+docker run -d --name mysql1 -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql
+
+docker ps
+```
+
+可以查看指定容器启动日志，方便查看报错信息。
+
+```s
+docker logs mysql1
+```
+
+查看```volume```, 这个```volume```就是创建```mysql```的时候产生的，只要```Dockerfile```中书写了就会创建。
+
+```s
+docker volume ls
+# 删除
+docker valume rm VOLUME_NAME
+```
+
+```volume```是```mount```到本地的```/var/lib/docker/volumes/.../_data```中
+
+```s
+docker volume inspect VOLUME_NAME
+```
+
+每创建一个```container```就会新增一个目录。并且删除这个```container```并不会删除掉这个```volume```目录。这也就实现了数据会丢的问题。
+
+可以给```volume```取一个别名方便查看。就是在创建的时候添加一个```-v```参数。将名称改为```mysql```，前面是要改为的名字，后面是```VOLUME```的路径。
+
+```s
+docker run -d -v mysql:/var/lib/mysql --name mysql1 -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql
+```
+
+这个时候当删除了```container```，再次创建```container```的时候，如果```-v```的名字相同，他们会继续使用之前的数据。
+
+要在```Dockerfile```里面指定需要持久化数据的路径，这个路径是容器里面的路径，然后在创建容器的时候使用```-v```将这个路径重新命名
+
+### 2. Bind Mouting
+
+他和```data volume```的区别是```data volume```需要在```Dockerfile```中定义，```Bind Mouting```不需要，他只需要在运行容器的时候去指定本地的目录和容器的目录一一对应的关系，通过这种方式可以做一个同步，也就是说本地路径中的文件和运行容器中的路径文件是同步的。
+
+如果本地本地文件做了修改，那么容器中的文件也会做修改，因为他们就是同一个目录的同一个文件。这里演示一下。创建容器的时候使用```-v```将本地的目录映射到```container```里面的目录。比如使用```pwd```将当前目录映射到```/usr/share/nginx/html```
+
+```s
+docker run -d -p 80:80 -v $(pwd):/usr/share/nginx/html --name web nginx
+```
+
+这样两个目录就共享了，无论修改哪一个都会同步到另一个。因为他们就是一个目录。
+
+## 16. Docker Compose多容器部署
+
+假设创建的应用需要依赖多个```container```，每次部署的时候都要全部手动启动一遍，停止的时候也需要每台手动停止，这样太麻烦了，```Docker Compose```就是一个批处理的工具，可以统一启动容器和停止容器。
+
+可以通过这个文件在这个文件中定义```app```所需要的所有```container```，定义之后可以通过一条命令搞定所有容器的启动，停止操作。
+
+```Docker Compose```是一个基于```Docker```的命令行工具，这个工具可以通过一个```yml```格式的文件去定义多个容器的```docker```的应用。有了```yml```文件之后通过一条命令根据文件中的定义去创建和管理容器。
+
+所以这里最重要的就是这个```yml```文件，这个文件有一个默认的名字叫做```docker-compose.yml```, 可以改成自己需要的。
+
+在这个文件中有三个重要的概念，```Services```，```Networks```，```Volumes```。
+
+```Docker Componse```是有版本的，所以```yml```文件也存在版本，目前有```3```个版本，推荐使用```version3```，不同的版本对应```Docker```不同的版本。```version2```只能用于单机，```version3```可以用于多机，```version1```已经淘汰了。
+
+### 1. Services
+
+一个```service```代表一个```container```，这个```container```可以从```docker hub```的```Image```来创建，或者从本地的```Dockerfile build```出来的```Image```来创建。
+
+```service```的启动类似```docker run```，可以给其指定```network```和```volume```
+
+比如下面这个```services```，他的名字叫做```db```，然后这个```db```的```Image```是从```docker hub```上拉取的```postgres:9.4```, 接着```volumes```映射了一个目录到本地，相当于```-v db-data:/var/lib/postgresql/data```, 定义一个叫做```back-tier```的```network```
+
+```yml
+services:
+    db: 
+        Image: postgres:9.4
+        volumes:
+            - "db-data:/var/lib/postgresql/data"
+        networks:
+            - back-tier
+```
+
+这相当于使用下面的命令启动容器
+
+```s
+docker run -d --network back-tier -v db-data:/var/lib/postgresql/data postgres:9.4
+```
+
+还有第二种书写方式，这里的```Imag```e不是从```docker hub```上拉取的, 他是在本地```build```的，这个```build```目录就是要```build```的```Dockerfile```。这里他```links```了```db```和```redis```的容器。一般情况下如果连接到同一个```bridge```中的时候是不需要```links```的。只有适应默认的```th0```的时候才需要```links```。
+
+
+```yml
+services:
+    worker:
+        build: ./worker
+        links:
+            - db
+            - redis
+        networks:
+            - back-tier
+```
+
+### 2. Volumes
+
+可以在```services```同级别定义```volumes```。
+
+```yml
+services:
+    db: 
+        Image: postgres:9.4
+        volumes:
+            - "db-data:/var/lib/postgresql/data"
+        networks:
+            - back-tier
+volumes:
+    db-data:
+```
+
+### 3. networks
+
+可以在```services```同级别定义```networks```, 他会创建一个```dirver```是```bridge```的名字叫做```back-tier```的```network```
+
+```yml
+services:
+    db: 
+        Image: postgres:9.4
+        volumes:
+            - "db-data:/var/lib/postgresql/data"
+        networks:
+            - back-tier
+networks:
+    front-tier:
+        driver: birdge
+    back-tier:
+        driver: bridge
+```
+
+这里基于```yml```文件定义一个```wordpress```, 这里第一行是声明版本，这里声明```3```，首先```services```里面定义了两个```service```，第一个是```wordpress```，端口做了一下映射将容器中的```80```端口映射到本地的```8080```端口。可以通过```enviroment```传递环境变量。```networks```指定了容器要连接的网络是```networks```中定义的网络。
+
+```mysql```中的```volumes```映射成```mysql-data```, 同样这里的名字是要在```volumes```创建的。
+
+```yml
+version: '3'
+services:
+    wordpress:
+        Image: wordpress
+        ports:
+            - 8080:80
+        enviroment:
+            WORDPRESS_DB_HOST: mysql
+            WORDPRESS_DB_PASSWORD: root
+        networks:
+            - my-bridge
+    mysql:
+        Image: mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: wordpress
+        volumes:
+            - mysql-data:/var/lib/mysql
+        networks:
+            - my-bridge
+
+volumes:
+    mysql-data:
+
+networks:
+    my-bridge:
+        driver: bridge
+```
+
+这就是一个比较完整的```docker compose```的```file```，总体上来说还是比较清晰的。
+
+### 4. docker-compose
+
+如果要使用```docker compose```首先需要安装它，他是一个工具，如果使用的是```mac```或者```windows```在安装docker的时候他默认是已经安装好了的。
+
+```s
+docker-compose --version
+```
+
+```linux```需要手动安装(https://docs.docker.com/compose/install/)
+
+```s
+sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+```
+
+赋予可执行的权限。
+
+```s
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+设置一下软连接
+
+```s
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+docker-compose --version
+```
+
+基于```yml```文件来试验一下。```docker-compose up```的功能是启动```yml```中的```container```。默认```yml```文件的名字是```docker-compose.yml```。也可以使用```-f```指定文件。```-d```会后台执行，如果不加会打印出日志在控制台```debug```的时候可以查看, 关闭就会停止也就是调试模式。
+
+```s
+docker-compose -f docker-compose.yml up -d
+```
+
+这样就会启动起来两个```container```。
+
+可以使用```stop```命令停止```container```，```down```命令不但会停止，同时也会移除```container```, ```network```, ```volume```
+
+```s
+# 启动
+docker-compose start
+# 停止
+docker-compose stop
+
+docker-compose ps
+# 查看定义的container和依赖的Image
+docker-compose Images
+# 进入容器，既然怒mysql的base，这里的mysql是services
+docker-compose exec mysql base
+```
+
+```docker-compose```会在创建的容器和```network```上添加一些前缀，使用的时候直接用定义的名字就可以，他命令的内部会自动转换。
+
+```yml
+version: '3'
+services:
+    redis:
+        Image: redis
+    web:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - 8080:5000
+        environment:
+            REDIS_HOST: redis
+```
+
+### 5. scale
+
+这是```docker-compose```新增的一个功能，可以实现```docker```容器的扩展，也就是相同的容器启动多少个，用来做负载均衡。比如说让```web```这个容器启动```3```个。
+
+```s
+docker-compose up --scale web=3
+```
+
+但是这里有个问题，启动```3```个服务他们的端口映射到了一个端口，是有问题的，所以做法是不写端口映射。然他们直接启用自己的```80```端口。然后通过```haproxy```工具将做负载。因为知道每个容器的端口，所以也就很容易。使用```haproxy```负载到所有的```80```端口服务，然后映射到```8080```。
+
+```yml
+version: '3'
+
+services:
+    redis:
+        Image: redis
+    
+    web:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        environment:
+            REDIS_HOST: redis
+    lib:
+        Image: dockercloud/haproxy
+        links:
+            - web
+        prots:
+            - 8080:80
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+```
+
+先创建一个
+
+```s
+docker-compose up
+
+docker-compose ps
+```
+
+启动```3```个```web```，会加上之前的```1```个。所以一共还是```3```个。
+
+```s
+docker-compose up --scale web=3 -d
+```
+
+这样就实现了一个负载均衡。
+
+```docker-compose build```这个命令是如果配置文件中有些```Image```是需要```build```的可以先通过这个命令把这个```Image```生成出来，这样在```up```的时候会快一些。如果```service```里面发生了变化也可以使用这个命令打包新的```service```再去启动。
+
+```s
+docker-compose build
+```
+
+注意的是```docker-compose```是一个用于本地开发的工具，并不是用于部署生产环境的工具，他只是方便在本地开发看到结果。
+
+## 17. 容器编排Docker Swarm
+
+所有```docker```的操作都是在本地操作的，也就是在一台机器上执行的。但是实际情况是应用可能部署在很多台机器上，也就是在一个集群部署应用，这就涉及很多的容器。
+
+那这种情况怎么去管理这么多的容器，怎么增加一些容器，如果一个容器```down```掉了怎么自动恢复，怎么样动态更新容器而不影响业务, 如何去监控追踪容器状态，如何去调度容器的创建，怎么去保护隐私数据，等等这些问题都需要去处理。
+
+基于这些需要有一套容器的编排系统，在这种情况下```Swarm```就诞生了，```Swarm```不是唯一做编排的工具，他是```docker```的工具。集成在```docker```里面的，如果想使用它是不需要安装任何东西的。
+
+```Swarm```中有两种角色，```Manager```和```Worker```，```Manager```是大脑而且不止一个，既然不止一个就要进行数据同步，所以内置了一个分布式。```Worker```就是干活的节点，大部分服务都是部署在```Worker```中。
+
+### 1. Service
+
+在```Swarm```中不使用```run```，使用```service```，下面来创建一个```service```, 采用的```Image```是```busybox```。
+
+```s
+docker service create --name demo busybox sh -c "while true..."
+```
+
+创建之后查看创建的```service```。使用```ps```可以看到容器是运行在```swarm```上面。
+
+```s
+docker service ls
+# 查看容器
+docker service ps demo
+# 创建5个，这五个平均分布到clust里面的。他可以确保5是有效的，当有一个down掉会重新起一个替代。
+docker service scale demo=5
+```
+
+### 2. Routing Meth
+
+Internal：```Container```和```Container```之间的访问通过```overlay```网络通过```VIP```虚拟```ip```进行通信。
+
+Ingress: 如果服务有绑定端口，则此服务可以通过任意```swarm```节点的相应接口访问。
+
+```LVS```实现负载均衡，可以自行查看。
