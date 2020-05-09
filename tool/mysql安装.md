@@ -59,4 +59,17 @@ firewall-cmd --list-ports  # 只看端口信息
 命令含义：
 --zone #作用域
 --add-port=80/tcp  #添加端口，格式为：端口/通讯协议
---permanent   #永久生效，没有
+--permanent   #永久生效，没有此参数重启后失效
+# 关闭防火墙(不建议)
+systemctl stop firewalld.service
+# 开启端口（建议）
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
+# 成功之后我们需要重启我们的防火墙
+systemctl restart firewalld.service
+```
+
+## 5. 赋予权限
+
+```s
+# 创建本地用户
+CREATE USER 'user'@'localhost' IDENTIFIED B
