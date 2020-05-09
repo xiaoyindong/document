@@ -144,4 +144,100 @@ default-authentication-plugin=mysql_native_password
 
 ```s
 firewall-cmd --add-port=3306/tcp --permanent
-firewa
+firewall-cmd --reload
+```
+注意：如果是云服务器，有的服务商（如阿里云）需要到控制台去开放端口的。
+
+## 8. 修改字符编码
+
+字符集是一套符号和编码，查看字符集配置：
+
+```s
+mysql> show variables like 'charac%';
++--------------------------+--------------------------------+
+| Variable_name            | Value                          |
++--------------------------+--------------------------------+
+| character_set_client     | utf8mb4                        |
+| character_set_connection | utf8mb4                        |
+| character_set_database   | utf8mb4                        |
+| character_set_filesystem | binary                         |
+| character_set_results    | utf8mb4                        |
+| character_set_server     | utf8mb4                        |
+| character_set_system     | utf8                           |
+| character_sets_dir       | /usr/share/mysql-8.0/charsets/ |
++--------------------------+--------------------------------+
+```
+
+字符集生效规则为：```Table```继承于```Database```，```Database```继承于```Server```。就是说，可只设置```character_set_server```。
+
+校对规则是在字符集内用于比较字符的一套规则，查看校对规则：
+
+```s
+mysql> show character set like 'utf8%';
++---------+---------------+--------------------+--------+
+| Charset | Description   | Default collation  | Maxlen |
++---------+---------------+--------------------+--------+
+| utf8    | UTF-8 Unicode | utf8_general_ci    |      3 |
+| utf8mb4 | UTF-8 Unicode | utf8mb4_0900_ai_ci |      4 |
++---------+---------------+--------------------+--------+
+```
+
+校对规则生效规则：如果没有设置校对规则，字符集取默认校对规则，例如```utf8mb4```的校对规则是```utf8mb4_0900_ai_ci```。
+
+```MySQL 8```默认字符集改成了```utf8mb4```。之前的```MySQL```版本如果默认字符集不是```utf8mb4```，建议改成```utf8mb4```。
+
+```mb4```即```most bytes 4```。为什么是```utf8mb4```，而不是```utf8```，```MySQL```支持的```utf8```编码最大字符长度为```3```字节，如果遇到```4```字节的宽字符就会插入异常。
+
+下面是 老版```MySQL```修改字符集为```utf8mb4```的步骤，```MySQL 8.0+```无需修改。
+
+```s
+# 查看配置文件位置
+whereis my.cnf
+
+# 打开文件
+vi /etc/my.cnf
+```
+
+增加字符编码配置项：
+
+```s
+[client]
+default-character-set=utf8mb4
+
+[mysqld]
+character-set-server=utf8mb4
+collation-server=utf8mb4_general_ci
+```
+
+重启```MySQL```服务
+
+```s
+sudo systemctl restart mysqld
+```
+
+使用```MySQL```命令检查字符集配置：
+
+```s
+show variables like 'charac%';
+```
+
+## 9. 设置软连接
+
+```s
+ln -s  /usr/local/mysql/bin/mysql    /usr/bin
+```
+
+## 10. 卸载mysql
+
+```s
+# 查找已经安装的mysql
+rpm -qa | grep -i mysql
+# 删除对应的mysql
+yum -y remove mysql-*
+# 查找一些目录
+find / -name mysql
+# 删除找到的目录
+rm -rf /var/lib/selinux/targeted/active/modules/100/mysql
+# 删除配置文件，主要mysql的默认密码，如果不删除，以后安装mysql这个sercret中的默认密码不会变，使用其中的默认密码就可能会报类似Access denied for user 'root@localhost' (using password:yes)的错误.
+rm -rf /root/.mysql_sercret
+```
