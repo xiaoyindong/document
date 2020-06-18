@@ -29,4 +29,11 @@ export const Button = styled.button`
 }
 ```
 
-使用```someHash```函数生成一个独特的```c
+使用```someHash```函数生成一个独特的```className```
+
+```js
+// 定义
+const css = styledBlock => {
+    const className = someHash(styledBlock);
+    const styleEl = document.createElement('style');
+    styleEl
