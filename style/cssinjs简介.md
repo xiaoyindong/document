@@ -36,4 +36,21 @@ export const Button = styled.button`
 const css = styledBlock => {
     const className = someHash(styledBlock);
     const styleEl = document.createElement('style');
-    styleEl
+    styleEl.textContent = `
+        .${className} {
+            ${styleBlock}
+        }
+    `;
+    document.head.appendChild(styleEl);
+    return className;
+}
+// 使用
+const className = css(`
+    color: red;
+    padding: 20px
+`)
+```
+
+### 1. 隐式依赖, 样式难以追踪
+
+传统的```css```样式是按层级编写的，比如下面这样:
