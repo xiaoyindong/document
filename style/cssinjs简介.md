@@ -93,3 +93,102 @@ const Container = styled.div(props => ({
 ```css
 .target .name h1 {
     color: red;
+}
+body #container h1 {
+    color: green;
+}
+```
+
+如果有一天我们想要把```h1```改成```h2```，必须要同时改动```css```和```html```，而在```CSS-in-JS```中，```html```和```css```是结合在一起的，易于修改。
+
+```js
+export const Title = styled.h1`
+    color: green;
+`
+<Title>文字颜色</Title>
+
+export const Title = styled.div`
+    color: green;
+`
+```
+
+## 3. Emotion
+
+```Emotion```是目前最受欢迎的```CSS-in-JS```库之一，他还对```React```做了很好的适应，可以方便的创建```styled component```也支持写行内样式。
+
+```js
+import { jsx } from '@emotion/react'
+
+render(
+    <div
+        css={{
+            backgroundColor: 'hotpink',
+            '&.hover': {
+                color: 'lightgreen'
+            }
+        }}
+    >
+        background
+    </div>
+)
+```
+
+这种写法比起```React```自带的```style```的写法功能更强大，比如可以处理级联，伪类等```style```处理不了的情况。
+
+### 1. 使用Emotion
+
+```s
+yarn add @emotion/react @emotion/styled
+```
+
+可以给编辑器安装一个高亮语法插件，```styled.component```
+
+```js
+import styled from '@emotion/styled'
+import Card from '....';
+
+const Container = styled.div`
+    display: flex;
+    flexDirection: column;
+    aligin-items: center;
+    min-hieght: 100vh;
+`
+
+// 普通React的组件来使用
+<Container>
+    <ShadowCard></ShadowCard>
+</Container>
+```
+
+需要注意的是```styled```后面跟的属性必须是```html```的标签对象，如果想要将样式属性给到组件，需要使用```()```调用。
+
+```js
+const ShadowCard = styled(Card)`
+    display: flex;
+    flexDirection: column;
+    aligin-items: center;
+    min-hieght: 100vh;
+`
+```
+
+可以通过```as```属性将标签改变，比如下面的抱歉原本为```div```，可以使用```as```改为```h3```
+
+```js
+const Container = styled.div`
+    color: red;
+`
+
+// 普通React的组件来使用
+<Container as={'h3'}>
+  123
+</Container>
+```
+
+可以定义组件样式
+
+```js
+export const Row = styled.div<{
+    gap?: number | boolean,
+}>```
+marginTop: ${props.gap}px;
+```
