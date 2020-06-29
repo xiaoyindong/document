@@ -39,4 +39,16 @@ rq.get('/a', async (ctx, next) => {
     ctx.response.body = 'abc'; // 设置返回参数
 })
 
-// co
+// const router = require('koa-router');
+// const r1 = router();
+// server.use(r1.routes());
+// r1.get(路径, async() => {})
+// r1.post(路径, async() => {})
+// r1.put(路径, async() => {})
+// r1.delete(路径, async() => {})
+// r1.use(路径, async() => {})
+```
+
+## 3. 静态资源
+
+```js
