@@ -40,4 +40,22 @@ NW文档中心: ```https://nwjs.org.cn/```
     <title>我的应用</title>
 </head>
 <body>
-    我的
+    我的应用程序
+</body>
+</html>
+```
+
+双击```nwjs```执行这个程序，页面长成这么个样子。
+
+![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/8dd384d5256d46bf8deefd07e62741ad~tplv-k3u1fbpfcp-watermark.image)
+
+## 3. 应用配置
+
+接着我们介绍一下```package.json```中都能配置哪些参数
+
+```json
+{
+  "name": "应用的名称", // 应用的名称
+  "main": "./index.html", // 指定应用的主页面
+  "build": "1445048139741", // 这是为了给更新时判断版本用的时间戳
+  "version": "0.0.1",// 
