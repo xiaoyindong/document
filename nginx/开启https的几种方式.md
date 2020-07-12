@@ -69,4 +69,95 @@ const start = async () => {
 
     // then create a tls certificate
     const cert = await mkcert.createCert({
-        domains: ['127.0.0.1', 'localh
+        domains: ['127.0.0.1', 'localhost'], // 域名地址
+        validityDays: 365,
+        caKey: ca.key,
+        caCert: ca.cert
+    });
+    fs.writeFile(`${__dirname}/test.key`,cert.key, (error) => {
+        console.log(error)
+    });
+    fs.writeFile(`${__dirname}/test.pem`,cert.cert, (error) => {
+        console.log(error)
+    });
+}
+
+start();
+```
+
+执行之后就可以在写入的文件位置```${__dirname}/test.key```找到生成的一对证书。
+
+### 3. mkcert工具获取证书
+
+```mkcert```工具，区别于```npm```工具，注意和```npm```的```mkcert```进行区分，同时安装两个工具会造成使用冲突。
+
+首先使用```brew```安装```mkcert```工具，然后初始化安装```CA```的根证书。最后使用```mkcert```生成域名证书就可以了。同样会在本地生成```key```和```pem```两个文件。
+
+```s
+# 安装mkcert
+brew install mkcert
+# 安装根证书
+mkcert ---install
+# 生成本地签名，假设域名为zhiqianduan.com
+mkcert zhiqianduan.com
+```
+
+## 3. 证书使用
+
+### 1. nginx 服务
+
+将下载好的```key```和```pem```文件放在自己需要的位置，我一般是习惯在```nginx```的配置目录中新建一个```certs```的文件夹存放他们。
+
+![](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/a4352c8574da40508b980c3f309369c4~tplv-k3u1fbpfcp-watermark.image)
+
+修改```nginx```配置文件
+
+```s
+vi /usr/local/nginx/conf/nginx.conf
+```
+
+```https```使用的是```443```端口号，默认情况下```nginx```是注释了这块代码区域的，记得放开，然后将```key```和```pem```分别配置在```ssl_certificate```和```ssl_certificate_key```中，注意后面的路径，我这里```nginx.conf```和```certs```文件夹在同一个目录，所以我使用```/certs/xxxx.key```找到文件。
+
+![](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/54b3325664924d2298b3be4516d39863~tplv-k3u1fbpfcp-watermark.image)
+
+重启```nginx```就可以使用https访问了。
+
+```s
+nginx -s reload
+```
+
+还可以将http转发为https
+
+```s
+server {
+    listen 80;
+    server_name zhiqianduan.com;
+    rewrite ^(.*)$ https://${server_name}$1 permanent; 
+}
+```
+
+### 2. node
+
+首先需要安装https模块。
+
+```s
+npm install https --save-dev
+```
+
+使用```https```创建服务，使用方式和```http```模块基本一致，不过需要传入```key```和```pem```，最后监听的端口是```443```。
+
+```js
+const https = require('https');
+const fs = require('fs');
+const app = https.createServer({
+    key: fs.readFileSync('./xxxx.key'),
+    cert: fs.readFileSync('./xxxx.pem')
+}, (req, res) => {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end('https');
+}).listen(443, '0.0.0.0');
+```
+
+## 3. 最后
+
+至此网站升级```https```就做完了，说实话我还是倾向于第一种```nginx```的方式，无论你是搭建企业应用还是个人博客，```nginx```都是不可缺少的。或许很多人觉得```nginx```距离前端很远是运维的东西，其实不然，他时时刻刻都在我们身边。用户访问网站所经过的第一关就是```nginx```。
