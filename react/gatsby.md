@@ -171,4 +171,58 @@ const data = useStaticQuery(graphql`
     query {
         site {
             siteMetadata {
-                titl
+                title
+            }
+        }
+    }
+`)
+```
+
+gatsby允许将源数据存储在配置中，然后gatsby会把网站源数据添加到数据层中，然后就可以在组件中拿到数据了。
+
+gatsby-config.js
+
+siteMetadata就是我们定义的数据。
+
+```js
+modules.exports = {
+    siteMetadata: {
+        title: 'gatsby'
+    }
+}
+```
+
+## 插件
+
+Gatsby 框架内置插件系统, 插件是扩展应用程序为应用添加功能的最好的方式。官方提供了很多非常好用的插件，如果你找不到还可以自己编写插件，而且可以发布给别人用。
+
+在 Gatsby 中有三种类型的插件: 分别为数据源插件 ( source ), 数据转换插件 ( transformer ), 功能插件 ( plugin )
+
+数据源插件负责从应用外部获取数据，将数据统一放在 Gatsby 的数据层中。
+
+数据转换插件负责转换特定类型的数据的格式，比如我们可以将 markdown 文件中的内容转换为对象形式。
+
+最后一种是功能插件他是为应用提供功能，比如通过插件让应用支持 Less 或者 TypeScript。
+
+插件的命名是有规范的，数据源插件名称中必须包含source，数据转换插件必须包含transformer，功能插件名称必须包含plugin。
+
+插件查找地址: https://www.gatsbyjs.org/plugins/
+
+我们这么有一个需求，要将本地 JSON 文件中的数据放入数据层需要用到两个插件。
+
+gatsby-source-filesystem插件用于将本地文件中的数据添加至数据层。
+
+gatsby-transformer-json插件用于将原始JSON字符串转换为JavaScript对象。
+
+插件的使用很简单，首先需要下载插件，使用npm install下载就可以了。
+
+下载之后配置插件，我们需要在根目录的gatsby-cinfog.js文件中配置插件，在plugins属性中添加我们的插件。
+
+plugins是一个数组，每一项都是一个插件，他支持字符串和对象两种类型，如果需要配置插件参数就是用对象，resolve指明要配置什么插件，options就是配置选项，name表示资源类别，这个是自定义的这里写json，path是数据源文件路径。
+
+gatsby-transformer-json插件不需要配置，直接写上名字就可以了。
+
+```js
+modules.exports = {
+    plugins: [
+   
