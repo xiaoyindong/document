@@ -152,4 +152,40 @@ export default {
   // The maximum amount of workers used to run your tests. Can be specified as % or a number. E.g. maxWorkers: 10% will use 10% of your CPU amount + 1 as the maximum worker number. maxWorkers: 2 will use a maximum of 2 workers.
   // maxWorkers: "50%",
 
-  // An array of directory names to be
+  // An array of directory names to be searched recursively up from the requiring module's location
+  // moduleDirectories: [
+  //   "node_modules"
+  // ],
+
+  // An array of file extensions your modules use
+  // moduleFileExtensions: [
+  //   "js",
+  //   "jsx",
+  //   "ts",
+  //   "tsx",
+  //   "json",
+  //   "node"
+  // ],
+
+  // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
+  // moduleNameMapper: {},
+
+  // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
+  // modulePathIgnorePatterns: [],
+
+  // Activates notifications for test results
+  // notify: false,
+
+  // An enum that specifies notification mode. Requires { notify: true }
+  // notifyMode: "failure-change",
+
+  // A preset that is used as a base for jest's configuration
+  // preset: undefined,
+
+  // Run tests from one or more projects
+  // projects: undefined,
+
+  // Use this configuration option to add custom reporters to jest
+  // reporters: undefined,
+
+  // Aut
