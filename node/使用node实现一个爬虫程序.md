@@ -69,4 +69,40 @@ function requestUrl(url, headers) {
                 res.on('end', () => {
                     const buffer = Buffer.concat(data);
                     fs.writeFile(path.resolve('tem', '1.html'), buffer, err => {
-                        if
+                        if (err) {
+                            console.log('出错');
+                        } else {
+                            console.log('成功');
+                            resolve({
+                                code: 200,
+                                body: buffer,
+                                headers: res.headers
+                            })
+                        }
+                    })
+                })
+            } else if (res.statusCode === 301 || res.statusCode === 302) {
+                console.log(res.headers);
+                resolve({
+                    code: 200,
+                    body: null,
+                    headers: res.headers
+                })
+            } else {
+                console.log('出错');
+                reject({
+                    code: res.statusCode,
+                    body: null,
+                    headers: res.headers
+                })
+            }
+        })
+        req.on('error', err => {
+            console.loh(err)
+        })
+        req.write(''); // 发送post数据
+        req.end(); // 开始请求
+    })
+}
+
+(async 
