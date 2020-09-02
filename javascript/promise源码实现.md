@@ -236,4 +236,73 @@ Primsie.prototype.then = function(onFulfilled, onRejected) {
         onFulfilled(self.value);
     }
 
-    if (self.status ==
+    if (self.status === 'rejected') {
+        onRejected(self.reason);
+    }
+    if (self.status === 'pending') {
+        self.onResolvedCallbacks.push(function () {
+                onFulfilled(self.value);
+            });
+            self.onRejectedCallbacks.push(function() {
+                onRejected(self.reason);
+            });
+    }
+}
+```
+
+当成功或者失败的时候，执行```onFulfilled```和```onRejected```的函数，也就是在```resolve```和reject中分别循环执行对应的数组函数。
+
+```js
+function resolve(value) {
+    if (self.status === 'pending') {
+        self.status = 'resolved';
+        self.value = value;
+        self.onResolvedCallbacks.forEach(function (fn) {
+            fn();
+        })
+    }
+}
+
+function reject(reason) {
+    if (self.status === 'pending') {
+        self.status = 'rejected';
+        self.reason = reason;
+        self.onRejectedCallbacks.forEach(function (fn) {
+            fn();
+        })
+    }
+}
+```
+
+这时候当异步执行```resolve```的时候，```then```中绑定的函数就会执行，并且绑定多个```then```的时候，多个方法也全部都会执行。
+
+## 6. 实现链式调用
+
+```Promise```最大的优点就是链式调用，如果一个```then```方法返回普通值，这个值会传递给下一次```then```中，作为成功的结果。如果返回的是一个```primise```，则会把```promise```的执行结果传递下去，并且取决于这个```Promise```的成功或失败。如果返回的是一个报错就会执行到下一个```then```的失败的函数中。
+
+捕获错误的机制是，默认会找距离自己最近的then的失败方法，如果找不到就向下继续找，一直找到```catch```方法。
+
+```js
+let p = new Promise(funcion(resolve, reject) {
+    setTimeout(function() {
+        resolve('成功啦');
+    }, 1000)    
+});
+
+p.then(function(value) {
+    retrun 123;
+}).then(function(value) {
+    console.log(value);
+}).catch(function(error) {
+    console.log(error);
+}).then(function(data) {
+    console.log(data);
+})
+```
+
+```Promise```的链式调用和其它对象比如JQuery的链式调用有所不同，```Promise```的then方法返回的是一个全新的```Promise```，而不是当前的```Promise```。因为```Promise```的状态只能改变一次，如果使用同一个```Promise```的话后面的```then```就失去了成功失败的自由性。
+
+在```then```方法之后再去```return```一个新的```Promise```，原本的逻辑放在新创建的```Promise```内部即可，因为他是立即执行的一个函数。这里定义一个```promise2```接收新创建的```Promise```，在函数底部返回出去。
+
+```js
+Primsie.prototype.then = functi
