@@ -26,4 +26,13 @@ const async_hooks = require('async_hooks');
 
 每一个```async scope```中都有一个```triggerAsyncId```表示当前函数是由那个```async scope```触发生成的；
 
-通过 ```asyncId`
+通过 ```asyncId``` 和 ```triggerAsyncId``` 我们可以很方便的追踪整个异步的调用关系及链路。
+
+```async_hooks.executionAsyncId()```用于获取```asyncId```，可以看到全局的```asyncId```是```1```。
+
+```async_hooks.triggerAsyncId()```用于获取```triggerAsyncId```，目前值为```0```。
+
+```js
+const async_hooks = require('async_hooks');
+console.log('asyncId:', async_hooks.executionAsyncId()); // asyncId: 1
+console.log('triggerAsyncId:
