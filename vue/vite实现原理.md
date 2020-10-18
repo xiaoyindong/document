@@ -103,4 +103,72 @@ app.use(async (ctx, next) => {
 const pkgPath = path.join(process.pwd(), 'node_modules', moduleName, 'package.json');
 const pkg = require(pkgPath);
 // 重新给ctx.path赋值，需要重新设置一个存在的路径，因为之前的路径是不存在的
-ctx.path = path.join('/node_modules', moduleName, pkg.mo
+ctx.path = path.join('/node_modules', moduleName, pkg.module);
+// 执行下一个中间件
+awiat next();
+```
+
+这样浏览器请求进来的时候虽然是@modules路径，但是在加载之前将path路径修改为了```node_modules```中的路径，这样在加载的时候就会去```node_modules```中获取文件，将加载的内容响应给浏览器。
+
+```js
+// 加载第三方模块
+app.use(async (ctx, next) => {
+    if (ctx.path.startsWith('/@modules/')) {
+        // 截取模块名称
+        const moduleName = ctx.path.substr(10);
+        // 找到模块路径
+        const pkgPath = path.join(process.pwd(), 'node_modules', moduleName, 'package.json');
+        const pkg = require(pkgPath);
+        // 重新给ctx.path赋值，需要重新设置一个存在的路径，因为之前的路径是不存在的
+        ctx.path = path.join('/node_modules', moduleName, pkg.module);
+        // 执行下一个中间件
+        awiat next();
+    }
+})
+```
+
+## 4. 单文件组件处理
+
+之前说过浏览器是没办法处理```.vue```资源的, 浏览器只能识别```js```、```css```等常用资源，所以其他类型的资源都需要在服务端处理。当请求单文件组件的时候需要在服务器将单文件组件编译成js模块返回给浏览器。
+
+所以这里当浏览器第一次请求```App.vue```的时候，服务器会把单文件组件编译成一个对象，先加载这个组件，然后再创建一个对象。
+
+```js
+import Hello from './src/components/Hello.vue'
+const __script = {
+    name: "App",
+    components: {
+        Hello
+    }
+}
+```
+
+接着再去加载入口文件，这次会告诉服务器编译一下这个单文件组件的模板，返回一个render函数。然后将render函数挂载到刚创建的组件选项对象上，最后导出选项对象。
+
+```js
+import { render as __render } from '/src/App.vue?type=template'
+__script.render = __render
+__script.__hmrId = '/src/App.vue'
+export default __script
+```
+
+也就是说```vite```会发送两次请求，第一次请求会编译单文件文件，第二次请求是编译单文件模板返回一个```render```函数。
+
+1. 编译单文件选项
+
+首先来实现一下第一次请求单文件的情况。需要把单文件组件编译成一个选项，这里同样用一个中间件来实现。这个功能要在处理静态服务器之后，处理第三方模块路径之前。
+
+首先需要对单文件组件进行编译需要借助```compiler-sfc```。
+
+```js
+// 处理单文件组件
+app.use(async (ctx, next) => {
+    if (ctx.path.endsWith('.vue')) {
+        // 获取响应文件内容，转换成字符串
+        const contents = await streamToString(ctx.body);
+        // 编译文件内容
+        const { descriptor } = compilerSFC.parse(contents);
+        // 定义状态码
+        let code;
+        // 不存在type就是第一次请求
+        if (!ctx.query
