@@ -76,4 +76,31 @@ const stream2string = (stream) => {
 // 修改第三方模块路径
 app.use(async (ctx, next) => {
     if (ctx.type === 'application/javascript') {
-        const con
+        const contents = await stream2string(ctx.body);
+        // 将body中导入的路径修改一下，重新赋值给body返回给浏览器
+        // import vue from 'vue', 匹配到from '修改为from '@modules/
+        ctx.body = contents.replace(/(from\s+['"])(?![\.\/])/g, '$1/@modules/');
+    }
+})
+```
+
+接着开始加载第三方模块, 这里同样需要一个中间件，判断请求路径是否是修改过的@module开头，如果是的话就去node_modules里面加载对应的模块返回给浏览器。这个中间件要放在静态服务器之前。
+
+```js
+// 加载第三方模块
+app.use(async (ctx, next) => {
+    if (ctx.path.startsWith('/@modules/')) {
+        // 截取模块名称
+        const moduleName = ctx.path.substr(10);
+    }
+})
+```
+
+拿到模块名称之后需要获取模块的入口文件，这里要获取的是```ES Module```模块的入口文件，需要先找到这个模块的```package.json```然后再获取这个```package.json```中的```module```字段的值也就是入口文件。
+
+```js
+// 找到模块路径
+const pkgPath = path.join(process.pwd(), 'node_modules', moduleName, 'package.json');
+const pkg = require(pkgPath);
+// 重新给ctx.path赋值，需要重新设置一个存在的路径，因为之前的路径是不存在的
+ctx.path = path.join('/node_modules', moduleName, pkg.mo
