@@ -115,3 +115,56 @@ yarn rollup --config rollup.config.js
 尝试使用一个可以在代码中导入```JSON```文件的插件，这里使用的插件名字叫做```rollup-plugin-json```需要先安装这个插件。
 
 ```s
+yarn add rollup-plugin-json --dev
+```
+
+安装完成过后打开配置文件，由于```rollup```的配置文件可以直接使用```ES Modules```所以使用```import```的方式导入插件。导出的是一个函数，可以将函数的调用结果添加到配置对象的```plugins```数组当中。
+
+```js
+import json from 'rollup-plugin-json';
+
+export default {
+    input: 'src/index.js',
+    output: {
+        file: 'dist/bundle.js',
+        format: 'iife'
+    },
+    plugins: [
+        json()
+    ]
+}
+```
+
+配置好插件后就可以在代码中通过```import```方式导入```json```文件了。
+
+```js
+import { log } from './logger';
+import message from './message';
+import { name, version } from '../package.json';
+
+const msg = message.hi;
+log(msg);
+
+log(name);
+log(version);
+```
+
+```s
+yarn rollup --config rollup.config.js
+```
+
+输出的```bundle.js```能看到```json```中的```name```和```version```正常被打包进来了，而```json```当中那些没有用到的属性也都会被```tree-shaking```移除掉。
+
+```js
+(function () {
+    'use strict';
+
+    const log = msg => {
+        console.log(msg);
+    };
+
+    var message = {
+        hi: 'Hey Guys, I am yd~'
+    };
+
+    var name = "roll
