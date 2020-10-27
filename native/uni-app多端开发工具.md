@@ -162,4 +162,191 @@ exports.main = async (event, context) => {
 const db = uniCloud.database();
 const collection = db.collection('user');
 
-exports.main = async (event, 
+exports.main = async (event, context) => {
+    // 将token写入数据集
+    collection.where({
+        name: event.data.name,
+        password: event.data.password
+    }).update({
+        token: event.token,
+        token_time: event.timestamp
+    });
+    // 获取用户信息
+    const user_info = await collection.where({
+        name: event.data.name
+    }).get();
+    // 返回给前端
+    return {
+        code: 200,
+        msg: '登录成功',
+        data.user_info.data
+    }
+}
+```
+
+云存储和```CDN```: 可以前端直传```cdn```和云存储。
+
+小程序自身提供云开发
+
+配置云开发环境: 
+
+创建项目的时候开启```unicloud```选项，创建之后项目中就会多出一个```cloudfunctions```文件夹，然后在```manifest.json```中获取到应用标识，然后在```cloudfunctions```文件夹右键创建服务空间，填写一个名称点击创建就可以了。这个时候在```cloudfunctions```文件夹右键就可以选择我们创建的服务空间。这就可以创建云函数之类的，然后右键上传部署，就可以部署到云开发平台。
+
+web控制台: 在```cloudfunctions```右键打开```uniCloud Web```控制台，就会访问控制台，可以看到所有的空间，选中详情我们创建的空间，可以去删除
+
+云数据库: 可以直接通过云函数操作数据库，也可以直接在控制台进行操作。可以在```cloudfunctions```右键创建```db_init.json```,这个文件可以配置数据库初始化。右键可以初始化云数据库。
+
+还可以使用云存储: 存储图片地址之类的。使用```uniCloud.uploadFile```可以直接上传文件。
+
+H5域名配置: 是因为浏览器跨域的问题，发行```H5```站点的时候允许在这里配置安全域名。
+
+云函数就是运行在云端的函数，```event```是客户端调用云函数时候传入的参数，```context```包含了调用信息和运行状态，可以通过他查看运行信息比如操作系统之类的。
+
+```js
+exports.main = async (event, context) => {
+    return event;
+}
+```
+
+使用云函数就是使用```uniCloud.callFunction```来操作，```name```就是云函数的文件。
+
+```js
+uniCloud.callFunction({
+    name: "login",
+    data: {
+        name: 'yd',
+        age: 18
+    },
+    success(res) {
+        console.log('云函数调用成功', res)
+    },
+    fail(error) {
+        console.log(error)
+    }
+})
+```
+
+选择图片和上传图片
+
+```js
+uni.chooseImage({
+    count: 1,
+    success(res) {
+        const tempFilePath = res.tempFilePaths[0]; // 获取图片blob地址
+        uniCloud.uploadFile({ // 上传云端
+            filePath: tempFilePath,
+            success(res) {
+                console.log(res);
+            }
+        })
+    }
+})
+```
+
+删除图片
+
+```js
+uniCloud.deleteFile({
+    fileList: ['图片地址'],
+    success(res) {
+        console.log(res);
+    }
+})
+```
+
+获取手机系统信息
+
+```js
+uni.getSystemInfoSync();
+```
+
+获取小程序胶囊的信息
+
+```js
+uni.getMenuButtonBoundingClientRect();
+```
+
+vuex是内置模块，不需要安装
+
+```js
+import Vuex from 'vuex';
+Vue.use(Vuex);
+
+const store = new Vuex.Store({
+    state: { // 数据源
+        historyList: []
+    },
+    mutations: { // 改变数据源的数据
+        SET_HISTORY_LIST(state, history) {
+            state.historyList = history;
+        }
+    }
+    actions: {
+        set_history({commit, state}, history) { // commit可以调用mutations中的方法，第一个参数，第二个参数是传入的参数。
+            commit('SET_HISTORY_LIST', history);
+        }
+    }
+})
+
+const app = new Vue({
+    ...store
+})
+
+```
+
+自定义事件:
+
+自定义事件只能在打开的页面触发，
+
+```js
+uni.$on('aaaa', (res) => {
+    console.log(res);
+})
+
+uni.$emit('aaaa', 123);
+```
+
+富文本:
+
+gaoyia-parse组件
+
+```js
+import uParse from '@/components/gaoyia-parse/parse.vue';
+import '@/components/gaoyia-parse/parse.css';
+
+export default {
+    components: [uParse],
+}
+
+<u-parse :content="富文本内容" :noData="没有数据的时候展示"></u-parse>
+```
+
+## 12. 项目优化与平台兼容
+
+微信小程序：
+
+小程序中的渲染```list-card```渲染的时候如果慢渲染会导致页面错乱，最好是给外层添加一个父标签占位。
+
+支付宝小程序：
+
+打开支付宝小程序开发者工具，打开就可以了。
+
+支付宝小程序隐藏导航栏是不生效的。需要使用条件判断处理一下。
+
+## 13. 项目发行与打包
+
+H5:
+
+```h5```发行比较简单，在```manifest.json```中配置应用标识，可以获取到，然后再找到h5配置，在配置指南中找到每个字段对应的含义。点击工具栏的发行，选择```h5```端的发行，会打包出一个```dist```文件。
+
+小程序:
+
+首先需要填写小程序的```appId```，然后编译就可以了。
+
+app:
+
+```ios```和```安卓```打包需要一定的原生开发经验，```uni-app```可以使用云打包的方式，通过```dcloud```去打包，打包之后下载下来就可以了，使用的是```dcloud```的证书这就简单多了。首先打开```manifest.json```要配置```appid```，也要配置应用名称，描述，版本名称版本号要更新，必须要高于上一个版本。
+
+配置完成之后点击发行，原生```app```云打包。安卓填写包名就可以了，安卓证书如果有可以使用自有的，如果没有使用公共证书。老版证书可以不要。```ios```配置只兼容```iphone```就可以了，证书有的话可以添加，如果没有可以使用越狱证书。 控制台会提示打包状态。可以在发行菜单查询打包状态。打包成功后控制台会出现下载地址。测试可以使用自定义基座。不要一直打包。
+
+也可以使用本地打包，通过本地打包指南可以知道打包过程。
