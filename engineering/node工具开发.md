@@ -62,4 +62,33 @@ inquirer.prompt([
     {
         type: 'input',
         name: 'name',
-        message
+        message: 'Project name'
+    }
+]).then(answer => {
+    console.log(answer);
+})
+```
+
+那有了```inquirer```之后要考虑的就是动态的去生成项目文件，一般会根据模板去生成，所以在项目的跟目录下新建一个```templates```目录，在这个目录下新建一些模板。
+
+```index.html```
+
+```html
+<head>
+    <title><%= name %></title>
+</head>
+```
+
+```style.css```
+
+```css
+body {
+    margin: 0;
+    background-color: red;
+}
+```
+
+模板的目录应该是项目当前目录的```templates```通过```path```获取。
+
+```js
+const path
