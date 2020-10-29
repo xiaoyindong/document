@@ -91,4 +91,45 @@ body {
 模板的目录应该是项目当前目录的```templates```通过```path```获取。
 
 ```js
-const path
+const path = require('path');
+
+// 工具当前目录
+const tmplDir = path.join(__dirname, 'templates');
+```
+
+输出的目标目录一般是命令行所在的路径也就是```cwd```目录。
+
+```js
+const path = require('path');
+
+// 工具当前目录
+const tmplDir = path.join(__dirname, 'templates');
+// 命令行所在目录
+const destDir = process.cwd();
+
+```
+
+明确这两个目录就可以通过```fs```模块读取模板目录下一共有哪些文件。把这些文件全部输入到目标目录，通过```fs```的```readDir```方法自动扫描目录下的所有文件。
+
+```js
+fs.readdir(tmplDir, (err, files) => {
+    if (err) {
+        throw err;
+    }
+    files.forEach(file => {
+        console.log(file); // 得到每个文件的相对路径
+    })
+})
+```
+
+可以通过模板引擎渲染路径对应的文件比如```ejs```。
+
+```js
+yarn add ejs --dev
+```
+
+回到代码中引入模板引擎，通过模板引擎提供的```renderFile```渲染路径对应的文件。第一个参数是文件的绝对路径，第二个参数是模板引擎在工作的时候的数据上下文，第三个参数是回调函数，也就是在渲染成功过后的回调函数，当然如果在渲染过程中出现了意外可以通过```throw err```的方式错误抛出去。
+
+```js
+const fs = require('fs');
+co
