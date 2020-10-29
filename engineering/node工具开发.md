@@ -53,4 +53,13 @@ sample-cli
 yarn add inquirer --dev
 ```
 
-```inquirer```模块提供一个prompt方法用于发起一个命令行的询问，可以接收一个数组参数，数组中每一个成员就是一个问题，可以通过```t
+```inquirer```模块提供一个prompt方法用于发起一个命令行的询问，可以接收一个数组参数，数组中每一个成员就是一个问题，可以通过```type```指定问题输入方式，然后```name```指定返回值的键，```message```指定屏幕上给用户的一个提示，在```promise```的```then```里面拿到这个问题接收到用户的答案。
+
+```js
+const inquirer = require('inquirer');
+
+inquirer.prompt([
+    {
+        type: 'input',
+        name: 'name',
+        message
