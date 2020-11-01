@@ -30,4 +30,24 @@ oAjax.onreadystatechange = function() {
         if (oAjax.status >= 200 && oAjax.status < 300 || oAjax.status == 304) {
             alert('成功');
         } else {
-            al
+            alert('失败');
+        }
+    }
+}
+
+```
+
+服务器依赖一个```body-parser```插件。
+
+```s
+npm install express body-parser multer -S;
+```
+
+```js
+const express = require('express'); // 主体
+const multer = require('multer'); // 接收文件POST数据
+const body = require('body-parser');// 接收普通数据
+
+const server = express();
+server.use(body.urlencoded({ extended: false }));
+const multerObj = mult
