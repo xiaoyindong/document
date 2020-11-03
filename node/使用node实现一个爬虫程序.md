@@ -56,4 +56,17 @@ function requestUrl(url, headers) {
             httpMode = http;
         }
     return new Promise((resolve, reject) => {
-        const req = 
+        const req = httpMode.request({
+            host: obj.host,
+            path: obj.path,
+            headers,
+        }, (res) => {
+            if (res.statusCode >= 200 && res.statusCode < 300 || res.statusCode === 304) {
+                let arr = [];
+                res.on('data', data => {
+                    arr.push(data);
+                })
+                res.on('end', () => {
+                    const buffer = Buffer.concat(data);
+                    fs.writeFile(path.resolve('tem', '1.html'), buffer, err => {
+                        if
