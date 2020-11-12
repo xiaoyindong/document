@@ -22,44 +22,4 @@ npm install cypress --save-dev
 npx cypress open
 ```
 
-启动后会自动打开一个类似的浏览器窗口，这个是测试管理器。同时会在项目中生成一个cypress目录，目录里面有4个子目录fixtures是测试数据，integration里面的examples是测试代码文件。plugins是插件，support是相关的支持配置。
-
-在测试管理器里面可以点击测试用例，就会开始跑对应的测试。
-
-首先添加一个测试文件integration/sample_spec.js，这里默认使用的mocha，断言使用的chai。
-
-```js
-describe('My First Test', () => {
-  it('Does not do much!', () => {
-    expect(true).to.equal(true)
-  })
-})
-```
-
-新增或删除的测试文件，默认都会自动更新到测试管理器里面。可以点击直接运行。
-
-访问指定的网页，比如打开百度的网址，查看是否包含百度一下的按钮。
-
-```js
-describe('My First Test', () => {
-  it('Visits the Kitchen Sink', () => {
-    cy.visit('https://www.baidu.com');
-
-    cy.contains('百度一下');
-  })
-})
-```
-
-模拟用户行为，找到输入框，输入内容，点击百度一下按钮。
-
-```js
-describe('My First Test', () => {
-  it('Visits the Kitchen Sink', () => {
-    cy.visit('https://www.baidu.com');
-    // 找到输入框 输入Hello World 敲击回车
-    cy.get('#kw').type('Hello World{enter}');
-    // 验证是否包含 百度百科内容
-    cy.contains('百度百科');
-  })
-})
-```
+启动后会自动打开一个类似的浏览器窗口，这个是测试管理器。同时会在
