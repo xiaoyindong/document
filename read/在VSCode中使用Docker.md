@@ -49,4 +49,24 @@ CMD [ "htop" ]
 
 除了```Run```这个命令外，另一个非常有用的命令就是```Run Interactive```。可以创建并运行```container```，然后进入到这个```container```的```shell```环境。
 
-在上面的例子里```container
+在上面的例子里```container```运行的命令是```htop```，也就是实时监控系统运行的情况，执行了```Run interactive```命令，运行了```contaienr```并且进入到它的```shell```环境中后，就立刻看到了```htop```的运行界面。
+
+对于命令面板里执行每个命令```VS Code```都会打开集成终端，然后运行相对应```Docker```脚本。可以先依赖于```VS Code```提供的命令，试着理解```VS Code```每个命令背后的脚本的含义。这就需要具备一定的```docker```命令行的知识。
+
+### 4. 输出 log
+
+对```Dockerfile```按如下稍作修改
+
+```s
+FROM alpine:latest
+
+RUN apk --no-cache add \
+
+    htop
+
+CMD [ "pwd" ]
+```
+
+将```Dockerfile```中最后一个配置```CMD```进行了修改。这个```image```生成的```container```运行起来后会执行```pwd```命令，而非```htop```命令。
+
+修改完```Dockerfile```之后，第一件要做的事情，就是重新构建```image```。在构建```image```时，可以覆盖之前的```image```，也可以重新起个名字来创建新的```image```。比如新的```image```取名为
