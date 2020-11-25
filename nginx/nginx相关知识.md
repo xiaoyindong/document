@@ -61,4 +61,53 @@ http {
 gzip on;                     #开启gzip压缩功能
 gzip_min_length 10k;         #设置允许压缩的页面最小字节数; 这里表示如果文件小于10个字节，就不用压缩，因为没有意义，本来就很小.
 gzip_buffers 4 16k;          #设置压缩缓冲区大小，此处设置为4个16K内存作为压缩结果流缓存
-gzip_http_
+gzip_http_version 1.1;       #压缩版本
+gzip_comp_level 2;           #设置压缩比率，最小为1，处理速度快，传输速度慢；9为最大压缩比，处理速度慢，传输速度快; 这里表示压缩级别，可以是0到9中的任一个，级别越高，压缩就越小，节省了带宽资源，但同时也消耗CPU资源，所以一般折中为6
+gzip types text/css text/xml application/javascript;      #制定压缩的类型,线上配置时尽可能配置多的压缩类型!
+gzip_disable "MSIE [1-6]\.";       #配置禁用gzip条件，支持正则。此处表示ie6及以下不启用gzip（因为ie低版本不支持）
+gzip vary on;    #选择支持vary header；改选项可以让前端的缓存服务器缓存经过gzip压缩的页面; 这个可以不写，表示在传送数据时，给客户端说明我使用了gzip压缩
+```
+
+## 6. proxy_pass
+
+可以通过```proxy_pass```将请求转发到对应的服务，假设服务器中存在一个```7001```的服务，可以通过本地ip```127.0.0.1:7001```访问，这个时候就可以使用```proxy_pass```在```location```中进行配置。
+
+```js
+server {
+    listen     8080;
+    ...
+    location / {
+        proxy_pass http://127.0.0.1:7001;
+    }
+}
+```
+
+## 7. upstream
+
+假设有两台服务，一个端口```7001```一个端口```7002```，可以通过```upstream```来实现负载均衡，在```http```代码块中通过```upstream```创建服务池。然后在```server```的```location```中通过```proxy_pass```转发至这个服务池。这样就实现了一个简单的负载均衡。
+
+```js
+http {
+    upstream myservice {
+        server 127.0.0.1:7001;
+        server 127.0.0.1:7002;
+    }
+    server {
+        listen 80;
+        location / {
+            proxy_pass http://myservice;
+        }
+    }
+}
+
+```
+
+## 8. 配置https
+
+在````nginx````配置文件夹中新建 ```cert``` 文件夹用于存放域名证书。
+
+```s
+cd /usr/local/nginx/conf
+mkdir cert
+```
+修改nginx配置文件 ```/usr/local/nginx
