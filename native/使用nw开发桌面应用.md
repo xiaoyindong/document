@@ -86,4 +86,81 @@ npm install marked --save-dev
 
 ```json
 {
-  "na
+  "name": "我的应用",
+  "main": "index.html",
+  "devDependencies": {
+    "marked": "^1.2.5"
+  }
+}
+```
+
+然后在```html```中的```script```中通过```require```加载这个模块，并且使用这个模块在页面转义一句```markedown```。
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的应用</title>
+</head>
+<body>
+    <div id="content"></div>
+    <script>
+        const marked = require('marked'); // 加载marked模块
+        document.getElementById('content').innerHTML = marked('# Marked in the browser\n\nRendered by **marked**.');
+    </script>
+</body>
+</html>
+```
+
+效果如下: 
+
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ce2c413db6ba4e19ae41b9b8d58ccd86~tplv-k3u1fbpfcp-watermark.image)
+
+## 4. 开发调试
+
+新版的```nw```是没有地址栏的，同时也没有控制台，这在开发过程中会产生很大的不便，不过这也很好解决，可以使用腾讯的[vconsole](https://github.com/Tencent/vConsole/blob/dev/README_CN.md)来调试代码。
+
+引入```vconsole.js```
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的应用</title>
+</head>
+<body>
+    <script src="https://cdn.bootcss.com/vConsole/3.3.4/vconsole.min.js"></script>
+    <script>
+        var vConsole = new VConsole();
+        console.log('Hello world');
+    </script>
+</body>
+</html>
+```
+
+![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/8260426b1f2a4c2291b846dc9a3596ed~tplv-k3u1fbpfcp-watermark.image)
+
+## 5. 软件打包
+
+如果是```mac```系统，打包就比较简单了，将```package，html``` 等资源所在的文件夹 压缩成```zip```，注意```nwjs```执行程序不要压缩否则包体积太大，然后修改文件名为```app.nw```，注意这里的后缀名改为```nw```。
+
+然后在```nwjs```文件上右键```显示包内容``` -> ```Contents``` -> ```Resources```, 将上面的```app.nw```文件放进来，同时这个文件夹里面有一个```app.icns```就是我们软件的显示图标，可以自己制作一个替换掉。这样我们的软件就只做完了，可以发给其他人使用了。
+
+
+```windows```系统打包方式相对来说麻烦一些，首先也是将```package，html``` 等资源所在的文件夹 压缩成```zip```，修改后缀名为```app.nw```，然后需要将```nw.exe```和```app.nw```合并成一个文件夹。可以使用下面命令操作。
+
+```s
+copy /b nw.exe+app.nw app.exe
+```
+
+然后可以下载```Enigma Virtual Box```将文件打成一个软件包。更换软件展示```icon```可以使用借助```zip```的能力。
+
+```程序``` -> ```添加到压缩文件``` -> ```zip```, ```存储（方式）``` , ```创建自解压``` -> ```高级``` -> ```自解压选项``` ->
+```设置``` -> ```提取后运行(添加文件名.exe)``` -> ```模式(解压到临时文件夹, 全部隐藏)``` ->
+```更新(覆盖所有文件)``` -> ```文本和图标(从文件加载自解压文件图标)``` -> ```确定```。
+
+至此打包好的应用就可以发送给用户使用了。
