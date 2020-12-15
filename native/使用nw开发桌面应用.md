@@ -58,4 +58,32 @@ NW文档中心: ```https://nwjs.org.cn/```
   "name": "应用的名称", // 应用的名称
   "main": "./index.html", // 指定应用的主页面
   "build": "1445048139741", // 这是为了给更新时判断版本用的时间戳
-  "version": "0.0.1",// 
+  "version": "0.0.1",// 当前的版本号
+  "homepage": "一般是官网地址之类的",
+  "description": "应用的描述", // 描述
+  "window": {
+    "title": "应用打开时候显示的名称", // 如果 index.html没有title,则会显示这里的值
+    "icon": "assest/img/logo.png", // icon
+    "position": "center", // 打开应用时在浏览器屏幕中的位置
+    "width": 1280, // 应用的宽度
+    "height": 680, // 应用的高度
+    "toolbar": true, // 是否隐藏窗口的浏览器工具栏，nw老版本还有用，新版本已经无效了
+    "frame": true, // 是否显示最外层的框架，设为false之后 窗口的最小化、最大化、关闭 就没有了
+    "resizable": true, // 可以通过拖拽变换应用界面大小
+    "min_width": 1028 // 最小宽度
+  },
+  "node-main": "./node-main.js",// 启动时执行的js，检查更新之类的。
+}
+```
+
+其实这里的```package.jso```n就是我们日常开发项目中的项目管理文件，我们可以通过```npm```或者```yarn```的方式安装第三方的依赖包，然后通过```require```的方式导入进来，这里也是可以使用的。
+
+比如我们通过```npm```安装一个```marked```模块。
+
+```js
+npm install marked --save-dev
+```
+
+```json
+{
+  "na
