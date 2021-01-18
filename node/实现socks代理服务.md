@@ -75,4 +75,34 @@ server.listen(config.port, () => {
 sock.once('readable', () => {
         const data = sock.read();
         console.log(data); // {"type":"Buffer","data":[5,1,0]}
-        sock.write(Buffer.from([0x05, 0x00]), (er
+        sock.write(Buffer.from([0x05, 0x00]), (err) => {
+
+        })
+});
+```
+
+完善一下，加上对应的判断。
+
+```js
+sock.once('readable', () => {
+        const data = sock.read();
+        if (!data && data[0] !== 0x05) {
+            sock.destroy();
+            return;
+        }
+        sock.write(Buffer.from([0x05, 0x00]), (err) => {
+            if (err) {
+                console.log(`写入数据失败,失败信息:${err.message}`);
+                socket.destroy();
+            }
+            // 其他
+        })
+});
+```
+
+客户端发起的连接由服务端验证通过后，客户端下一步应该告诉真正目标服务的地址给服务器，服务器得到地址后再去请求真正的目标服务。也就是说客户端需要把 Google 服务的地址google.com:80告诉服务端，服务端再去请求google.com:80。目标服务地址的格式为 (IP或域名)+端口，客户端需要发送的包格式如下。
+
+| VER | CMD | RSV | ATYP | DST.ADDR | DST.PORT |
+| -- | -- | -- | -- | -- | -- |
+| 1 | 1 | 0x00 | 1 | Variable | 2 |
+| SOCKS协议版本，固定0x05 | 命令(本文只实现CONNECT) | 保留字段 | 目标服务器地址类型(本文仅实现IP 
