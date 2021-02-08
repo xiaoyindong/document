@@ -126,4 +126,41 @@ border-bottom-right-radius: 70px 70px;
         .head {
             position: absolute;
             /* border: 1px solid red; */
-            background:
+            background: #000;
+            width: 268px;
+            height: 204px;
+            left: 116px;
+            top: 77px;
+            border-top-left-radius: 137px 94px;
+            border-top-right-radius: 137px 94px;
+            border-bottom-left-radius: 105px 95px;
+            border-bottom-right-radius: 104px 82px;
+        }
+        .ears-left {
+            position: absolute;
+            /* border: 1px solid red; */
+            background: #000;
+            width: 60px;
+            height: 60px;
+            transform: rotate(12deg);
+            top: 66px;
+            left: 133px;
+            border-top-right-radius: 150px 36px;
+            border-bottom-left-radius: 43px 95px;
+        }
+        .ears-right {
+            position: absolute;
+            /* border: 1px solid red; */
+            background: #000;
+            width: 60px;
+            height: 60px;
+            top: 66px;
+            left: 304px;
+            transform: rotate(-14deg);
+            border-top-left-radius: 161px 36px;
+            border-bottom-right-radius: 50px 130px;
+        }
+        .face {
+            position: absolute;
+            /* border: 1px solid red; */
+            backgroun
