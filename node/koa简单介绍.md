@@ -52,3 +52,25 @@ rq.get('/a', async (ctx, next) => {
 ## 3. 静态资源
 
 ```js
+const static = require('koa-static');
+server.use(static(path.resolve('www'));
+```
+
+```koa-static```返回的文件没有压缩，不建议使用，想要压缩需要传入```gzip: true```，后缀名用```gz```不过太麻烦了可以用```koa-static-cache```。
+
+```s
+npm install koa-static-cache --save
+```
+
+```js
+const static = require('koa-static-cache');
+server.use(static(path.resolve('www'));
+```
+
+## 4. 请求数据
+
+动态路由，路由参数在```ctx.params```中。
+
+```js
+const betterBody = require('koa-better-body');
+const conv
