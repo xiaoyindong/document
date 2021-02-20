@@ -616,4 +616,601 @@ new RTCPeerConnection([configuration])
 
 简单来说就是发送端和接收端都有两个数据要设置，自身的数据和另一方的数据。发送端创建数据之后要将数据设置在自己身上还要发送给接收端，接收端拿到之后设置到自己身上，然后接收端创建的数据也要设置在自己身上还要传给发送端，让他也设置到自己身上。
 
-当一开始创建```RTCPeerConnection```的时候协商处于一个```stable```
+当一开始创建```RTCPeerConnection```的时候协商处于一个```stable```状态，这个时候```connect```就可以用了，但是这时他是不能进行编解码的，因为还没有进行数据的协商。创建```offer```之后再调用```setLocalDescription```将```offer```放进去这个时候状态会变成```hava-local-offer```。
+
+接收到```answer```之后再将```answer```放入```setRemoteDescription```，状态会回到```stable```状态，这个时候```connect```就可以用了，并且是协商过的。
+
+对于被调用者也是一样收到```offer```之后，将```offer```放入到``setRemoteDescription``，状态变成```hava-remote-offer```, 自己创建了```answer```放入```setLocalDescription```中之后状态变成了```stable```。
+
+```createOffer```调用方创建一个```offer```也就是本地的媒体编解码信息。
+
+```option```参数包括```iceResetart```该选项会重启```ICE```，重新进行```Candidate```的收集。```voiceActivityDetection```是否开启静音检测，默认开启。
+
+```js
+aPromise = myPeerConnection.createOffer([options])
+```
+
+```createAnswer```接收方需要创建一个```answer```
+
+```js
+aPromise = myPeerConnection.createAnswer([options])
+```
+
+```setLocalDescription```参数是```createOffer```或者```createAnswer```的结果。
+
+```js
+aPromise = myPc.setLocalDescription(sessionDescription)
+```
+
+```setRemoteDescription```参数是```createOffer```或者```createAnswer```的结果。
+
+
+```js
+aPromise = myPc.setRemoteDescription(sessionDescription)
+```
+
+媒体协商的方法很简单，只有添加和移除。
+
+```addTrack```第一个是要添加的```track```，第二个是流里面可能有音频也可能有视频，需要将他们遍历添加进来，这样就获取到了```PeerConnection```，里面包含要传输的音视频了。
+
+```js
+rtpSender = myPc.addTrack(track, stream...)
+```
+
+```removeTrack```可以删除轨道
+
+```js
+myPc.removeTrack(rtpSender);
+```
+
+```onnegotiationneeded```表示协商事件，当进行媒体协商的时候会触发这个事件。
+
+```onicecandidate```当收到一个```ice```候选者的时候会触发这个事件。可以拿到这个候选者将它添加到```ice```中去，这样就可以进行通信了。
+
+这里来介绍一下端对端链接的基本流程，首先这里需要有四个实体，```发起端A```,```接收端B```,```服务器```，```sturn和turn服务```。
+
+首先```A```和```B```要与服务器建立链接，这样就可以实现数据中转, 接着```A```如果想要发起呼叫需要创建一个```PeerConnect```, 通过```getUserMedia```拿到本地的音视频流，将这个流添加到连接中去, 接着可以调用```PeerConnect```的```create offe```r创建一个```offer```的```sdp```，然后调用```setLocalDescription```将它设置到这个槽中去，掉完这个方法会发送一个请求给```STUN/TURN```服务，这时候就开始收集所有可以连接的候选者了。
+
+接着再把```offer```发给服务器，服务器将它转给```B```,```B```就拿到了```offer```，他首先也要创建一个```PeerConnect```，然后调用```setRemoteDescription```，然后再创建一个```answer```，然后调用```setLocalDescription```将它设置进去。他也会发送一个请求给```STUN/TURN```服务，这时候就开始收集所有可以与A通信的候选者。
+
+```B```将```answer```通过服务器转发给```A```,这时```A```再调用```setRemoteDescription```就进行媒体协商了。
+
+````A````拿到候选者之后将数据通过服务器发送给```B```端，让```B```知道有哪些链接通路，```B```将链接通路添加到列表中。同样```B```也通过服务器发送给```A```,让```A```存储到自己的通路添加到列表中。这时```A```和```B```就可以进行通信了。
+
+## 14. 案例演示
+
+这里简单演示一下，在一个页面中创建两个```video```一个展示本地采集的视频，另一个模拟传递过来的视频。由于这里没有```STUN/TURN```服务，就省略掉这个步骤。数据只在本地流转，模拟真实的传输过程。主要是为了演示上面提到的流程。
+
+在页面中新建两个```video```，一个是表示展示本地数据，一个表示展示远端数据。除了两个```video```，还要有```button```, 通过```startbutton```开始采集数据，然后展示在```localvideo```中。
+
+第二个```button```用来创建双方的```connection```，媒体协商之后然后将收到的数据渲染到```remotevideo```中。最后一个```button```是结束。
+
+```html
+<video id="localvideo" autoplay palysinline></video>
+<video id="remotevideo" autoplay palysinline></video>
+<button id="start">start</button>
+<button id="call">call</button>
+<button id="hangup">hangup</button>
+<script src="https://webrtc.github.io/adapter/adapter/adapter-latest.js"></script>
+```
+
+点击start的时候需要采集数据，在返回值里面需要做两件事，第一件是设置到````localvideo````中。然后这里要将```stream```存储到全局变量中```localStream```，后面还需要使用。
+
+```js
+
+let localStream;
+
+btnstart.onclick = function start() {
+    if (navigator.mediaDevices || navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+        }).then(((stream) => {
+        localVideo.srcObject = stream;
+        localStream = stream;
+        }).catch((err) => {
+            console.error(err);
+        })
+    } else {
+        console.log('不支持这个特性');
+    }
+}
+```
+
+点击```call```的时候逻辑比较复杂，首先要创建```pc1```的```PeerConnection```和```pc2```的```PeerConnection```, 这里是需要一个可选参数的，参数是需要的网络传输的配置整个```ICE```的配置，这里演示没有不涉及网络，所以就不设置这个参数了。
+
+拿到两个链接之后需要添加一些事件，需要知道```candidate```收集到之后的事情，最主要的也是这个事件。在这个事件中需要通过服务器将数据传回给```pc2```。所以在```pc1```的```onicecandidate```事件中调用```pc2```的```addIceCandidate```方法。对于```p2```同样监听```onicecandidate```，然后交给```pc1```。这是```pc1```和```pc2```收集到```Candidate```之后要做的事情。
+
+```js
+var pc1;
+var pc2;
+call.onclick = function() {
+    pc1 = new RTCPeerConnection();
+    pc2 = new RTCPeerConnection();
+
+    pc1.onicecandidate = function(e) {
+        pc2.addIceCandidate(e.candidate);
+    }
+    pc2.onicecandidate = function(e) {
+        pc1.addIceCandidate(e.candidate);
+    }
+}
+```
+
+对于```pc2```还要有一个```ontrack```，当他收到```track```的时候就接收到了```stream```，所以这里将```streams```放到```remoteVideo```的```srcObject```中。这里有很多的```stream```，取第一个就可以了。这样就将远端的音视频流传给了```remoteVideo```中。
+
+```js
+pc2.ontrack = function(e) {
+    remoteVideo.srcObecjt = e.streams[0];
+}
+```
+
+接着要将本地采集的数据添加到```pc1```的```PeerConnection```中去，这样在创建媒体协商的时候才会知道有哪些媒体数据。这个顺序不能乱，是现有数据才能做媒体协商，不能先协商后有数据。
+
+所以要先添加流，这里通过全局的```localStream```的```getTracks```拿到所有的轨，循环他传入的```pc1```的```track```中，第一个参数是当前的```track```，第二个参数是所在的流。这样就将本地采集的音视频流添加到了```pc1```的```PeerConnection```。
+
+```js
+localStream.getTracks().forEach(function(track) {
+    pc1.addTrack(track, localStream);
+})
+```
+
+这个时候就可以去创建```pc1```去媒体协商了，第一步是创建```offer```，这里的参数可以指定本地媒体的信息。因为没有采集音频所以```offerToRecieveAudio```是```0```，```offerToRecieveVideo```是```1```。
+
+有了这个就可以创建本地的媒体信息了，他是一个```promise```。可以在```then```中可以拿到描述信息，在这里要调用```pc1```的```setLocalDescription```将他传入进去。
+
+正常完成这步接着应该发送```desc```到信令服务器，信令服务会转发给```B```, 所以第二个人会从信令服务中接收```desc```。然后第二个人会调动```setRemoteDescription```将```desc```设置为自己的远端。
+
+设置之后```pc2```创建自己的```answer```, 这里是不需要传递参数的。创建成功之后也是一个```promise```，在这个```then```中```pc2```会将参数设置为自己的```LocalDescription```。然后```pc2```也开始收集```candidate```，然后他也会将自己的```desc```发送到信令服务。与```pc1```进行交换，```pc1```会接收这个```desc```设置自己的```remoteDescription```
+
+```js
+pc1.createOffer({
+    offerToRecieveAudio: 0,
+    offerToRecieveVideo: 1,
+}).then(function(desc) {
+    pc1.setLocalDescription(desc);
+    // send desc to 信令服务
+    // pc2 receive desc from 信令服务
+    pc2.setRemoteDescription(desc);
+
+    pc2.createAnswer().then(function(desc2) {
+        pc2.setLocalDescription(desc2);
+        // send desc2  to 信令服务
+        // pc1 receive desc from 信令服务
+        pc1.setRemoteDescription(desc2);
+    })
+})
+```
+
+这样整个协商就完成了，并且对```candidate```也收集完了，然后进行交换形成连接列表，然后进行连接检测，检测之后就开始真正的发送了。
+
+当关闭的时候执行```close```方法就可以了。
+
+```js
+hangup.onclick = function() {
+    pc1.close();
+    pc2.close();
+    pc1 = null;
+    pc2 = null;
+}
+```
+
+```SDP```它是一种信息格式的描述标准，本身不属于传输协议，但是可以被其他传输协议用来交换必要的信息。最主要的用途就是之前所讲的进行媒体的协商。
+
+## 15. STUN/TURN服务器搭建
+
+市面上有很多的```STUN/TURN```这种服务，一般都是将这两个协议融合在一起，也就是在一个服务中既支持```STUN```协议又支持```TURN```协议。一个比较有名的就是```rfc5766-turn-server```这个```turn-server```最初是由```google```发起的，也有很多人使用，不过他有很多的功能不足，很多人在他之上做了一些修改形成了现在的```coTurn```。```coTurn```是```rfc5766-turn-server```的升级版本。它支持了```UDP```和```TCP```还支持```IPV4```和```IPV6```。这里也选用```coTurn```, 因为他的活跃度比较高，用户量比较大。
+
+还有一种叫做```ResTurn```相对来说他比```coTurn```差一些。
+
+可以在```github```的```coTurn```中[下载](https://github.com/coturn/coturn), 将源码```clone```下来，下载之后需要进行编译。安装到```/usr/local/coturn```目录中。
+
+```js
+./configure --prefix=/usr/local/coturn
+// -j是表示多线程编译，一般根据CPU核心数的2倍来定，如果双核就用4
+make -j 4
+// 安装
+sudo make install
+```
+
+安装之后```/usr/local/coturn```就会存在，```bin```目录下面是可执行的程序，配置文件在```etc```目录下。
+
+对```coturn```来说有很多的配置项，其中主要的就是下面这几项。
+
+```s
+listening-port=3378  # 指定侦听的端口，默认3478
+external-ip=0.0.0.0  # 指定云主机的公网IP地址
+user=aaaaa:bbbbb     # 访问 stun/turn服务的用户名和密码
+realm=stun.xxx.cn    # 域名，这个一定要设置
+```
+
+配置文件在```/usr/local/coturn/etc/turnserver.conf```,可以在这个文件中进行修改编辑。设置上面四项就足够了。配置之后启动这个服务。
+
+```s
+cd /usr/local/coturn/bin
+./turnserver -c ./etc/turnserver.conf
+```
+
+启动之后可以在这个网站中做下测试```webrtc.github.io/samples/src/content/peerconnection/trickle-ice/```
+
+![](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/5f7622e442124a188ad3ecdec44019ae~tplv-k3u1fbpfcp-watermark.image)
+
+添加测试的```url```和端口，输入用户名和密码，点击添加服务，然后点击下面的```Gather candidates```开始收集。
+
+![](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1c302721f4ce4ea1a126f48374f1425e~tplv-k3u1fbpfcp-watermark.image)
+
+这里有不同的服务和不同的端口，有```IPV4```的地址也有```IPV6```的端口。也有```TCP```也有```UDP```。还有他们的优先级。
+
+```js
+new RTCPeerConnection()
+```
+
+在之前使用```RTCPeerConnection```的时候是没有添加参数的, 其实它里面可以有很多的参数。
+
+![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/8de8d7c40563456d898a44ba483ef832~tplv-k3u1fbpfcp-watermark.image)
+
+最关键的是```iceServers```也就是```stun/turn```服务，通过这个服务他可以做检测来获取到相应的反射地址和中继地址。有了这些就可以在做连接性检测的时候找到优先级。
+
+第二个是```iceTranportPolicy```, 这是传输策略，他有两种，一种是```all```一种是```relay```，```all```支持反射后的```candidates```和中继的```candidates```，如果是```relay```那就只收集中继的```candidates```。
+
+第三个是```bundlePolicy```这个策略也有好几种默认是```balanced```就是平衡的，后续会详细介绍。
+
+还有一个就是```rtcpMuxPolicy```就是```RTC```的复用策略，默认是```require```。
+
+```peerIdentity```是一个标识的字符串，```certificates```是一些证书，就是每一个链接，每一个可连通的候选者都需要有一个证书，如果有多个链接就会有多个证书，如果复用的情况下有一个证书就可以了，这样可以增加传输速度。
+
+最后一个就是```iceCandidatePoolSize```就是要收集的候选者的空间，默认是```0```，如果设置```5```的话，即使有```20```个也选其中的```5```个。
+
+下面来详细看一下。
+
+### 1. bundlePolicy
+
+balanced如果有多路传输通道音频与视频轨使用各自的传输通道。
+
+max-compat最大兼容性，每个轨道使用自己的传输通道。bundle绑定不成功的时候实际上走的就是这个方式。
+
+max-bundle最大话的使用绑定，都绑定到同一个传输通道。这个是WebRTC建议的方式，这样最简单，而且证书只需要一个，因为每个链接都需要一个证书。
+
+### 2. certificates
+
+授权可以使用链接的一组证书，如果不提供会自动产生，所以一般不会设置。
+
+### 3. iceCandidatePoolSize
+
+```16```位的整数值，用于指定预取的```ICE```候选者的个数，如果该值发生变化，它会触发重新收集候选者。
+
+### 4. iceTransportPolicy
+
+指定```ICE```传输策略，一般设置为```relay```，默认是```all```
+
+```relay```收集候选者的时候只收集中继候选者
+
+```all```可以使用任何类型的候选者
+
+### 5. iceServers
+
+由```RTCIceServer```组成，每个```RTCIceServer```都是一个```ICE```代理的服务。
+
+| 属性 | 含义 |
+| ---- | ---- |
+| credential | 凭据，只有TURN服务使用 |
+| credentialType | 凭据类型可以password或oauth |
+| urls | 用于连接服务中的url数组 |
+| username | 用户名，只有TURN服务使用 |
+
+### 6. rtcpMuxPolcy
+
+在收集```ICE```候选者时使用
+
+| 选项 | 说明 |
+| ---- | ---- |
+| negotiate | 收集RTCP与RTP复用的ICE候选者，如果RTCP能复用就与RTP复用，如果不能复用，就将他们单独使用 |
+| require | 只收集RTCP与RTP复用的ICE候选者，如果RTCP不能复用，则失败。 |
+
+### 7. candidate
+
+| 属性 | 说明 |
+| ---- | ---- |
+| candidate | 候选者描述信息 |
+| sdpMid | 与候选者相关的媒体流的识别标签 |
+| sdpMLineIndex | 在SDP中 m=的索引值 |
+| usernameFragment | 包括了远端的唯一标识 |
+
+## 16. 音视频直播客户端实现
+
+首先存在两个按钮，链接和离开，然后有两个```video```标签，一个展示本地的```video```，一个展示远端获取的```video```
+
+当点击链接按钮的时候，需要打开本地的连接设备, 拿到之后将视频渲染到本地```video```中，再存储到```localStream```变量中，这样本地视频就展示出来了。调用```connection```链接函数。
+
+```js
+
+let localStream;
+connect.onclick = function() {
+    if (navigator.mediaDevices || navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+        }).then(((stream) => {
+            localStream = stream;
+            document.querySelector('#local').srcObject = stream;
+            // 链接服务端函数
+            connection();
+        }).catch((err) => {
+            console.error(err);
+        })
+    } else {
+        console.log('不支持这个特性');
+    }
+}
+```
+
+当调用```joined```的时候表示第一个人进来了，这时候调用```createPeerConnection```创建链接。当执行```otherjoin```的时候表示房间不只一个人，需要建立媒体协商了。
+
+```js
+let socket;
+function connection() {
+    // 链接服务器
+    socket = io.connect();
+    // 接收服务端加入成功的消息，接收房间id和用户id
+    socket.on('joined', (roomid, id) => {
+        createPeerConnection();
+    })
+    // 其他人加入
+    socket.on('otherjoin', (roomid, id) => {
+        // 第二个人加入
+    })
+    // 
+    socket.on('full', (roomid, id) => {
+        socket.disconnect(); // 断开链接
+    })
+}
+```
+
+创建```PeerConnection```，首先判断有没有创建过，如果没有就创建, 这里传入```iceServers```设置```urls```地址这个前面讲过了，链接的用户名和密码。这样就配置了一个简单的```ice```。
+
+创建链接之后需要监听```onicecandidate```事件和```ontrack```事件。然后需要给本地的```track```获取到，然后添加到```pc```中，告诉对方，自己本身有哪些媒体流，对方会根据自身的媒体流创建相同类型的媒体流。
+
+在```onicecandidate```函数中，每当发现```candidate```就会执行，所以要发送一个消息, 发送给房间中的所有人这个消息是```candidate```。
+
+```js
+let pc;
+function createPeerConnection() {
+    if (!pc) {
+        pc = new RTCPeerConnection({
+            'iceServers': [{
+                'urls': 'turn:sturn.al.aaaaa.cn:3478',
+                'credential': 'password',
+                'username': 'username'
+            }]
+        })
+
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                socket.emit('message', '1111', {
+                    type: 'candidate',
+                    label: e.candidate.sdpMlineIndex,
+                    id: e.candidate.sdpMid,
+                    candidate: e.candidate.candidate
+                }); // 发送消息
+            }
+        }
+        pc.ontrack = (e) => { // 获取远端的流，赋值给video标签。
+            remoteVideo.srcObject = e.streams[0];
+        }
+    }
+
+    if (localStream) { // 给本地Stream添加到pc中，
+        localStream.getTracks().forEach(track => {
+            pc.addTrack(track);
+        })
+    }
+}
+```
+
+关闭媒体流比较简单，调用```close```方法就可以了。
+
+```js
+function closePeerConnection() {
+    if (pc) {
+        pc.close();
+        pc = null;
+    }
+}
+```
+
+创建```offer```，然后发送给对端，这个方法只能在发起端调用。
+
+创建```createOffer```这里先传入音频和视频选项, 表示接收远端的视频和音频，在回调里面，当收到```desc```之后需要调用```setLocalDescription```, 来收集```candidate```。设置之后要给另一端发送一个消息，让对方创建一个```answer```，这里要发送给房间中的另一个人，所以传入房间号```1111```，和```desc```。
+
+```js
+function call() {
+    if (pc) {
+        pc.createOffer({
+            offerToReceiveAudio: 1,
+            offerToReceiveVideo: 1,
+        }).then(function(desc) {
+            pc.setLocalDescription(desc);
+            socket.emit('message', '1111', desc); // 发送消息
+        })
+    }
+}
+
+```
+
+在```socket```的```message```中需要做一些逻辑, 首先要判断传入进来的是```offer```还是```answer```还是```candidate```，他们的逻辑是不同的。
+
+如果是```offer```，表示粉丝接收到了直播人发来的```offer```，所以他要将这个```desc```设置到```setRemoteDescription```，由于传递过来之后会自动转换成文本，所以需要使用```RTCSessionDescription```将它重新转换为对象,设置之后要创建一个```answer```, 在这个回调中设置到本地，```setLocalDescription```, 然后发送给直播端。
+
+如果数据类型是```answer```，也就是直播人收到了回答，设置到自己的```setRemoteDescription```。
+
+如果类型是```candidate```，需要创建```candidate```, 然后将它添加到本地的```candidate```中。
+
+```js
+let socket;
+function connection() {
+    // 链接服务器
+    socket = io.connect();
+    // 接收服务端加入成功的消息，接收房间id和用户id
+    socket.on('joined', (roomid, id) => {
+        createPeerConnection();
+    })
+    // 其他人加入
+    socket.on('otherjoin', (roomid, id) => {
+        // 第二个人加入
+    })
+    // 
+    socket.on('full', (roomid, id) => {
+        socket.disconnect(); // 断开链接
+    })
+
+    socket.on('message', (roomid, data) => {
+        if (data.type === 'offer') {
+            pc.setRemoteDescription(new RTCSessionDescription(data));
+            pc.createAnswer().then((desc) => {
+                pc.setLocalDescription(desc);
+                socket.emit('message', '1111', desc); // 发送消息
+            });
+        } else if (data.type === 'answer') {
+            pc.setRemoteDescription(new RTCSessionDescription(data));
+        } else if (data.type === 'candidate') {
+            let candidate = new RTCIceCandidate({
+                sdpMlineIndex: date.label,
+                candidate: data.candidate,
+            })
+            pc.addIceCandidate(candidate);
+        }
+    })
+}
+```
+
+```getDisplayMedia```可以采集桌面无法同时采集音频。
+
+## 17. WebRTC核心之RTP媒体控制与数据统计
+
+这里介绍```RTP```的```Media```，在这一层是真正处理数据传输的，控制了分辨率，传输规则，帧率，码流等内容。
+
+这里主要有两个类，一个是```Receiver```一个是```Sender```。也就是一个接收类，一个是发送类。
+
+```RTCRtpReceiver```的方法
+
+| 方法 | 说明 |
+| ---- | ---- |
+| getParameters | 返回RTCRtpParameter 对象 |
+| getSynchronizationSources | 返回一组SynchronizationSources实例 |
+| getContributingSources | 返回一组ContributingSources实例 |
+| getStats | RTCStatsReport,里面包括输入流统计信息 |
+| getCapabilities | 返回系统能接收的媒体能力(音频，视频) |
+
+```RTCRtpSender```的方法
+
+| 方法 | 说明 |
+| ---- | ---- |
+| getParameters | 返回RTCRtpParameter 对象 |
+| setParameters | 设置RTP传输相关的参数 |
+| getStats | 提供了输出流的统计数据 |
+| replaceTrack | 用另一个track替换现在的track，如切换摄像头 |
+| getCapabilities | 按类型(音频，视频)返回系统发送媒体的能力 |
+
+下面来控制一下传输速率，来演示一下上面介绍的```sender```和```receive```，控制速率就是在```sender```中控制的。这个设置要在协商之后打开才可以生效，对于发送者来说是收到```answer```的时候，接受者来说是创建```answer```之后。
+
+```js
+// 定义vsender变量来存储获取到的sender
+let vsender;
+const senders = pc.getSenders(); // 获取所有发送器
+// 这里控制视频，就不演示音频了，原理一样
+// 遍历每一个发送器
+senders.forEach(function(sender) {
+    // 如果是视频就赋值给vsender
+    if (sender && sender.track.king === 'video') {
+        vsender = sender;
+    }
+})
+// 获取拿到的发送器的参数
+const parameters = vsender.getParmeters();
+// 判断encodings是否存在值，因为要修改encodings
+if (parameters.encodings) {
+    // 设置maxBitrate
+    parameters.encodings[0].maxBitrate = 2000 * 1000;
+}
+// 修改完成后需要再设置回vsender, setParameters是一个promise
+vsender.setParameters(paramters).then(() => {
+    console.log('设置成功')
+}).catch((error) => {
+    console.error(error);
+})
+```
+
+可以在```chrome://webrtc-internals```中查看效果，这是谷歌的一个调试工具。
+
+## 18. WebRTC网络基础补充
+
+### 1. NAT: network address translator，对于网络主机来说必须有个公网地址才可以进行通信，NAT就是将内网的ip映射为外网的ip和端口，这就实现了通信。
+
+```NAT```产生的原因第一个是因为```IPv4```地址不够用，第二个是处于安全的考虑，办公室内所有的主机都不能被外网直接访问，需要经过```NAT```的处理，也就是网关层。
+
+### 2. STUN: 两个公网地址需要经过介绍才能连接到一起，这就是STUN，STUN充当一个中介的作用。
+
+他的作用就是进行```NAT```穿越，他是典型的客户端、服务器模式，客户端发送请求，服务端响应请求。
+
+在```RFC```中有两种```STUN```标准，一种是```RFC3489```, 不过他基于```UDP```进行穿越，失败率较高，```RFC5389```，他是在```3489```的基础上增加了一些功能。成功率提高很多。基于```UDP```和```TCP```。
+
+### 3. TURN: 不是所有的P2P都可以连接成功，当P2P连接不成功的时候引入TURN服务，负责双方之间流媒体的转发，其实是一个云端服务器。
+
+```TURN```出现的目的是解决```NAT```穿过过程无法穿越的问题，在```NAT```无法穿越如何解决，```TURN```服务其实就是在服务端架设一个```TURN```服务，他是建立在```STUN```之上，消息格式使用```STUN```格式消息。
+
+### 4. ICE: 是将NAT，STUN, TURN打包成一体，然后选择其中最优的一条线路，当出现问题时会切换到其他线路。
+
+每个```candidate```是一个地址，包括```IP```，```端口```，```协议```。
+
+## 19. WebRTC核心之SDP详解
+
+```SDP```一般分为两层，会话层和媒体层。
+
+媒体信息包含媒体格式和传输协议，传输```ip```，端口，负载类型。
+
+## 20. WebRTC非音视频数据传输
+
+```WebRTC```除了传输音视频，还可以传输文件，聊天，网络加速器等。下面来详细看下。
+
+传输非音视频文件借助的是```createDataChannel```这个类，返回的也是一个```promise```。他接收两个参数，一个```lable```标识给人看的，一个```options```，```options```也是可选的。
+
+```options```第一个是```ordered```表示是否按顺序到达，因为```UDP```是无序的。```maxPacketLifeTime/MaxRetransmits```这两个参数互斥，表示最大存活时间和尝试次数。
+
+```negotiated```如果是```false```接收方使用```ondatachannel```监听，如果是```true```两端都可以调用```createDataChannel```创建通过通过```id```来标识唯一。
+
+```js
+pc.createDataChannel('chat', { negotiated: true, id: 0 });
+```
+
+onmessage：接收数据
+
+onopen: 创建好```datachannel```的时候触发这个或者当第一次有消息来的时候触发。
+
+onclose：当```datachannel```关闭的时候
+
+onerror：出错的时候
+
+```js
+var pc = new RTCPeerConnection();
+var dc = pc.createDataChannel('dc', options);
+
+dc.onerror = (error) => {
+    console.log(error);
+}
+
+dc.onmessage = (event) => {
+
+}
+```
+
+非音视频数据传输方式对比：
+
+| 特性 | TCP | UDP | SCTP(流) |
+| ---- | ---- | ---- | ----- |
+| 可靠性 | 可靠 | 不可靠 | 可配置 |
+| 可达性 | 有序 | 无序 | 可配置 |
+| 传输方式 | 字节 | 消息包 | 消息包 |
+| 流控 | 需要 | 不需要 | 需要 |
+| 网络拥塞控制(丢包，抖动) | 需要支持 | 不需要 | 需要 |
+
+```datachannel```可以传输任何二进制的数据。
