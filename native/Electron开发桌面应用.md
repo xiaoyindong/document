@@ -41,4 +41,23 @@ const path = require('path')
 function createWindow() {
     const mainWindow = new BrowserWindow({
         width: 800,
-  
+        height: 600,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js')
+        }
+    })
+    // 加载页面
+    mainWindow.loadFile('index.html')
+
+    mainWindow.on('close', () => {
+        console.log('当前窗口关闭')
+    })
+}
+
+// 生命周期
+app.whenReady().then(() => {
+    // 加载界面
+    createWindow();
+
+    app.on('activate', () => {
+        console.l
