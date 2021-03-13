@@ -50,4 +50,36 @@ const body = require('body-parser');// 接收普通数据
 
 const server = express();
 server.use(body.urlencoded({ extended: false }));
-const multerObj = mult
+const multerObj = multer({ dest: './upload/'});
+
+server.use(multerObj.any());
+
+server.listen(8080);
+server.post('/', (req, res) => { // post请求会走这个
+    res.send('ok'); // express的res将write和end合并成了send
+    console.log(req.body); // body-parser 会在req上添加一个body
+    console.log(req.files); // multer 会在req上添加一个files
+})
+server.get('/api', () => { // get请求会走这个
+    
+})
+server.use('/', () => { // 所有请求都走这个
+    
+})
+// 设置静态服务器的地址
+server.use(express.static('./www/'));
+```
+
+实现上传文件进度
+
+```js
+const fileDom = document.getElementById('file');
+const data = new FormData();
+Array.from(fileDom.files).forEach(file => {
+    data.append('f1', file);
+})
+const oAjax = new XMLHttpRequest();
+
+
+oAjax.upload.onprogress = function(ev) {
+    const percent = ev.loa
