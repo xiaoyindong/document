@@ -49,4 +49,19 @@
 // 添加到主屏后的标题和short_name一致
 <link rel="apple-mobile-web-app-title" content="标题">
 // 隐藏safari地址栏 standalone模式下默认隐藏
-<link rel="apple-mob
+<link rel="apple-mobile-web-app-capable" content="yes">
+// 设置状态栏颜色
+<link rel="apple-mobile-web-app-status-bar-style" content="black-translucent">
+```
+
+横幅安装: 用户在浏览器中访问至少两次，两次访问间隔至少时间为```5```分钟(```safari```不支持横幅)
+
+## 运行环境
+
+1、localhost
+
+2、https
+
+只支持以上两种环境
+
+如果
