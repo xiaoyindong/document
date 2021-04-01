@@ -127,4 +127,115 @@ function fetchAddSave(request) { // 数据获取后 进行缓存
 
 // 监听fetch，只要拦截到请求就会走这里
 self.addEventListener('fetch', function(e) { // 线程中不能发送ajax，可以使用fetch
-    //
+    // 如果联网 发送请求，如未联网，
+    if (e.request.url.includes('/api/')) { // 请求的是接口
+        return e.respondWith(
+            fetchAddSave(e.request).catch(err => {
+                return caches.open(CACHE_NAME).then(cache => chche.match(e.request))
+            })
+        )
+    }
+    // 缓存策略 缓存优先，网络优先
+    console.log(e.request.url);
+    e.respondWith( // 用什么内容 返回当前请求
+        fetch(e.request).catch(err=> {
+            // 打开缓存，把缓存中匹配的结果返回回去
+            return caches.open(CACHE_NAME).then(cache => chche.match(e.request))
+        })
+    )
+});
+// 缓存，需要缓存内容
+function preCache() { // 需要返回一个promise
+    // 开启一个缓存空间
+    return caches.open(CACHE_NAME).then(function(cache) {
+        return cache.addAll(CACHE_LIST);
+    })
+}
+self.addEventListener('install', function(e) {
+    // 如果上一个serviceWorker不销毁，需要树洞skipWating
+    console.log('install');
+    e.waitUntil(
+        preCache().then(skipWaiting)
+    ) // 等待promise执行那个完成
+});
+// 激活当前serviceWorker，让service立即生效 self.clients.claim
+function clearCache() {
+    return caches.keys().then(function(keys) {
+        return Promise.all(keys.map(function(key) {
+            if (key !== CACHE_NAME) {
+                return caches.delete(key);
+            }
+        }));
+    })
+}
+// 当前serviceWorker安装完毕之后，删除之前的缓存
+self.addEventListener('activate', function(e) {
+    console.log('activate');
+    e.waitUntil(
+        Promise.all([
+            clearCache(),
+            self.clients.claim()
+        ])
+    )
+})
+
+```
+
+服务器代码:
+
+```js
+const http = require('http');
+const fs = require('fs');
+const URL = require('url');
+
+http.createServer((req, res) => {
+    let { pathname } = URL.parse(req.url, true);
+    const mime = {
+        js: 'text/javascript',
+        html: 'text/html',
+        ico: 'image/ico'
+    }
+    console.log(pathname);
+    try {
+        fs.readFile(`.${pathname}`, (err, data) => {
+            if (err) {
+                return res.end();
+            }
+            res.writeHead(200, {'Content-type' : mime[pathname.split('.')[1]]});
+            res.write(data);
+            return res.end();
+        })
+    } catch (error) {
+        return res.end();
+    }
+}).listen(8080);
+```
+
+```serviceWorker```需要拦截我们的客户请求，如果可以通畅，正常请求，如果网络不通，则走缓存
+添加主屏幕，两次访问，间隔```5```分钟 会弹出横条，手动点击是没有问题的
+
+## 缓存策略
+
+- cechefirst
+
+缓存优先
+
+- cacheonly
+
+仅缓存
+
+- networkfirst
+
+网络优先
+
+- networkonly
+
+仅网络
+
+- StateWhileRevalidate
+
+从缓存取，用网络数据更新缓存
+
+## pwa的库
+
+- workbox
