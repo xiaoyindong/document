@@ -93,3 +93,25 @@ yarn rollup ./src/index.js --format iife --file dist/bundle.js
 在这个文件中需要导出一个配置对象，对象中通过```input```属性指定打包的入口文件路径。通过```output```指定输出的相关配置，```output```属性要求是一个对象，在```output```对象中可以使用```file```属性指定输出的文件名。```format```属性可以用来指定输出格式。
 
 ```js
+export default {
+    input: 'src/index.js',
+    output: {
+        file: 'dist/bundle.js',
+        format: 'iife'
+    }
+}
+```
+
+需要通过```--config```参数来表明使用项目中的配置文件，默认是不去读取配置文件的。
+
+```js
+yarn rollup --config rollup.config.js
+```
+
+## 4. 使用插件
+
+```rollup```自身的功能就是```ES```模块的合并打包，如果项目有更高级别的需求，例如想去加载其他类型的资源文件，或者是要在代码中导入```CommonJS```模块，又或者是想要编译```ECMAScript```的新特性。这些额外的需求，```rollup```同样支持使用插件的方式扩展实现，而且插件是```rollup```唯一的扩展方式，他不像```webpack```中划分了```loader```，```plugin```和```minimize```这三种扩展方式。
+
+尝试使用一个可以在代码中导入```JSON```文件的插件，这里使用的插件名字叫做```rollup-plugin-json```需要先安装这个插件。
+
+```s
