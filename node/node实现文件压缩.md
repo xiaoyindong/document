@@ -14,4 +14,8 @@ const rs = fs.createReadSteam(path.resolve(__dirname, 'name.txt'), {
 // 流 默认流是暂停模式，非流动模式，内部会监控你有没有监听data事件 rs.emit('data', 123);
 const arr = [];
 rs.on('data', function(chunk) {
-    
+    arr.push(chunk);
+    rs.pause(); // 暂停data事件的触发  rs.play(); 继续
+});
+rs.on('end', function() {
+    console.log(Buffer.concat(arr).toString()); //
