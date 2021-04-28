@@ -11,4 +11,7 @@ const rs = fs.createReadSteam(path.resolve(__dirname, 'name.txt'), {
     start: 0,
     end: 5 // slice(start, end) 包含end的
 })
-// 流 默认流是暂停模式，非流动模式，内部会监控你
+// 流 默认流是暂停模式，非流动模式，内部会监控你有没有监听data事件 rs.emit('data', 123);
+const arr = [];
+rs.on('data', function(chunk) {
+    
