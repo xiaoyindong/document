@@ -112,4 +112,183 @@ var i, str = '';
 </body>
 ```
 
-``
+```JavaScriptperf```结果可以发现，使用缓存的效果比没使用缓存会有一些优势。
+
+## 5. 通过原型对象添加附加方法
+
+```JavaScript```中存在三种概念，构造函数，第原型对象，实例对象。实例对象和构造函数都是可以指向原型对象的，可以把某些调用频繁的方法添加在原型对象上，而不需要放在构造函数内部。比较一下两种不同的实现方式的性能。
+
+```js
+var fn1 = function() {
+    this.foo = function() {
+        console.log(11111);
+    }
+}
+
+let f1 = new fn1();
+
+var fn2 = function() {}
+fn2.prototype.foo = function() {
+    console.log(11111);
+}
+
+let f2 = new fn2();
+```
+
+```JavaScriptperf```对比发现构造函数添加的方法相比通过原型添加的方法效率要低很多。
+
+## 6. 避开闭包陷阱
+
+闭包在```JavaScript```中是非常强大的语法，可以带来非常大的便捷，不过闭包如果使用不当很容易造成内存泄漏，不要为了闭包而闭包。
+
+这里对比一下使用闭包和使用函数重用哪种方式执行效率更高。首先定义函数，接收另外一个函数作为参数。
+
+```js
+function test(func) {
+    console.log(func());
+}
+
+function test2() {
+    var name = 'yd';
+    return name;
+}
+
+test(function() { // 使用闭包
+    var name = 'yd';
+    return name;
+});
+
+test(test2) // 不使用闭包
+```
+
+## 7. 避免属性访问方法使用
+
+属性访问方法是跟面向对象语法相关的，为了更好的实现封装性，更多的时候可能将对象的成员属性和方法放在函数内部，然后对外部暴露方法对这些属性进行增删改查。但是这个特性在```JavaScript```中并不是那么的适用，在```JavaScript```里是不需要属性的访问方法的，所有的属性在外部都是可见的，使用属性访问方法的时候他相当是增加了一层重定义，对当前的访问控制来说没有太多的意义。所以不推荐属性访问方法的使用。
+
+```js
+function Person() {
+    this.name = 'icoder';
+    this.age = 18;
+    this.getAge = function() {
+        return this.age;
+    }
+}
+
+const p = new Person();
+// 使用访问方法
+const a = p.getAge();
+
+function Person() {
+    this.name = 'icoder';
+    this.age = 18;
+    this.getAge = function() {
+        return this.age;
+    }
+}
+const p = new Person();
+// 不使用访问方法
+const b = p.age;
+```
+
+对比发现通过属性访问方法比直接访问效率要低很多。
+
+## 8. For循环优化
+
+使用```for```循环遍历数组的时候，不要直接使用数组的属性，最好缓存下来。
+
+```js
+var arrList = [];
+arrList[10000] = 'icoder';
+for (var i = 0; i < arrList.length; i++) {
+    console.log(arrList[i])
+}
+
+// 缓存数组长度
+for (var i = arrList.length; i; i--) { 
+    console.log(arrList[i])
+}
+```
+
+## 9. 选择最优的循环方法
+
+对比```forEach```，```for```，```for ... in```三种方式谁的效率更高一些。
+
+```js
+var arrList = new Array(1, 2, 3, 4, 5)
+
+arrList.forEach(function(item) {
+    console.log(item);
+})
+
+for (var i = arrList.length; i; i--) { // 缓存数组长度
+    console.log(arrList[i])
+}
+
+for (var i in arrList) { // 缓存数组长度
+    console.log(arrList[i])
+}
+```
+
+```foreach```效率最高，```for...in...```效率最低。
+
+## 10. 文档碎片优化节点添加
+
+```DOM```操作是非常消耗性能的，特别是创建新的节点，将它添加至界面中时，这个过程一般都会伴随着回流和重绘。这两个操作对性能的消耗又是比较大的。
+
+```js
+// 不使用优化
+for (var i = 0; i < 10; i++) {
+    var oP = document.createElement('p');
+    oP.innerHTML = i;
+    document.body.appendChild(oP);
+}
+
+// 使用优化
+const fragEle = document.createDocumentFragment();
+for (var i = 0; i < 10; i++) {
+    var oP = document.createElement('p');
+    oP.innerHTML = i;
+    fragEle.appendChild(oP);
+}
+document.body.appendChild(fragEle);
+```
+
+## 11. 克隆优化节点操作
+
+页面渲染完成之后页面中存在很多```p```标签，当要新增节点的时候，可以找到一个与新增节点类似的已经存在于页面中的节点，通过克隆的方式添加到界面当中。这样优化的内容是本身已经具有的样式和属性就不需要后续执行添加了，这就是所谓的优化。
+
+```html
+<body>
+    <p id="box1">old</p>
+    <script>
+        // 创建方式
+        for (var i = 0; i < 10; i++) {
+            var oP = document.createElement('p');
+            oP.innerHTML = i;
+            document.body.appendChild(oP);
+        }
+        // 克隆方式
+        var oldP = document.getElementById('box1');
+        for (var i = 0; i < 10; i++) {
+            var newP = oldp.cloneNode(false);
+            newP.innerHTML = i;
+            document.body.appendChild(newP);
+        }
+    </script>
+</body>
+```
+
+## 12. 直接量替换newObject
+
+定义对象和数组的时候，有两种不同的形式，可以使用```new```的方式获取相应的数据，也可以直接采用字面量。
+
+```js
+// 字面量方式
+var a = [1, 2, 3];
+
+// 实力换方式
+var a1 = new Array(3)
+a1[0] = 1;
+a1[1] = 2;
+a1[2] = 3;
+```
