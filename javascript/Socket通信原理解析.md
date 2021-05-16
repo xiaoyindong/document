@@ -80,4 +80,20 @@ const crypto = require('crypto'); // 借助加密库实现一些安全性
     console.log('链接');
 }).listen(8080); */
 // http无法完成socket链接，所以采用原生的net套接字，自己写一个。
-const server = net.createServer(soc
+const server = net.createServer(sock=> {
+    console.log('链接上了');
+    sock.on('end', () => {
+        console.log('客户端断开了')
+    }); // 断开
+    sock.once('data', (data) => {
+        console.log('hand shake start...');
+        // 最先过来的是http头
+        console.log(data.toString());
+        // 头虽然是2进制，但是都是可见数据，所以可以放心toString();
+        const str = data.toString();
+        // 将http头用\r\n切开
+        let lines = str.split('\r\n');
+        // 删除第一行和最后一行，没啥用
+        lines = lines.slice(1, lines.length - 2);
+        // 将所有请求头通过'分号空格'切开
+      
