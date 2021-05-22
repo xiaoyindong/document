@@ -31,4 +31,31 @@ curl -sSl https://get.docker.com/ | sh
 ```s
 
 # 添加yum源
-curl 
+curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh" | sudo bash
+
+```
+
+- 安装最新版gitlab-runner
+
+```s
+sudo yum install gitlab-runner
+```
+
+- 安装指定版本的gitlab-runner
+
+```s
+# 查看列表
+yum list gitlab-runner --showduplicates | sort -r
+# 安装10.0.0-1
+sudo yum install gitlab-runner-10.0.0-1
+```
+
+- 查看是否正常运行
+
+```s
+gitlab-runner status
+```
+
+## 4. 注册
+
+注册将```runner```与一个或多个```GitL
