@@ -60,4 +60,20 @@ console.log('服务器已经启动 http://localhost:5000')
 
 我们的做法是当代码中使用了第三方模块(```node_modules```中的文件)，可以通过修改第三方模块的路径给他一个标识，然后在服务器中拿到这个标识来处理这个模块。
 
-首先需要修改第三方模块的路径，这里需要一个新的中间件来实现。判断一下当前返回给浏览器的文件是否是```javascript```，只需要看响应头中的```c
+首先需要修改第三方模块的路径，这里需要一个新的中间件来实现。判断一下当前返回给浏览器的文件是否是```javascript```，只需要看响应头中的```content-type```。如果是```javascript```需要找到这个文件中引入的模块路径。```ctx.body```就是返回给浏览器的内容文件。这里的数据是一个```stream```，需要转换成字符串来处理。
+
+```js
+
+const stream2string = (stream) => {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on('data', chunk => {chunks.push(chunk)})
+        stream.on('end', () => { resolve(Buffer.concat(chunks).toString('utf-8'))})
+        stream.on('error', reject)
+    })
+}
+
+// 修改第三方模块路径
+app.use(async (ctx, next) => {
+    if (ctx.type === 'application/javascript') {
+        const con
