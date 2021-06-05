@@ -72,4 +72,32 @@ systemctl restart firewalld.service
 
 ```s
 # 创建本地用户
-CREATE USER 'user'@'localhost' IDENTIFIED B
+CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
+
+# 新建远程用户
+CREATE USER 'user'@'%' IDENTIFIED BY 'password';
+
+# 新建数据库
+CREATE DATABASE test_db;
+
+# 查看用户权限
+SHOW GRANTS FOR 'user'@'%';
+
+# 赋予用户指定数据库远程访问权限
+GRANT ALL PRIVILEGES ON test_db.* TO 'user'@'%';
+
+# 赋予用户对所有数据库远程访问权限
+GRANT ALL PRIVILEGES ON *.* TO 'user'@'%';
+
+# 赋予用户对所有数据库本地访问权限
+GRANT ALL PRIVILEGES ON *.* TO 'user'@'localhost';
+
+# 刷新权限
+FLUSH PRIVILEGES;
+```
+
+## 6. 收回权限
+
+```s
+# 收回权限
+REVOKE ALL PRIVILEGE
