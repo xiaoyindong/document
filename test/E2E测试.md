@@ -10,4 +10,16 @@ E2E测试一般是由QA测试工程师来做，稍小的项目可能根据测试
 
 E2E测试有点是真实的测试环境，更容易获得程序的信心，缺点是端到端测试运行不够快，启动浏览器需要占用几秒钟，网站响应速度又慢，通常一套端到端测试需要30分钟的运行时间，如果应用程序完全依赖于端到端测试，那么测试套件将需要数小时运行时间。端到端测试的另一个问题是调试起来比较困难，需要打开浏览器并逐步完成用户操作以重新bug。本地运行这个调试过程已经很糟糕了，如果是在持续集成的服务器上运行那调试将会更加糟糕。
 
-常用的测试框架有Selenum，Cypress，Nightwatch，Webdriv
+常用的测试框架有Selenum，Cypress，Nightwatch，WebdriverIO，playright。
+
+## 2. Cypress安装
+
+[官网https://www.cypress.io](https://www.cypress.io)，[安装文档](https://docs.cypress.io/guides/getting-started/installing-cypress#System-requirements)
+
+```s
+npm install cypress --save-dev
+# 启动
+npx cypress open
+```
+
+启动后会自动打开一个类似的浏览器窗口，这个是测试管理器。同时会在
