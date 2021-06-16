@@ -38,4 +38,8 @@
 
 ```meta```存在两个非必须的属性```http-equiv```和```name```, 用于表示要设置的项。
 
-比如```<meta http-e
+比如```<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">```,设置的项是```Content-Security-Policy```设置的值是```upgrade-insecure-requests```。
+
+### 1. http-equiv 属性
+
+```http-equiv```一般设置的都是与```http```请求头相关的信息，设置的值会关联到http头部。也就是说浏览器在请求服务器获取```html```的时候，服务器会将```html```中设置的```meta```放在响应头中返回给浏览器。常见
