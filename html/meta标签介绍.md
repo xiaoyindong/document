@@ -66,3 +66,61 @@ content-type: text/html charset=utf8
 expires:31 Dec 2008
 ```
 
+#### 3. refresh
+
+该种设定表示5秒自动刷新并且跳转到指定的网页。如果不设置url的值那么浏览器则刷新本网页。
+
+```html
+<meta http-equiv="refresh" content="5 url=http://www.zhiqianduan.com">
+```
+
+#### 4. window-target
+
+强制页面在当前窗口以独立页面显示, 可以防止别人在框架中调用自己的页面。
+
+```html
+<meta http-equiv="window-target" content="_top'>
+```
+
+#### 5. pragma
+
+禁止浏览器从本地计算机的缓存中访问页面的内容
+
+```html
+<meta http-equiv="pragma" content="no-cache">
+```
+
+### 2. name 属性
+
+```name```属性主要用于描述网页，与对应的```content```中的内容主要是便于搜索引擎查找信息和分类信息用的, 用法与```http-equiv```相同，```name```设置属性名，```content```设置属性值。
+
+#### 1. author
+
+```author```用来标注网页的作者
+
+```html
+<meta name="author" content="aaa@mail.abc.com">
+```
+
+#### 2. description
+
+```description```用来告诉搜素引擎当前网页的主要内容，是关于网站的一段描述信息。
+
+```html
+<meta name="description" content="这是我的HTML">
+```
+
+#### 3. keywords
+
+```keywords```设置网页的关键字，来告诉浏览器关键字是什么。是一个经常被用到的名称。它为文档定义了一组关键字。某些搜索引擎在遇到这些关键字时，会用这些关键字对文档进行分类。
+
+```html
+<meta name="keywords" content="Hello world">
+```
+
+#### 4. generator
+
+表示当前```html```是用什么工具编写生成的，并没有实际作用，一般是编辑器自动创建的。
+
+```html
+<meta n
