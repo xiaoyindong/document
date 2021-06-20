@@ -53,3 +53,60 @@ minikube version
 启动```minikube```, 这个启动可能会失败，因为服务在国外，可以参考上面的文档设置国内镜像。
 
 ```s
+minikube start
+```
+
+创建之后会在```VBox```（这里用的虚拟机）里面创建一台虚拟机，然后会创建很多的```container```和镜像，这需要一些时间，耐心等待就可以了。
+
+```s
+# 查看状态
+minikube status
+# 进入到创建的虚拟机里面
+minikube ssh
+# 查看容器
+docker ps
+```
+
+安装```kubectl```，他可以获取集群的运行信息和创建```k8s```的资源，比如```pod```，```development```。
+
+[安装](https://kubernetes.io/zh/docs/tasks/tools/install-kubectl/)
+
+```s
+# 查看信息
+kubectl version
+# 查看k8s的pod，这里面展示的都是一些核心的组件，是他们组成了k8s
+kubectl get pod --all-namespaces
+```
+
+停止```minikube```
+
+```s
+# 停止
+minikube stop
+# 删除
+minikube delete
+# 启动dashboard服务，可以通过网页访问k8s集群
+minikube dashboard
+```
+
+## 3. Kubernetes中的基本概念和操作
+
+```kubectl```有一个自动补全的方法``completion``，可以使用```--help```查询设置方法
+
+```s
+kubectl completion --help
+```
+
+设置之后使用```tab```按键就会出现提示方法。
+
+```kubectl```默认会查看```.kube```下面的```config```文件来操作```k8s```, 也可以自己设置这个```config```中的设置来管理```k8s```的操作。可以通过```config```命令查看。
+
+```s
+kubectl config current-context
+kubectl config get-contexts
+```
+
+切换```context```, 可以将不同的```cluster```配置到```config```中，然后通过切换来设置不同的操作。
+
+```s
+kubectl config use-context [
