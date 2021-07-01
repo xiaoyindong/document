@@ -41,4 +41,17 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setClearColor(0xffffff);
 renderer.setSize(window.innerWidth, window.innerHeight);
 // 几何体
-document.body.appendChild(renderer.dom
+document.body.appendChild(renderer.domElement);
+// 创建几何体
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+// 材质
+const material = new THREE.MeshBasicMaterial({
+    color: 0x324334,
+    wireframe: true,
+});
+
+const cube = new THREE.Mesh(geometry, material);
+
+scene.add(cube);
+
+// 修
