@@ -73,3 +73,29 @@ function animate() {
 let scene, camera, geometry, mesh, renderer, controls
 
 // 初始化渲染器
+function initRenderer() {
+    renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setPixelRatio(window.devicePixelRatio)
+    document.body.appendChild(renderer.domElement)
+}
+
+// 初始化场景
+function initScene() {
+    scene = new THREE.Scene()
+    const axesHelper = new THREE.AxesHelper(100)
+    scene.add(axesHelper)
+}
+
+// 初始化相机
+function initCamera() {
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000)
+    camera.position.set(0, 0, 15)
+    controls = new THREE.TrackballControls(camera, renderer.domElement)
+}
+
+// 初始化模型
+function initMesh() {
+    geometry = new THREE.BoxGeometry(2, 2, 2)
+    // material = new THREE.MeshNormalMaterial()
+    const texture = new THREE.TextureLoader().
