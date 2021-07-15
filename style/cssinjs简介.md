@@ -54,3 +54,42 @@ const className = css(`
 ### 1. 隐式依赖, 样式难以追踪
 
 传统的```css```样式是按层级编写的，比如下面这样:
+
+```css
+.target .name h1 {
+    color: red;
+}
+body #container h1 {
+    color: green;
+}
+```
+
+这个```h1```元素最终显示为什么颜色，假如想要追踪这个影响```h1```的样式，还是比较难以确定的。
+
+使用```CSS-in-JS```的方案就简单直接，易于追踪。
+
+```js
+export const Title = styled.h1`
+    color: green;
+`
+<Title>文字颜色</Title>
+```
+
+### 2. 使用变量
+
+传统的```css```里面没有变量，但是在```CSS-in-JS```中就可以方便的控制变量。
+
+```js
+const Container = styled.div(props => ({
+    display: 'flex',
+    flexDirection: props.column || 'column'
+}))
+```
+
+### 3. 解耦css和html
+
+```css```选择器与```html```元素名称是耦合的
+
+```css
+.target .name h1 {
+    color: red;
