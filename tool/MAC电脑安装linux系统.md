@@ -22,47 +22,4 @@
 
 ## 5. 添加网络
 
-刚安装的```linux```一般不能上网，可以修改```/etc/sysconfig/network-scripts/ifcfg-enp0s3```文件。
-
-可能你的不是这个文件，但是没关系只要是```/ifcfg-exxx```就行，将```ONBOOT=no```修改为```ONBOOT=yes```。
-
-```s
-# 修改
-vi /etc/sysconfig/network-scripts/ifcfg-enp0s3
-```
-
-重启网络服务，就能够上网了
-
-```s
-# 重启
-service network restart
-```
-
-可以使用ping看下是否可以ping通。
-
-```s
-# 能ping通，说明能联网
-ping www.baidu.com 
-```
-
-## 6. 本地连接
-
-虚拟机中的界面太小了，可以使用本机的终端连接虚拟机。查看虚拟机的```ip```
-
-```s
-ip addr
-```
-
-得到```ip```之后使用本机终端通过```ssh```连接。输入密码即可。
-
-```s
-ssh root@xx.xx.xx.xx
-```
-
-## 7. 开放端口
-
-开放```22```端口, 默认开放```22```端口，如未开放可手动开放，方便```ssh```链接。
-
-```s
-iptables -A INPUT -p tcp --dport 22 -j ACCEPT
-```
+刚安装的```linux```一般不能上网，可以
