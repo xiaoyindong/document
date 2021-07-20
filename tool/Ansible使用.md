@@ -130,3 +130,65 @@ cd ../../..
 ```
 
 创建```deploy.yml```文件
+
+```s
+vi deploy.yml
+```
+
+编辑这个文件, 告诉```ansible```使用```host```任务，并且在目标主机中获取主机信息，并且使用目标主机的```root```账户读写权限。最后告诉```ansible```执行```roles```下的```testbox```任务。
+
+```yml
+- hosts: "testservers"
+  gather_facts: true
+  remote_user: root
+  roles:
+    - testbox
+```
+
+使用```tree```查看一下目录结构
+
+```s
+tree .
+```
+
+这样文件就配置好了，接下来要配置一下秘钥认证
+
+```s
+# 返回root命令行
+su - root
+# 编辑dns
+vi /etc/hosts
+```
+
+添加dns文件。
+
+```s
+xx.xx.xx.xx test.example.com
+```
+
+返回到```deploy```命令行
+
+```s
+exit
+```
+
+创建```ssh```秘钥认证对, 一路回车。
+
+```s
+ssh-keygen -t rsa
+# cat ~/.ssh/id_*.pub | ssh  root@test.example.com 'cat >> .ssh/authorized_keys'
+ssh-copy-id-i ~/.ssh/id_rsa.pub root@test.example.com
+```
+
+这样就可以不需要密码直接连接到```test.example.com```服务器了，这里在```ansible```的```deploy```目录中，执行入口文件。
+
+```s
+cd test_playbooks/
+
+ansible-playbook -i inventory/testenv ./deploy.yml
+```
+
+执行完成。可以去目标主机查看状态。创建了一个```test.txt```文件并且将数据写到了文件中。
+
+```s
+ssh root@test.e
