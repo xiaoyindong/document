@@ -89,3 +89,44 @@ cd test_playbooks
 mkdir inventory
 mkdir roles
 cd inventory/
+vi testenv
+```
+
+编辑```testenv```
+
+```s
+[testservers]
+test.example.com
+
+[testservers:vars]
+server_name=test.example.com
+user=root
+output=/root/test.txt
+```
+
+创建```main.yml```
+
+```s
+cd ..
+cd roles/
+mkdir testbox
+cd testbox
+mkdir tasks
+cd tesks/
+vi main.yml
+```
+
+编辑```main.yml```, 添加一个测试任务，这里```shell```前是两个空格。
+
+```yml
+- name: Print server name and user to remote testbox
+  shell: "echo 'Currently {{ user }} is logining {{ server_name }}' > {{ output }}"
+```
+
+返回路径，回到```test_palybooks```
+
+```s
+cd ../../..
+```
+
+创建```deploy.yml```文件
