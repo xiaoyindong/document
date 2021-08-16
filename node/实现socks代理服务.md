@@ -63,4 +63,16 @@ server.listen(config.port, () => {
 | -	| VERSION | METHODS_COUNT | METHODS |
 | -- | -- | -- | -- |
 | data | 0x05 | 0x01 | 0x00 |
-|
+| 说明 | 协议版本，目前固定0x05 | 客户端支持的认证方法数量 | 不需要认证 |
+
+服务端收到客户端的验证信息之后，就要回应客户端，服务端需要客户端提供哪种验证方式的信息。服务端回应ver和method。根据请求的协议需要添加协议验证与响应信息。这里服务端不需要验证的话，可以这么回应客户端。ver代表 socks socks 默认为0x05，其固定长度为1个字节，method代表服务端需要客户端按此验证方式提供的验证信息，其值长度为1个字节，可为上面六种验证方式之一。
+
+| VER | METHOD |
+| -- | -- |
+| 0x05 | 0x00 | 
+
+```js
+sock.once('readable', () => {
+        const data = sock.read();
+        console.log(data); // {"type":"Buffer","data":[5,1,0]}
+        sock.write(Buffer.from([0x05, 0x00]), (er
