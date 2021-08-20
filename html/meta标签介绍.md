@@ -42,4 +42,27 @@
 
 ### 1. http-equiv 属性
 
-```http-equiv```一般设置的都是与```http```请求头相关的信息，设置的值会关联到http头部。也就是说浏览器在请求服务器获取```html```的时候，服务器会将```html```中设置的```meta```放在响应头中返回给浏览器。常见
+```http-equiv```一般设置的都是与```http```请求头相关的信息，设置的值会关联到http头部。也就是说浏览器在请求服务器获取```html```的时候，服务器会将```html```中设置的```meta```放在响应头中返回给浏览器。常见的类型比如```content-type```, ```expires```, ```refresh```, ```set-cookie```, ```window-target```, ```charset```， ```pragma```等等。
+
+#### 1. content-type
+
+比如：```<meta http-equiv="content-type" content="text/html charset=utf8">```可以用来声明文档类型，设置字符集，```content-type```几乎所有的属性都可以在```meta```中进行设置。
+
+这样设置浏览器的头信息就会包含: 
+
+```
+content-type: text/html charset=utf8
+```
+
+#### 2. expires
+
+用于设置浏览器的过期时间, 其实就是响应头中的expires属性。
+
+```html
+<meta http-equiv="expires" content="31 Dec 2021">
+```
+
+```
+expires:31 Dec 2008
+```
+
