@@ -68,4 +68,31 @@ git config --system http.sslVerify false
 
 ```s
 #!/bin/sh
-e
+export PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+
+# Print env variable
+echo "[INFO] Print env variable"
+echo "Current deployment environment is $deploy_env" >> test.properties
+echo "THe build is $version" >> test.properties
+echo "[INFO] Done"
+
+# Check test properties
+echo "[INFO] Check test properties"
+if [ -s test.properties ]
+then
+    cat test.properties
+    echo "[INFO] Done..."
+else
+    echo "test.properties is empty"
+fi
+
+echo "[INFO] Build finished"
+```
+
+点击应用就配置完成了，点击保存自动退出配置页面。
+
+点击左侧的````Build with Parameters````菜单，这里会出现我们之前配置的可选参数和文本参数，需要我们自己选择一下。点击开始构建。可以点击左下角的圆球，查看构建结果。
+
+## 4. Pipline Job构建配置
+
+代码包裹在```pipeline{}```内，```stages{}```用来包含```pipline```所有的```stage```层，用来将```pipeline```管道分为若干个管道块，每一个管道块都可以独立的做一些事
