@@ -95,4 +95,72 @@ echo "[INFO] Build finished"
 
 ## 4. Pipline Job构建配置
 
-代码包裹在```pipeline{}```内，```stages{}```用来包含```pipline```所有的```stage```层，用来将```pipeline```管道分为若干个管道块，每一个管道块都可以独立的做一些事
+代码包裹在```pipeline{}```内，```stages{}```用来包含```pipline```所有的```stage```层，用来将```pipeline```管道分为若干个管道块，每一个管道块都可以独立的做一些事情。```stage```中的```steps```子层用来添加```pipeline```的业务编写。
+
+```s
+pipline {
+    agent any
+    environment {
+        host='test.example.com'
+        user='deploy'
+    }
+    stages {
+        stage('build') {
+            steps {
+                sh "cat $host"
+                echo $deploy
+            }
+        }
+    }
+}
+```
+
+```agent```的作用是定义```pipeline```在哪里运行，通常可以使用```any```，```none```或具体的```jenkins node```主机名等。
+
+```s
+agent {node {label 'node1'}}
+```
+
+```environment```用来定义当前的环境变量。```变量名称=变量值```的方式，与```stages```平级就可以应用到```stages```中。如果定义在```stage```中就值可以使用在```steps```中。
+
+```script```是可选的，定义在```steps```区域下，可以编写```groovy```脚本语言，用来进行相应的脚本逻辑运算。
+
+```s
+steps {
+    echo "Hello world"
+    script {
+        def servers = ['node1', 'node2']
+        For (int i=0; i < server.size(); ++i) {
+            echo "testing ${servers[i]} server";
+        }
+    }
+}
+```
+
+```steps```中可以使用```echo```输出，可以使用```linux```系统的```shell```命令。可以使用```git```模块进行```git```相关操作。
+
+```s
+steps {
+    echo "Hello world"
+    sh "cat 'hello world'"
+    git url: "https://root@gitlab.example.com/root/test.git"
+}
+```
+
+可以在新建任务重创建一个```Pipeline project```, 名称为```test-pipeline-job```, 类型选择流水线任务。描述信息添加```this is first pipeline job```。在```Pipeline```任务栏填写脚本。
+
+```s
+#!groovy
+
+pipeline {
+    agent {node {label 'master'}}
+
+    environment {
+        PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+    }
+
+    parameters {
+        choice (
+            choices: 'dev\nprod',
+            description: 'choose deploy environment',
+ 
