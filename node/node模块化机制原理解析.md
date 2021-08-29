@@ -127,4 +127,73 @@ __filename: 当前文件的绝对路径
 ```js
 const path = require('path', 's');
 console.log(path.basename('1.js'));
-cons
+console.log(path.extname('2.txt'));
+console.log(path.dirname('2.txt'));
+console.log(path.join('a/b/c', 'd/e/f')); // a/b/c/d/e/
+console.log(path.resolve('2.txt'));
+```
+
+### 2. fs模块
+
+用于操作文件或者文件夹，比如文件的读写，新增，删除等。常用方法有```readFile```和```readFileSync```，分别是异步读取文件和同步读取文件。
+
+```js
+const fs = require('fs');
+const buffer = fs.readFileSync('./name.txt', 'utf8'); // 如果不传入编码，出来的是二进制
+console.log(buffer);
+```
+
+fs.access: 判断是否存在，```node10```提供的，```exists```方法已经被废弃, 原因是不符合```node```规范，所以改为采用```access```来判断文件是否存在。
+
+```js
+try {
+    fs.accessSync('./name.txt');
+} catch(e) {
+    // 文件不存在
+}
+```
+
+## 5. 手动实现require模块加载器
+
+首先导入依赖的模块```path```，```fs```, ```vm```, 并且创建一个```Require```函数，这个函数接收一个```modulePath```参数，表示要导入的文件路径。
+
+```js
+// 导入依赖
+const path = require('path'); // 路径操作
+const fs = require('fs'); // 文件读取
+const vm = require('vm'); // 文件执行
+
+// 定义导入类，参数为模块路径
+function Require(modulePath) {
+    ...
+}
+```
+
+在```Require```中获取到模块的绝对路径，方便使用```fs```加载模块，这里读取模块内容使用```new Module```来抽象，使用```tryModuleLoad```来加载模块内容，```Module```和```tryModuleLoad```稍后实现，```Require```的返回值应该是模块的内容，也就是```module.exports```。
+
+```js
+// 定义导入类，参数为模块路径
+function Require(modulePath) {
+    // 获取当前要加载的绝对路径
+    let absPathname = path.resolve(__dirname, modulePath);
+    // 创建模块，新建Module实例
+    const module = new Module(absPathname);
+    // 加载当前模块
+    tryModuleLoad(module);
+    // 返回exports对象
+    return module.exports;
+}
+```
+
+```Module```的实现很简单，就是给模块创建一个```exports```对象，```tryModuleLoad```执行的时候将内容加入到```exports```中，```id```就是模块的绝对路径。
+
+```js
+// 定义模块, 添加文件id标识和exports属性
+function Module(id) {
+    this.id = id;
+    // 读取到的文件内容会放在exports中
+    this.exports = {};
+}
+```
+
+之前说过``node``模块是运行在一个函数中，这里给```Module```挂载静态属性```wrapper```，里面定义一下这个函数的字符串，```wrapper```是一个数组，数组的第一个元素就是函数的参数部分，其中有```exports```，```module```，```Require
