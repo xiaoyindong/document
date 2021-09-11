@@ -145,4 +145,55 @@ path.extname('/a/b/index.html.js.css'); // .css
 path.extname('/a/b/index.html.js.'); // .
 ```
 
-### 4. 
+### 4. isAbsolute()
+
+获取路径是否是绝对路径
+
+```js
+path.isAbsolute('a'); // false
+path.isAbsolute('/a'); // true
+```
+
+### 5. join()
+
+拼接多个路径片段，还原成完整可用路径
+
+```js
+path.join('a/b', 'c', 'index.html'); // a/b/c/index.html
+path.join('/a/b', 'c', 'index.html'); // /a/b/c/index.html
+path.join('a/b', 'c', '../', 'index.html'); // a/b/index.html
+```
+
+### 6. resolve()
+
+返回一个绝对路径
+
+```js
+path.resolve(); // 获取绝对路径
+```
+
+### 7. parse()
+
+解析路径
+
+```js
+const obj = path.parse('/a/b/c/index.html');
+/**
+* root: /
+* dir: /a/b/c
+* base: index.html
+* ext: .html
+* name: index
+*/
+```
+
+### 8. format()
+
+序列化路径，与```parse```功能相反, 将对象拼接成完整的路径。
+
+```js
+path.format({
+    root: '/',
+    dir: '/a/b/c',
+    base: 'index.html',
+    ext: '.html',
