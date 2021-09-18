@@ -26,4 +26,8 @@
 
 选择左侧证书资源包选项卡，然后在剩余证书数量中点击证书申请。
 
-![](https:
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9902af04a289479499707a1b12078862~tplv-k3u1fbpfcp-watermark.image)
+
+申请一个。
+
+![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/dc62a793527341c2817d55f23d2a061f~tplv-k3u1fb
