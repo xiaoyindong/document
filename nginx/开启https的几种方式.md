@@ -30,4 +30,12 @@
 
 申请一个。
 
-![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/dc62a793527341c2817d55f23d2a061f~tplv-k3u1fb
+![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/dc62a793527341c2817d55f23d2a061f~tplv-k3u1fbpfcp-watermark.image)
+
+在下面新增的这条信息中点击申请证书，会要求填写一些信息，比如网站域名，证书所有人。
+
+![](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/6c98e490fa8e4108bda758f08b484ae7~tplv-k3u1fbpfcp-watermark.image)
+
+登记之后就会出现下载按钮，在弹出的弹框中选择需要对应的环境就可以了，一般我这里下载的证书会配置在```nginx```中，所以下载```nginx```的。
+
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/0451332bf6464c58a7e82b43b58099dc~tplv-k3u
