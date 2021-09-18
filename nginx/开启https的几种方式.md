@@ -38,4 +38,35 @@
 
 登记之后就会出现下载按钮，在弹出的弹框中选择需要对应的环境就可以了，一般我这里下载的证书会配置在```nginx```中，所以下载```nginx```的。
 
-![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/0451332bf6464c58a7e82b43b58099dc~tplv-k3u
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/0451332bf6464c58a7e82b43b58099dc~tplv-k3u1fbpfcp-watermark.image)
+
+这样我们下载下来的文件夹中就会包含```key```和```pem```两个文件。
+
+![](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/4a0b974b7e364782976176d14fe9cbd1~tplv-k3u1fbpfcp-watermark.image)
+
+### 2. mkcert获取证书
+
+通过本地服务自动生成。首先需要安装```mkcert```模块。
+
+```s
+npm install -g mkcert
+```
+
+通过下面代码生成证书的公钥和私钥，也就是```key```和```pem```。
+
+```js
+const mkcert = require('mkcert');
+const fs = require('fs');
+
+const start = async () => {
+    const ca = await mkcert.createCA({
+        organization: 'Hello CA',
+        countryCode: 'NP',
+        state: 'Bagmati',
+        locality: 'Kathmandu',
+        validityDays: 365
+    });
+
+    // then create a tls certificate
+    const cert = await mkcert.createCert({
+        domains: ['127.0.0.1', 'localh
