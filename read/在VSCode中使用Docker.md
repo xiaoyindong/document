@@ -39,4 +39,14 @@ CMD [ "htop" ]
 
 ### 1. docker build
 
-可以打开命令面板，执行```Docker: Build image```命令。这个命令会打开集成终端，然后执行
+可以打开命令面板，执行```Docker: Build image```命令。这个命令会打开集成终端，然后执行```docker build```命令。
+
+### 2. docker run
+
+生成了```image```之后，可以通过```image```来创建```container```了。此时，可以通过```Docker```视图的上下文菜单来生成```运行 container```，也可以从命令面板中，运行```Docker: Run```命令。然后```VS Code```就会询问使用哪个```image```。
+
+### 3. docker run interactive
+
+除了```Run```这个命令外，另一个非常有用的命令就是```Run Interactive```。可以创建并运行```container```，然后进入到这个```container```的```shell```环境。
+
+在上面的例子里```container
