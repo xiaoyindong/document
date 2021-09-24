@@ -66,3 +66,27 @@ import { createApp, reactive } from './node_modules/vue/dist/vue.esm-browser.js'
     setup() {
         const position = reactive({
             x: 0,
+            y: 0
+        })
+        // 这里的position并不是响应式的对象
+        return {
+            position
+        }
+    }
+...
+```
+
+使用Composition API方式。
+
+```js
+
+import { createApp, reactive, onMounted, onUnmounted } from './node_modules/vue/dist/vue.esm-browser.js'
+
+function useMousePosition () {
+    const position = reactive({ x: 0, y: 0 });
+    const update = (e) => {
+        position.x = e.pageX;
+        position.y = e.pageY;
+    }
+    onMounted(() => {
+        
