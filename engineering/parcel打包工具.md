@@ -64,4 +64,21 @@ foo.bar();
 yarn parcel src/index.html
 ```
 
-```p
+```parcel```就会根据所传入的参数，先去找到```index.html```文件，然后根据```index.html```当中的```script```标签去找到引入的```main.js```文件，最后顺着```import```语句找到```foo```模块，从而去完成整体项目的打包。
+
+```parcel```命令不仅打包应用而且同时还开启了一个开发服务器，这个开发服务器跟```webpack```当中的```dev-server```一样。在浏览器当中打开开发人员工具(控制台```F1```2)，此时就可以使用自动刷新的功能了。
+
+```js
+export default {
+    bar: () => {
+        // console.log('hello parcel~');
+        console.log('hello parcel11~');
+    }
+}
+```
+
+如果需要模块热替换体验```parcel```也是支持的，在```main.js```中需要使用```hmr```提供的```api```。
+
+先判断```module.hot```对象是否存在，如果存在这个对象就证明当前这个环境可以使用```hmr```的```api```。使用```module.hot.accept```方法处理模块热替换的逻辑。
+
+不过这里的```accept```和```webpack```提供的```api```有一点不太一样，```webpack```当中的```api```接收两个参数，用来去处理指定模块更新过后的逻辑。而```parcel```提供的```accept```只接收一个参数也就是回调函数，当模块更新或者是模块所依赖的模块更新过后他会自动
