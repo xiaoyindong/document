@@ -27,4 +27,13 @@ const server = http.createServer((req, res) {
             res.writeHeader(404); // 设置状态码
             res.write('404'); // 写入返回值，需为字符串
         } else {
-          
+            res.writeHeader(200);
+            res.write(data);
+        }
+        // 请求断开
+        res.end();
+    })
+});
+// 监听端口号
+server.listen(8080);
+``
