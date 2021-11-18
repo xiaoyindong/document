@@ -34,4 +34,18 @@ Redux就是数据仓库，他把数据统一保存起来，在隔离的数据和
 
 ![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/4eff3171612a43bf9f57478c9646b91c~tplv-k3u1fbpfcp-watermark.image)
 
-一般来说使用Redux都会创建一个用于存放数据的Store，在这个Store中有若干个Reducer，然后我们需要使用React组件来渲染UI
+一般来说使用Redux都会创建一个用于存放数据的Store，在这个Store中有若干个Reducer，然后我们需要使用React组件来渲染UI，除此之外还会有若干个和Reducer对应的Action指令。
+
+Store中的Reducer组合在一起就形成了项目中的数据仓库。Redux称之为State也就是数据。React组件通过订阅(subscribe )Store来获得数据，然后使用数据来渲染UI,UI通过显示器显示给用户，用户通过鼠标和键盘与组件进行交互，在交互中不可避免需要改变数据，在React中数据的流动是单向的，所以对数据来说React组件只有读取权限，没有书写权限UI组件不可以直接访问Store修改数据。
+
+所以UI必须向Store发送Action指令，来让Store自己修改自己，这个指令的分发过程就叫做dispatch。Action指令到达store之后可能会经过若干个middleware中间件进行数据的预处理，对于数据的异步处理也是在这里进行的，预处理过后数据就会连同action一起传递给reducer，reducer会按照Action中描述的指令来更新数据state，当state更新好以后Store就会把数据推送给订阅了自己的组件，组件会根据新的数据重新渲染UI, 用户就能看到变化了。可以看到在实际工作中Redux架构还是相对复杂的。
+
+上面的描述还是比较复杂的，不过不要慌，下面我们来简化一下这张图，只保留几个主要部件，通过学习简化的流程来了解Redux。
+
+![](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/7e392031194240a8b3f85b836f73ed72~tplv-k3u1fbpfcp-watermark.image)
+
+简化后的六层我们只保留Reducer，Store，React组件，Actions这四个部分。为了更加清晰我们这里将Reducer从Store中移了出来，实际上他们是一体的。
+
+Store中保存的是全局数据，对于Redux项目来说有且只有一个Store，我们可以把它看做一个带有推送功能的数据仓库。我们可以借用微信的朋友圈来理解这个概念。比如你加了某个人的好友，只要这个人一发朋友圈他的状态就会马上推送到你。加好友就是数据订阅，发朋友圈就是数据推送。
+
+Reducer是帮助Store处理数据的方法，他是一个方法是一
