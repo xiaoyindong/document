@@ -415,4 +415,205 @@ if (navigator.mediaDevices || navigator.mediaDevices.getUserMedia) {
         audio: true,
     }).then(((stream) => { // 存储stream到window上
         window.stream = stream;
-    }).catc
+    }).catch((err) => {
+        console.error(err);
+    })
+} else {
+    console.log('不支持这个特性');
+}
+```
+
+开始播放事件中创建一个```blob```, 传入的第一个参数是```buffer```，第二个参数指定类型也就是说明```blob```中传入的是什么东西，这里指定```video/webm```。这样就生成了一个可以处理```video```的```buffer```的```blob```。
+
+然后将```blob```赋值给```video```标签的```src```属性，这里需要使用```URL```的```createObjectURL```方法来实现。至于```srcObject```属性是赋值直播流的，这里不需要赋值为```null```就可以了。然后使用```play```方法开始播放。
+
+```js
+btnPlay.onclick = function() {
+    var recplayer = document.getElementById('recplayer');
+    const blob = new Blob(buf, { type: 'video/webm'});
+    recplayer.src = window.URL.createObjectURL(blob);
+    recplayer.srcObject = null;
+    recplayer.play();
+}
+```
+
+这样就可以播放录制的视频了，先开始录制，录制一段时间然后暂停，会自动保存录制的视频，然后再开始播放。就会播放刚刚录制的视频了。
+
+下载和播放类似首先需要拿到录制的数据，同样的也是使用```URL```对象的```createObjectURL```方法创建```url```。然后再创建一个```a```标签，将```url```赋值给```href```属性，设置文件的名称为```aaa.webm```。最后触发```a```的点击事件。
+
+```js
+btndownload.onclick = function() {
+    const blob = new Blob(buf, { type: 'video/webm'});
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.style.display = 'none';
+    a.download = 'aaa.webm';
+    a.click();
+}
+```
+
+## 11. 通过WebRTC捕获桌面
+
+使用```getDisplayMedia```来实现，他与```getUserMedia```是很类似的, 包括参数也是一致的。
+
+```js
+var ePromsie = navigator.mediaDevices.getDisplayMedia(constraints);
+```
+
+这个功能是```chrome```的实验功能，只在最新的几个版本中存在。需要手动设置一下。
+
+```s
+chrome://flags/#enable-experimental-web-platform-features
+```
+
+在这个设置中, 将它选中```enabled```来设置打开。
+
+js代码基本就是之前的代码，只需将```getUserMedia```修改为```getDisplayMedia```即可。
+
+```js
+if (navigator.mediaDevices || navigator.mediaDevices.getDisplayMedia) {
+    navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false
+    }).then(((stream) => {
+        document.querySelector('#player').srcObject = stream;
+    }) => {
+        
+    }).catch((err) => {
+        console.error(err);
+    })
+} else {
+    console.log('不支持这个特性');
+}
+```
+
+打开页面就会弹出共享屏幕，询问是录制整个屏幕还是录制应用窗口，还可以是```chrome```的一个标签页。
+
+## 12. Socket.io处理消息简述
+
+```WebRTC```中对服务器是没有规定的，主要是对web端的一些规定，这主要是因为每个公司的业务模型是不一样的，很难统一这种规范，所以不如干脆让每个公司自己去定义，只要可以实现数据交互就可以了，这样做也比较灵活更容易被接受。
+
+如果没有信令服务器的话```WebRTC```之间是没办法通信的。发起端和接收端想要传递数据的话，有两个信息是必须经过信令服务器相互交换之后才能进行通信的，第一个是媒体信息，也就是如果要实现通信就要确定编解码器，比如说```A```的视频编码是```H264```,```B```也要告诉```A```是否接受```H264```,所以这个信息是必须要传递的。第二个要传递的信息是网络信息，两个客户端尽可能要会选择```p2p```传输，在链接之前如何发现对方，也是通过服务器。
+
+这里简单演示一个通过```socket.io```搭建的服务器。
+
+```s
+npm install socket.io --save-dev
+```
+
+```node```代码将```https```和```socket```中进行一个绑定。```socketIo = listen(https_server);```。
+
+```js
+const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const express = require('express');
+const serveIndex = require('serve-index');
+const socketIo = require('socket.io');
+
+const app = express();
+app.use(serveIndex('./public'));
+app.use(express.static('./public'));
+
+const http_server = http.createServer(app);
+
+http_server.listen(80, '0.0.0.0');
+
+const https_server = https.createServer({
+    key: fs.readFileSync('./xxxx.key'),
+    cert: fs.readFileSync('./xxxx.pem')
+}, app);
+
+const io = socketIo.listen(https_server);
+
+https_server.listen(443, '0.0.0.0');
+
+```
+
+绑定之后就可以去处理站点上所有的```connection```事件了，回调函数中的参数socket代表每一个客户端。
+
+首先这台服务器是要有房间的概念，要有加入房间的事件和离开房间的事件。这里加入定义为```join```，离开定义```leave```。客户端传递一个参数说明加入到哪个房间，用```room```来接收。
+
+当收到加入房间的时候，加入到对应的房间，```socket.io```自身就提供了```join```方法也就是加入到那哪个房间。这里的房间就是一个名字或者```id```，如果不存在```socket.io```会自动创建一个房间。```io.sockets.adapter.rooms```, 这是一个对象，可以通过```room```的标识查到。
+
+加入成功之后可以给当前用户回复，也可以给所有人回复。
+
+```js
+const io = socketIo.listen(https_server);
+
+io.sockets.on('connection', (socket) => {
+    socket.on('join', (room) => {
+        socket.join(room);
+        const myRoom = io.sockets.adapter.rooms[room];
+        const users = Object.keys(myRoom.sockets).length; // 获取房间内用户数量。
+        // 当前用户回复
+        socket.emit('joined', room, socket.id);
+        // 给房间内除了自己所有人回复
+        socket.to(room).emit('joined', room, socket.id);
+        // 给房间所有人回复
+        io.in(room).emit('joined', room, socket.id);
+        // 给除了自己的所有人发送
+        socket.broadcast.emit('joined', room, socket.id);
+    })
+})
+
+https_server.listen(443, '0.0.0.0');
+```
+
+用户离开的逻辑和用户加入的基本一样，用户数这里需要减一，使用```socket.leave```方法让用户离开房间。
+
+```js
+io.sockets.on('connection', (socket) => {
+    socket.on('leave', (room) => {
+        
+        const myRoom = io.sockets.adapter.rooms[room];
+        let users = Object.keys(myRoom.sockets).length; // 获取房间内用户数量。
+        users -= 1;
+        socket.leave(room);
+        // 当前用户回复
+        socket.emit('joined', room, socket.id);
+        // 给房间内除了自己所有人回复
+        socket.to(room).emit('joined', room, socket.id);
+        // 给房间所有人回复
+        io.in(room).emit('joined', room, socket.id);
+        // 给除了自己的所有人发送
+        socket.broadcast.emit('joined', room, socket.id);
+    })
+})
+```
+
+```H5```端链接socket.io。
+
+```js
+// 链接服务
+const socket = io.connect();
+
+// 使用on接收消息
+socket.on('joined', (room, id) => {
+
+})
+
+// 发送消息, 名字叫join，值为1
+socket.emit('join', '1');
+```
+
+## 13. 端对端链接
+
+```RTCPeerConnection```是```WebRTC```的核心类, 接收一个可选参数。
+
+```js
+new RTCPeerConnection([configuration])
+```
+
+类的方法有按功能可以分为四类，媒体协商类，媒体流和轨道类，传输相关类和统计相关类。
+
+对于```AB```两个端来说如果想要创建连接，首先```A```会创建一个```offer```，创建```offer```实际上就形成了一个```sdp```，他是一个包含了媒体信息编解码信息传输的相关的信息，创建之后通过云端的信令牌服务器传给```B```, 在传输之前```A```需要调用```setLocalDescription```方法去收集候选者也就是可连接端。
+
+```B```端收到```offer```之后，会调用```setRemoteDescription```方法将```offer```的```sdp```数据放到自己远端的描述信息槽里，当这些做完之后需要返回```A```一个```answer```，就是创建```B```本身的一个媒体信息，```offer```是```A```的媒体信息，```answer```是```B```的媒体信息，也就是编解码信息之类的。形成之后```B```也要调用一个```setLocalDescription```方法，也是收集候选者。调用之后```B```将```answer```通过服务转给````A````。
+
+```A```收到```answer```也会将这个值使用```setRemoteDescription```存在自己的远程槽里，这样在每一端都有两个```SDP```，第一个是自己的媒体信息，第二是对方的媒体信息。拿到这两个媒体信息之后在内部进行一个协商，比较两者是否可以通信。协商之后取出交集，协商过程就建立好了。
+
+简单来说就是发送端和接收端都有两个数据要设置，自身的数据和另一方的数据。发送端创建数据之后要将数据设置在自己身上还要发送给接收端，接收端拿到之后设置到自己身上，然后接收端创建的数据也要设置在自己身上还要传给发送端，让他也设置到自己身上。
+
+当一开始创建```RTCPeerConnection```的时候协商处于一个```stable```
