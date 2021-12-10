@@ -5,6 +5,8 @@
 ## MarkDown库
 
 1. [showdown](https://github.com/showdownjs/showdown)
+2. [markdown-it](https://markdown-it.docschina.org/)
+3. [marked](https://gitee.com/mirrors/marked)
 
 ## 标题
 

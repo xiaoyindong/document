@@ -27,6 +27,7 @@
 #### 16. [pwa 前端离线化技术](/javascript/pwa前端离线化技术.md)
 #### 17. [formdata 实现文件上传](/javascript/formdata实现文件上传.md)
 #### 18. [数据结构与算法](/javascript/数据结构与算法.md)
+#### 19. [十种常见排序算法](/javascript/十种常见排序算法.md)
 
 ### 四. nodejs
 

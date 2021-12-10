@@ -15,6 +15,7 @@
 | 10. [JavaScript 垃圾回收机制](/javascript/JavaScript垃圾回收机制.md) | 11. [JavaScript 内存使用优化](/javascript/JavaScript内存使用优化.md) | 12. [前端性能测试工具](/javascript/前端性能测试工具.md) |
 | 13. [资源请求速度优化](/javascript/资源请求速度优化.md) | 14. [浏览器器渲染速度优化](/javascript/浏览器器渲染速度优化.md) | 15. [Socket 通信原理解析](/javascript/Socket通信原理解析.md) |
 | 16. [pwa 前端离线化技术](/javascript/pwa前端离线化技术.md) | 17. [formdata 实现文件上传](/javascript/formdata实现文件上传.md) | 18. [数据结构与算法](/javascript/数据结构与算法.md) |
+| 19. [十种常见排序算法](/javascript/十种常见排序算法.md) |||
 ||||
 | | 四. nodejs | |
 | 1. [node 设计基础](/node/node设计基础.md) | 2. [node 中常用的模块](/node/node中常用的模块.md) | 3. [async_hooks](/node/async_hooks.md) |
