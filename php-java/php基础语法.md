@@ -442,7 +442,7 @@ public
 ?>
 ```
 
-配置文件```config.php```。
+配置文件```application/config.php```。
 ```php
 <?php
     return array(
