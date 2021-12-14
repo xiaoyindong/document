@@ -116,17 +116,19 @@ export const Title = styled.div`
 
 ```Emotion```是目前最受欢迎的```CSS-in-JS```库之一，他还对```React```做了很好的适应，可以方便的创建```styled component```也支持写行内样式。
 
-```js
+```jsx
 import { jsx } from '@emotion/react'
 
 render(
     <div
-        css={{
-            backgroundColor: 'hotpink',
-            '&.hover': {
-                color: 'lightgreen'
+        css={
+            {
+                backgroundColor: 'hotpink',
+                '&.hover': {
+                    color: 'lightgreen'
+                }
             }
-        }}
+        }
     >
         background
     </div>
