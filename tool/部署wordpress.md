@@ -615,7 +615,7 @@ pm.max_spare_servers = 35
 ;      it can accept a strftime(3) format:
 ;      %d/%b/%Y:%H:%M:%S %z (default)
 ;      The strftime(3) format must be encapsuled in a %{<strftime_format>}t tag
-;      e.g. for a ISO8601 formatted timestring, use: %{%Y-%m-%dT%H:%M:%S%z}t
+;      e.g. for a ISO8601 formatted timestring, use: %{}t
 ;  %u: remote user
 ;
 ; Default: "%R - %u %t \"%m %r\" %s"
