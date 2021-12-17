@@ -62,4 +62,59 @@ const server = http.createServer((req, res) => {
     })
 });
 server.listen(8080);
-`
+```
+由此可见，```post```请求数据量较大，需要使用```on```绑定```data```事件。```end```表示接收结束。
+
+使用字符串接收流文件时会有问题。因为不是所有的文件都可以转换为字符串查看，比如说视频流，图片流
+
+```GET```数据在```req.url```里
+
+```POST```数据在```body```里面，数据比较大，使用```data``` 和 ```end``` 事件处理
+
+## 2. 实现一个简单版express
+
+```js
+const http = require('http'); // 引入http 模块，基于http模块进行开发
+const url = require('url'); // 引入url模块，解析url和前端传入的params
+
+let router = []; // 定义路由集合
+
+class MyExpress {
+    listen() { // 设置监听方法
+        const server = http.createServer((req, res) => {
+            const { pathname } = url.parse(req.url, true); // 解析url并获取请求路径
+            router.forEach(route => {
+                // 从注册的路由中遍历出符合的路由
+                const { path, method, handler } = route;
+                if (pathname === path && req.method.toLowerCase() === method) {
+                    return handler(req, res);
+                }
+                if (path === '*') {
+                    return handler(req, res);
+                }
+            })
+        });
+        server.listen(...arguments);
+    }
+    get(path, handler) {
+        if (typeof path === 'string') {
+            router.push({
+                path,
+                method: 'get',
+                handler
+            });
+        } else {
+            router.push({
+                path: '*',
+                method: 'get',
+                handler: path
+            })
+        }
+    }
+}
+
+module.exports = () => {
+    return new MyExpress();
+} 
+
+```
