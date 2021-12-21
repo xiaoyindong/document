@@ -1,6 +1,7 @@
 ### 一. html
 
 #### 1. [meta 标签详细介绍](/html/meta标签介绍.md)
+#### 2. [简单 ejs 实现](/html/简单ejs实现.md)
 
 ### 二. style
 
