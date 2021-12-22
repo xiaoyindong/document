@@ -368,7 +368,7 @@ console.log(result);
 ```<%=```会对传入的```html```进行转义，这里编写一个```escapeHTML```转义函数。
 
 ```js
-const escapeHTML = (e) => {
+const escapeHTML = (str) => {
     if (typeof str === 'string') {
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;").replace(/"/g, "&#34;").replace(/'/g, "&#39;");
     } else {
@@ -377,30 +377,39 @@ const escapeHTML = (e) => {
 }
 ```
 
-变量替换的时候使用```escapeHTML```函数处理变量。这里通过```\s*```去掉空格。```getHtml```中将```escapeHTML```传入。
+变量替换的时候使用```escapeHTML```函数处理变量。这里通过```\s*```去掉空格。为了避免命名冲突，这里将```escapeHTML```改造成自执行函数，函数参数为```$1```变量名。
 
 ```js
 const render = (ejs = '', data = {}) => {
     // 替换转移变量
-    let html = ejs.replace(/<%=\s*(.*?)\s*%>/gi, '${escapeHTML($1)}');
+    // let html = ejs.replace(/<%=\s*(.*?)\s*%>/gi, '${escapeHTML($1)}');
+    let html = ejs.replace(/<%=\s*(.*?)\s*%>/gi, `\${
+        ((str) => {
+            if (typeof str === 'string') {
+                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;").replace(/"/g, "&#34;").replace(/'/g, "&#39;");
+            } else {
+                return str;
+            }
+        })($1)
+    }`);
     // 拼接字符串
     html = html.replace(/<%(.*?)%>/g, (...props) => {
         return '`\r\n' + props[1] + '\r\n str += `';
     });
-    return getHtml(html, data, escapeHTML);
+    return getHtml(html, data);
 }
 ```
 
-getHtml函数中将escapeHTML作为第三个参数传入Function中。
+```getHtml```函数不变。
 
 ```js
-const getHtml = (html, data, escapeHTML) => {
-    const func = new Function('data', 'escapeHTML', `with(data) { var str = \`${html}\`; return str; }`);
-    return func(data, escapeHTML);
+const getHtml = (html, data) => {
+    const func = new Function('data', `with(data) { var str = \`${html}\`; return str; }`);
+    return func(data);
 }
 ```
 
-```<%-```会保留原本格式输出，只需要再加一条不使用escapeHTML函数处理的就可以了。
+```<%-```会保留原本格式输出，只需要再加一条不使用```escapeHTML```函数处理的就可以了。
 
 ```js
 const render = (ejs = '', data = {}) => {
@@ -416,4 +425,23 @@ const render = (ejs = '', data = {}) => {
 }
 ```
 
-至此一个简单的ejs模板解释器就写完了。
+输出样式
+
+```js
+<body>
+    <div>yindong</div>
+    <div>18</div>
+
+        <div>1</div>
+
+        <div>2</div>
+
+        <div>3</div>
+
+        <div>4</div>
+
+    <div>&lt;div&gt;escapeHTML&lt;/div&gt;</div>
+</body>
+```
+
+至此一个简单的```ejs```模板解释器就写完了。
