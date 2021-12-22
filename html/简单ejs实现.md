@@ -14,7 +14,7 @@ const render = (ejs = '', data = {}) => {
 
 事例模板字符串如下:
 
-```ejs
+```
 <body>
     <div><%= name %></div>
     <div><%= age %></div>
@@ -131,7 +131,7 @@ const render = (ejs = '', data = {}) => {
 
 这里扩展一下```ejs```，加上一个```arr.join```语句。
 
-```ejs
+```
 <body>
     <div><%= name %></div>
     <div><%= age %></div>
@@ -175,7 +175,7 @@ console.log(result);
 
 如果```ejs```中包含```forEach```语句，就比较复杂了。此时```render```函数就无法正常解析。
 
-```ejs
+```
 <body>
     <div><%= name %></div>
     <div><%= age %></div>
@@ -194,7 +194,7 @@ const render = (ejs = '', data = {}) => {
 }
 ```
 
-```ejs
+```
 <body>
     <div>${ name }</div>
     <div>${ age }</div>
@@ -347,7 +347,7 @@ console.log(result);
 
 输出结果
 
-```ejs
+```
 <body>
     <div>yindong</div>
     <div>18</div>
