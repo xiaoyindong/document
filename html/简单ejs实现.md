@@ -14,7 +14,7 @@ const render = (ejs = '', data = {}) => {
 
 事例模板字符串如下:
 
-```
+```ejs
 <body>
     <div><%= name %></div>
     <div><%= age %></div>
@@ -131,7 +131,7 @@ const render = (ejs = '', data = {}) => {
 
 这里扩展一下```ejs```，加上一个```arr.join```语句。
 
-```
+```ejs
 <body>
     <div><%= name %></div>
     <div><%= age %></div>
@@ -175,8 +175,7 @@ console.log(result);
 
 如果```ejs```中包含```forEach```语句，就比较复杂了。此时```render```函数就无法正常解析。
 
-```
-{% raw %}
+```ejs
 <body>
     <div><%= name %></div>
     <div><%= age %></div>
@@ -184,7 +183,6 @@ console.log(result);
         <div><%= item %></div>
     <%})%>
 </body>
-{% endraw %}
 ```
 
 这里分两步来处理。仔细观察可以发现，使用变量值得方式存在```=```号，而语句是没有```=```号的。可以对```ejs```字符串进行第一步处理，将```<%=```变量替换成对应的变量，也就是原本的```render```函数代码不变。
@@ -196,7 +194,7 @@ const render = (ejs = '', data = {}) => {
 }
 ```
 
-```
+```ejs
 <body>
     <div>${ name }</div>
     <div>${ age }</div>
@@ -349,7 +347,7 @@ console.log(result);
 
 输出结果
 
-```
+```ejs
 <body>
     <div>yindong</div>
     <div>18</div>
