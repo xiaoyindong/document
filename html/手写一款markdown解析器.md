@@ -131,13 +131,41 @@ const formatFont = (source) => {
 ## 7. 处理列表
 
 ```js
+const formatList = (source) => {
+    let html = source.replace(/\x20+[-+*]{1}\s(.+)/gi, (...props) => {
+        return `<ul><li>${props[1].trim()}</li></ul>`;
+    });
+    html = html.replaceAll('</ul>\n<ul>', '');
+    html = html.replace(/\x20+\d+\.\s(.+)/g, (...props) => {
+        return `<ol><li>${props[1].trim()}</li></ol>`;
+    });
+    html = html.replaceAll('</ol>\n<ol>', '');
+    html = html.replace(/\s{0}[-+*]{1}\s(.+(\n\<[uo]l\>.*)?)/g, (...props) => {
+        return `<ul><li>${props[1].trim()}</li></ul>`;
+    });
+    html = html.replaceAll('</ul>\n<ul>', '');
+    html = html.replace(/\d+\.\s(.+)(.+(\n\<[uo]l\>.*)?)/g, (...props) => {
+        return `<ol><li>${props[1].trim()}</li></ol>`;
+    });
+    html = html.replaceAll('</ol>\n<ol>', '');
+    return html;
+}
+```
+
+```js
 const getHtml = (source) => {
-    // 处理标题
+    // 处理图片
     let html = formatLink(source);
+    // 处理注释
     html = formatBlock(html);
+    // 处理表格
     html = formatTable(html);
+    // 处理标题
     html = formatTitle(html);
+    // 处理字体
     html = formatFont(html);
+    // 处理列表
+    html = formatList(html);
     return html;
 }
 
