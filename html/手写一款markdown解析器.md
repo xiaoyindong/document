@@ -1,6 +1,6 @@
-## 1. 准备
+## 1. 准备工作
 
-编写getHtml函数，传入markdown文本，使用fs读取markdown内容，传入到getHtml函数中。
+首先编写getHtml函数，传入markdown文本字符串，这里使用fs读取markdown文件内容，返回值是转换过后的字符串。
 
 ```js
 const fs = require('fs');

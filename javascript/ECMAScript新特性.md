@@ -1083,7 +1083,7 @@ p2.name; // y d; 发现并没有修改到a的值，是因为this仍旧指向p1
 
 ```js
 const description = Object.getOwnPropertyDescriptors(p1);
-const p2 = Object.defineProperty({}, description);
+const p2 = Object.defineProperties({}, description);
 p2.a = 'z';
 p2.name; // z d
 ```
