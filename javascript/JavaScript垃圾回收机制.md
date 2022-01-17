@@ -239,7 +239,9 @@ const A = {};
 
 function fn1() {
     const D = 1;
-    A.D = D;
+    A.D = () => {
+        console.log(D);
+    };
 }
 
 fn1();
@@ -250,7 +252,9 @@ const C = {};
 
 function fn2() {
     const E = 2;
-    A.E = E;
+    C.E = () => {
+        console.log(E);
+    };
 }
 
 fn2();
