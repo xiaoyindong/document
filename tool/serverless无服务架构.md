@@ -477,4 +477,659 @@ router.delete('/', async (req, res) => {
 
 ### 4. 运行代码
 
-当函数第一次执行时，会经过完整的四个步骤，前三个过程统称为```冷启动```，最后一步称为```热启动```。整个冷启动流程耗时可能达到百毫秒级别。函数运行完毕后，运行环境会保留一段时间，这个时间在几分钟到几十分钟不等，这和具体云厂商有关。如果这段时间内函数需要再次执行，则```FaaS```平台就会使用上一次的运行
+当函数第一次执行时，会经过完整的四个步骤，前三个过程统称为```冷启动```，最后一步称为```热启动```。整个冷启动流程耗时可能达到百毫秒级别。函数运行完毕后，运行环境会保留一段时间，这个时间在几分钟到几十分钟不等，这和具体云厂商有关。如果这段时间内函数需要再次执行，则```FaaS```平台就会使用上一次的运行环境，这就是```执行上下文重用```，也叫做```实例复用```，函数的这个启动过程也叫```热启动```。```热启动```的耗时就完全是启动函数的耗时了。当一段时间内没有请求时，函数运行环境就会被释放，直到下一次事件到来，再重新从冷启动开始初始化。
+
+考虑下面这个云函数:
+
+```js
+let i = 0;
+exports.main = async (event = {}) => {
+  i++;
+  console.log(i);
+  return i;
+};
+```
+
+在第一次调用该云函数的时候函数返回值为```1```，这是符合预期的。但如果连续调用这个云函数，其返回值有可能是从```2```递增，也有可能变成```1```，这便是实例复用的结果。
+
+当热启动时，执行函数的```Node.js```进程被复用，进程的上下文也得到了保留，所以变量自增。当冷启动时，```Node.js```进程是全新的，代码会从头完整的执行一遍，此时返回```1```。
+
+函数执行完毕后销毁运行环境，虽然对首次函数执行的性能有损耗，但极大提高了资源利用效率，只有需要执行代码的时候才初始化环境、消耗硬件资源。并且如果你的应用请求量比较大，则大部分时候函数的执行可能都是热启动。
+
+从函数运行的生命周期中可以发现，如果函数每分钟都执行，则函数几乎都是热启动的，也就是会重复使用之前的执行上下文。执行上下文就包括函数的容器环境、入口函数之外的代码。
+
+云平台会根据当前的负载情况，自动控制云函数实例的数量，并且均衡地分发请求。连续的多次请求有可能由同一实例处理，也可能不是。这就是在上面的代码中看到的，```i```的值非常放肆，根本就找不到规律。所以在编写云函数时应注意保证云函数是无状态的、幂等的，即当次云函数的执行不依赖上一次云函数执行过程中在运行环境中残留的信息。
+
+回到```Todo```案例中，因为将全部的业务逻辑放到了一个云函数中，因此处理的并发量会受到极大的限制，当并发量达到一定的程度时，无法创建更多的函数实例，也就无法分配更多的服务器资源。更好的方式是对业务逻辑进行拆分，一个云函数就对应一个独立的业务逻辑处理，这在小程序的云开发中就有体现，默认给小程序云开发模板中，就是一个小程序应用对应多个云函数的处理方式。
+
+## 13. 云函数高阶应用
+
+腾讯官方提供的```cloudbase-framework```工具则给提供了一种方式，前面使用的```CloudBase CLI```命令行工具，就是使用```cloudbase-framework```的对外接口工具，也就是说使用的命令行，实际就是调用了```cloudbase-framework```提供的功能，前面已经使用过一些了，比如```tcb new```创建应用、```tcb```应用部署、```tcb service create```创建```http```触发器 增量更新代码。除了这些部署代码相关的命令，```framework```还给我提供了一站式管理云平台资源的能力。
+
+接下来按照```Serverless```的开发模式，对```Todo```案例进行重构，在腾讯云开发```CloudBase```下，已经给创建好了各种各样的开发的模板，使用```tcb new```命令就可以看到，在选择应用模板时， 选择```Vue```应用就可以创建一个```Vue```云开发的项目。
+
+项目创建后之后，能看都项目路径下有```cloudfunctions```目录，这就是存放云函数的地方，一个函数就是一个文件夹，那么怎么管理这些函数呢？在项目的根路径下，有一个```cloudbaserc.json```的文件，它就是整个应用的```framework```的配置文件，可以通过这个配文件来管理项目应用。所以在开 始之前，要先来认识一下这个配置文件中各个配置项的含义。
+
+```json
+{
+  "version": "2.0", // framework 版本，开启配置文件支持动态变量的特性
+  "envId": "{{env.ENV_ID}}", // 应用ID
+  "$schema": "https://framework-1xxxxxxxxxx.xxxxapp.com/schema/latest.json", // 配置模板的描述信息
+  "framework": {
+    "name": "techo-show",
+    "plugins": {}
+  },
+  "region": "ap-shanghai", // 应用所在地区 
+}
+```
+
+```version```字段```CLI 0.9.1+```版本引入了```2.0```新版本配置文件，支持了动态变量的特性。在```cloudbaserc.json```中声明```"version": "2.0"```即可启用新的特性，新版配置文件只支持```JSON```格式。动态变量特性允许在```cloudbaserc.json```配置文件中使用动态变量，从环境变量或其他数据源获取动态的数据。使用```\{\{\}\}```包围的值定义为动态变量，可以引用数据源中的值。
+
+```envId```字段是应用```ID```。
+
+```$schema```是配置模板的描述信息。
+
+```region```应用所在地区。
+
+```framework```是配置文件的主要配置项
+```framework```字段```name```属性是应用名字。
+
+```framework.plugins```这是管理应用的重点，```Framework```是支持插件机制的，提供了多种应用框架和云资源的插件。应用依赖哪些插件，都在```plugins```参属下配置，```framework```会根据```plugins```的配置来管理应用，处理应用中的构建、部署、开发、调试等流程，一个应用可以使用多个插件，使用不同的自定义属性名字进行管理。官方提供的插件有很多，具体可以查看```https://docs.cloudbase.net/framework/plugins/```。
+
+### 1. 云函数插件
+
+首先对之前写好的云函数进行插件方式的修改:
+
+
+```json
+"server": { // 自定义插件名字
+  "use": "@cloudbase/framework-plugin-function", // 引入使用的插件 
+  "inputs": { //对于当前插件的配置信息
+    "functionRoot": "./functions", //函数代码的本地路径 "functions": [ //云函数的配置信息
+    "functions": [ //云函数的配置信息
+      {
+        "name": "express-todo", // 云函数的名字 "timeout": 5, // 运行超时时间
+        "envVariables": {}, // 环境变量的键值对对象 "runtime": "Nodejs10.15", // 运行时环境(编程语言) "memorySize": 128, // 运行最大分配内存 M 单位 "handler": "index.main" // 函数入口
+      }
+    ]
+  }
+}
+```
+配置完成后，修改代码，然后进行部署测试。
+
+### 1. 静态网站插件
+
+云函数配置好之后，回到我们的客户端代码中，正常的开发部署流程是。本地开发，测试，线上测试，打包发布。在云开发中，有一个静态站点托管的服务，我们可以借助 静态网站插件 ，一键完成打包上线部署的全部工作，不用再手动完成了。
+
+```json
+"client": {
+  "use": "@cloudbase/framework-plugin-website", // 引入使用的插件
+  "inputs": {
+    "buildCommand": "npm run build", // 本地执行的打包命令 
+    "outputPath": "dist", // 静态文件地址
+    "cloudPath": "/", // 静态网站托管的代码路径 
+    "envVariables": {
+        "VUE_APP_ENV_ID": "{{env.ENV_ID}}"
+    }
+  }
+}
+```
+
+## 14. 云函数 Todo 重构 
+ 
+搞清楚各个配置的含义之后，就可以按照之前的思路，实现```Todo```应用了，先配置一个添加任务的函数。首先需要手动的修改配置文件，在```sever```的```functions```中添加```addtodo```。
+
+```json
+"server": { // 自定义插件名字
+  "use": "@cloudbase/framework-plugin-function", // 引入使用的插件
+  "inputs": { //对于当前插件的配置信息
+    "functionRootPath": "cloudfunctions",
+    "functions": [
+      {
+        "name": "addtodo",
+        "timeout": 3,
+        "envVariables": {},
+        "runtime": "Nodejs10.15",
+        "memory": 128,
+        "aclRule": {
+          "invoke": true
+        }
+      }
+    ]
+  }
+}
+```
+
+注意，配置文件不能帮我们在本地创建文件及文件夹，不具备小程序的能力，所以，写好配置文件，需要自己创建对应的代码目录及文件。
+
+```/cloudfunctions/addtodo/index.js```。
+
+```js
+const cloud = require("./cloudDb");
+
+async function addTodo (event) {
+  var req = event;
+  if(req.title == undefined){
+    return; 
+  }
+  var todo = {
+    title:req.title,
+    createTime:Date.now(),
+    done:false
+  }
+  var backdata = await cloud.collection('todo').add(todo);
+
+  return backdata;
+}
+exports.main = async (event, context) => {
+  return addTodo(event)
+};
+```
+
+```/cloudfunctions/addtodo/cloud.js```是数据库连接文件。
+
+```js
+const nodeSdk = require("@cloudbase/node-sdk");
+
+const cloudDb = nodeSdk.init({
+  env:'yindong01-3gcch2hafXXXXXXXXXX',
+  secretId:'AxxxXXXXXXXKpWw6zbXXXXXXXXXXX',
+  secretKey:'kFXdOOXXxxxp22AwiXXXXXXXXXXX'
+});
+
+const app = cloudDb.database();
+
+module.exports = app;
+```
+
+代码写好之后可以使用的```SCF```工具，然后再使用```Postman```发个请求。测试完成后，可以使用```tcb```命令进行全量部署，注意，全量部署时，```vue```也会跟随打包并部署到静态站点中，如果只想部署单个云函数，可以使用命令```tcb fn deploy addtodo```对```addtodo```这个函数单独部署。部署完成后可以登录云控制台查看，也可以在本地使用```tcb fn list```查看已部署的函数列表。
+
+```gettodo```获取数据的方法实现类似，复制一个```function```，放在```functions```数组中。同时创建对应的目录和文件。
+
+```json
+"server": { // 自定义插件名字
+  "use": "@cloudbase/framework-plugin-function", // 引入使用的插件
+  "inputs": { //对于当前插件的配置信息
+    "functionRootPath": "cloudfunctions",
+    "functions": [
+      {
+        "name": "gettodo",
+        "timeout": 3,
+        "envVariables": {},
+        "runtime": "Nodejs10.15",
+        "memory": 128,
+        "aclRule": {
+          "invoke": true
+        }
+      },
+      {
+        "name": "addtodo",
+        "timeout": 3,
+        "envVariables": {},
+        "runtime": "Nodejs10.15",
+        "memory": 128,
+        "aclRule": {
+          "invoke": true
+        }
+      }
+    ]
+  }
+}
+```
+  
+```/cloudfunctions/gettodo/index.js```。
+
+```js
+const app = require("./cloudDb");
+
+async function showTodo(event) {
+  const backdata = await cloud.collection('todo').get();
+  return backdata;
+}
+
+exports.main = async (event, context) => {
+  return showTodo();
+}
+```
+
+## 15. Vue 客户端调用
+
+云函数可以在客户端直接调用，所以就不需要再去创建触发器了，直接在客户端调用就可以了。在```Vue```中调用云函数与传统的方式不一样。不需要自己发送 ``HTTP`` 请求，腾讯官方封装了```Vue```插件[vue-provider](https://github.com/TencentCloudBase/cloudbase-vue)并且在构建的项目中，已经引入在```main.js```中修改环境参数，就可以使用了。
+
+```js
+import Vue from "vue";
+
+import App from "./App.vue";
+
+import Cloudbase from "@cloudbase/vue-provider";
+
+import ElementUI from 'element-ui';
+
+import 'element-ui/lib/theme-chalk/index.css';
+
+Vue.use(ElementUI);
+
+window._tcbEnv = window._tcbEnv || {};
+
+export const envId = window._tcbEnv.TCB_ENV_ID;
+
+export const region = window._tcbEnv.TCB_REGION;
+
+Vue.config.productionTip = false;
+
+Vue.use(Cloudbase, {
+  env: 'yindong',
+  region: 'ap-shanghai'
+});
+new Vue({
+  render: h => h(App)
+}).$mount("#app");
+```
+
+同时在```index.html```中，还会默认加载一个静态的配置文件```_init_tcb-env.js```，其实就是环境的配置参数，因为已经在```main.js```配置了环境参数，因此，直接屏蔽这个文件即可。
+
+完成这些配置之后，在```Vue```中完成添加任务的功能进行测试，但是这里有个坑，```callFunction```调用的传参与```HTTP```触发器调用的```event```入参是不一样的一定要注意```https://docs.cloudbase.net/cloud-function/how-works.html```，```callFunction```调用的云函数```event```的入参就是传入```callFunction```的```data```而没有请求信息数据，所以云函数的代码一定记得修改。
+
+```html
+<div class="box-card">
+  <el-card shadow="always">
+    <el-input v-model="addData.title" placeholder="请输入内容">
+      <el-button slot="append" @click="addTodo">添加任务</el-button>
+    </el-input>
+  </el-card>
+</div>
+```
+
+```js
+async addTodo() {
+    var todoData = this.addData;
+    var back = await this.$cloudbase.callFunction({
+        name: "addtodo",
+        data: todoData
+    });
+    console.log(back);
+},
+```
+
+此时，会收到一个没有权限的报错，这是因为调用云函数必须要进行登录鉴权，暂时先使用匿名登录的方式，调通接口的数据通信，后面再详细说明```Cloudbase```的用户管理服务器，但是就算是使用匿名登陆也是个坑，控制台中登录鉴权的实例代码是错误的，正确的代码示例在文档中心哪里```https://docs.cloudbase.net/authentication/anonymous.html```。
+
+```js
+mounted() {
+  // 使用匿名登录
+  var auth = this.$cloudbase.auth();
+  auth.anonymousAuthProvider().signIn();
+},
+```
+
+当然，光有代码还不够还需要到控制台中开启应用允许匿名登录的选项才行，不过一般都是默认就开通的，这里就不再细说了，继续完善获取数据的功能。增加列表渲染、选项删除以及展示详情的功能。
+
+```html
+<el-card class="box-card">
+  <div v-for="(todo, key) in todos" :key="key" class="text item">
+    <template v-if="todo.done == false">
+      <div class="lists">
+        <el-checkbox v-model="todo.done" @change="todoDone(key)">
+          {{ todo.title }}
+        </el-checkbox>
+        <div>
+          <i class="el-icon-notebook-2" @click="showTodo(key)"></i> |
+          <i class="el-icon-delete" @click="deleteTodo(key)"></i>
+        </div>
+      </div>
+      <el-divider></el-divider>
+    </template>
+  </div>
+</el-card>
+<el-drawer title="任务详情" :visible.sync="drawer">
+  <div class="dra">
+    <p>任务:{{ drawerTodo.title }}</p>
+    <p>
+      附件:
+      <br />
+      <img :src="drawerTodo.tempfile" alt="" />
+    </p>
+    <p>
+      <input type="file" ref="fil" />
+      <el-button @click="upFile(drawerTodo._id)"> 点击上传 </el-button>
+    </p>
+  </div>
+</el-drawer>
+```
+
+```js
+// 获取数据
+async getdata() {
+  var back = await this.$cloudbase.callFunction({
+    name: "gettodo",
+  });
+  this.todos = back.result.data;
+  console.log(this.todos);
+},
+// 删除选项
+async deleteTodo(key) {
+  const todoinfo = this.todos[key];
+  const back = await this.$cloudbase.callFunction({
+    name: 'deltodo',
+    data: { _id: todoinfo._id }
+  })
+  console.log(back);
+  this.getdata();
+}
+// 展示详情
+async showTodo(key) {
+  var todoInfo = this.todos[key];
+  console.log(todoInfo.fileId);
+  var back = await this.$cloudbase.getTempFileURL({
+    fileList: [todoInfo.fileId],
+  });
+  this.drawerTodo = todoInfo;
+  this.drawerTodo.tempfile = back.fileList[0].tempFileURL;
+  this.drawer = true;
+},
+```
+
+## 16. 文件上传
+
+```js
+async upFile(id) {
+  var s = this.$refs.fil.files[0];
+  // uploadFile 就是云对象存储提供的接口，集成到了vue 云开发插件中
+  var back = await this.$cloudbase.uploadFile({
+    // 云存储的路径
+    cloudPath: "todo/" + Date.now() + s.name, // 需要上传的文件，File 类型
+    filePath: this.$refs.fil.files[0],
+  });
+
+  console.log(id, back);
+
+  var changeData = {
+    _id: id,
+    fileId: back.fileID,
+  };
+
+  var changeBack = await this.$cloudbase.callFunction({
+    name: "puttodo",
+    data: changeData,
+  });
+
+  console.log(changeBack);
+},
+```
+
+## 17. 用户管理及登录授权服务
+
+开始之前先完成基础的代码和功能搭建，首先引入路由完成注册登录的页面和对应的表单。
+
+```s
+npm install vue-router
+```
+
+添加路由文件```\src\router\index.js```。
+
+```js
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+Vue.use(VueRouter)
+const routes = [
+  {
+    path: '/',
+    name: 'Index',
+    component: () => import('../components/Index.vue')
+}, {
+    path: '/register',
+    name: 'Register',
+    component: () => import( '../components/Register.vue')
+}, {
+    path: '/login',
+    name: 'Login',
+    component: () => import( '../components/Login.vue')
+} ]
+const router = new VueRouter({
+  mode: 'history',
+  base: process.env.BASE_URL,
+  routes
+})
+export default router;
+```
+
+在入口文件```main.js```中引入并注册路由
+
+```js
+import router from './router'
+
+...
+
+new Vue({
+  router,
+  render: h => h(App)
+}).$mount("#app");
+```
+
+完成对应的单文件组件代码，注册组件```src\components\Register.vue```。
+
+```vue
+<template>
+  <div class="box-card">
+    <el-row>
+      <el-col>
+        <el-card shadow="always">
+          <el-form label-position="left" label-width="80px" :model="user">
+            <el-form-item label="手机号">
+              <el-input v-model="user.phone">
+                <template slot="append">
+                  <el-button size="mini" :disabled="disa" @click="sendCode">
+                      {{sendCodeMsg}}
+                </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="验证码">
+              <el-input v-model="user.code"></el-input> 
+            </el-form-item>
+            <el-form-item label="密码">
+                <el-input v-model="user.pwd"></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button size="primary" @click="sendRegister">注册</el-button> 
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+<style>
+.box-card {
+  margin: 0 auto;
+  width: 580px;
+  margin-bottom: 20px;
+}
+</style>
+```
+
+登录组件```\src\components\Login.vue```。
+
+```vue
+<template>
+  <div class="box-card">
+    <el-row>
+      <el-col>
+        <el-card shadow="always">
+          <el-form label-position="left" label-width="80px" :model="user">
+            <el-form-item label="手机号">
+              <el-input v-model="user.phoneNumber"></el-input>
+            </el-form-item> 
+            <el-form-item label="密码">
+              <el-input v-model="user.password"></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button size="primary" @click="Login">登录</el-button> 
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+<style>
+.box-card {
+  margin: 0 auto;
+  width: 580px;
+  margin-bottom: 20px;
+}
+</style>
+```
+
+```js
+import router from './router'
+
+...
+
+new Vue({
+  router,
+  render: h => h(App)
+}).$mount("#app");
+```
+
+### 1. 注册逻辑
+
+要使用短信验证逻辑需要在控制台开启```短信验证码登录```的选项，在登录授权里面开启。短信验证使用的是```js-sdk```，手册在[这里](https://docs.cloudbase.net/api-reference/webv2/authentication)，所以先安装。
+
+```s
+npm install @cloudbase/js-sdk
+```
+
+因为需要在多个地方使用，因此先进行封装，这里选在使用```Vue```插件的方式，```\src\assets\auth.js```。
+
+```js
+import cloudbase from "@cloudbase/js-sdk";
+// 自定义插件对象
+const auths = {};
+auths.install = function (vue) {
+    const app = cloudbase.init({
+        env: "yindong01-5gyindong72a1",
+    });
+    const myauth = app.auth()
+    vue.prototype.$auths = myauth;
+}
+// 导出插件
+export default auths;
+```
+
+不要忘记在入口文件中导入```\src\main.js```。
+
+```js
+import router from './router'
+import auths from './assets/auth.js'
+Vue.use(auths) // 注册使用 auth 插件
+import ElementUI from 'element-ui';
+import 'element-ui/lib/theme-chalk/index.css';
+```
+
+首先完成手机验证码的发送。
+
+```js
+  // 发送注册验证码
+async sendCode() {
+  const res = await this.$auths.sendPhoneCode(this.user.phone);
+  if (res) {
+    // 验证码发送成功
+    this.disabled = true;
+    this.sendCodeMsg = "有效期5分钟"
+  } else { 
+    console.log("短信发送失败");
+  } 
+},
+```
+
+用户输入验证码及密码，进行验证码及手机号的验证。
+
+```js
+  // 验证码密码注册
+async sendRegister(){
+  const res = await this.$auths.signUpWithPhoneCode(this.user.phone,this.user.code,this.user.pwd);
+  if(res){
+    console.log('注册成功');
+    this.$router.push({path:'/login'})
+  }
+}
+```
+
+验证注册成功后，跳转到登录界面。
+
+### 2. 登录逻辑
+
+```js
+ export default {
+  data() {
+    return {
+      user: {
+        phoneNumber: "",
+        password: "",
+      },
+    };
+  },
+  methods: {
+    async Login() {
+      const res = await this.$auths.signInWithPhoneCodeOrPassword(this.user);
+      if (res) {
+        this.$router.push({path:"/"})
+      }
+    },
+  },
+};
+```
+
+登录验证是非常简单的，那么是如何保持登录状态的呢。
+
+登录状态的保持有三种不同的[方式](https://docs.cloudbase.net/api-reference/webv2/authentication)。
+
+```local```在显式退出登录之前的```30```天内保留身份验证状态。
+
+```session```在窗口关闭时清除身份验证状态。
+
+```none```在页面重新加载时清除身份验证状态。
+
+在初始化调用auth方法时，传入```\src\assets\auth.js```。
+
+```js
+import cloudbase from "@cloudbase/js-sdk";
+
+// 自定义插件对象
+var auths = {};
+auths.install = function (vue) {
+  const app = cloudbase.init({
+      env: "yindong01-5gyindong872a1",
+  });
+// persistence:身份认证状态如何持久保留
+// local:在显式退出登录之前的 30 天内保留身份验证状态 // session:在窗口关闭时清除身份验证状态
+// none:在页面重新加载时清除身份验证状态
+  const myauth = app.auth({
+    persistence: "local" //用户显式退出或更改密码之前的30天一直有效 
+  })
+  vue.prototype.$auths = myauth;
+}
+// 导出插件
+export default auths;
+```
+
+不同的登录状态都可以在浏览器的控制台的```Appliction```中查看。那么在不同的组件中，如何获取登录状态和登录的数据呢？
+```auth```对象中，有```getLoginState```方法，看名字也知道，是获取登录状态的，在首页中使用挂载的生命周期函数进行验证，```\src\components\Index.vue```。
+
+```js
+async mounted() {
+  var hls = await this.$auths.getLoginState();
+  if(hls == null){
+    this.$router.push({path:"/login"})
+  }
+  this.getdata();
+},
+```
+
+当然，也可以使用```Vue-router```提供的导航守卫进行全局的登录状态验证。
+
+## 18. 上线部署
+
+部署非常的简单进行全量部署就可以了，在命令行切换到目录下执行```tcp```，这个命令会将云函数和```vue```代码进行打包和全量部署。部署成功之后会提供一个站点的入口，点击进去就可以访问了。不过默认提供的域名是很长很难记忆的，一般需要使用自己的域名访问应用。
+
+在访问服务中可以添加域名，目前仅支持https的域名，首先需要申请SSL证书，添加CNAME记录执行服务器地址即可。免费证书只能适配二级域名。
