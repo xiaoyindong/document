@@ -198,4 +198,203 @@ if (cluster.isMaster) {
     res.end('你好世界\n');
 
     // 通知主进程接收到了请求。
-    p
+    process.send({ cmd: 'notifyRequest' });
+  }).listen(8000);
+}
+```
+
+### 5. online 事件
+
+类似于```cluster.on('online')```事件，但特定于此工作进程, 此事件不会在工作进程中触发。
+
+```js
+cluster.fork().on('online', () => {
+  // 工作进程已上线。
+});
+```
+
+### 6. worker.disconnect()
+
+在一个工作进程内，调用此方法会关闭所有的```server```，并等待这些```server```的```close```事件执行，然后关闭```IPC```管道。
+
+在主进程内，会给工作进程发送一个内部消息，导致工作进程自身调用```.disconnect()```。
+
+会设置```.exitedAfterDisconnect```。
+
+当一个```server```关闭后，它将不再接收新的连接，但新连接会被其他正在监听的工作进程接收。 已建立的连接可以正常关闭。 当所有连接都关闭后，通往该工作进程的```IPC```管道将会关闭，允许工作进程优雅地死掉，详见```server.close()```。
+
+以上情况只针对服务端连接，工作进程不会自动关闭客户端连接，```disconnect```方法在退出前并不会等待客户端连接关闭。
+
+在工作进程中，也存在```process.disconnect```，但它不是这个函数，它是```disconnect()```。
+
+因为长时间运行的服务端连接可能阻止工作进程断开连接，可以采用发送消息的方法，让应用采取相应的动作来关闭连接。 也可以通过设置超时，当```disconnect```事件在某段时间后仍没有触发时关闭工作进程。
+
+```js
+if (cluster.isMaster) {
+  const worker = cluster.fork();
+  let timeout;
+
+  worker.on('listening', (address) => {
+    worker.send('shutdown');
+    worker.disconnect();
+    timeout = setTimeout(() => {
+      worker.kill();
+    }, 2000);
+  });
+
+  worker.on('disconnect', () => {
+    clearTimeout(timeout);
+  });
+
+} else if (cluster.isWorker) {
+  const net = require('net');
+  const server = net.createServer((socket) => {
+    // 连接永远不会结束。
+  });
+
+  server.listen(8000);
+
+  process.on('message', (msg) => {
+    if (msg === 'shutdown') {
+      // 将所有与服务器的连接优雅地关闭。
+    }
+  });
+}
+```
+
+### 7. worker.id
+
+每一个新衍生的工作进程都会被赋予自己独一无二的编号，这个编号就是储存在```id```里面。
+
+当工作进程还存活时，这个编号可以作为在```cluster.workers```中的索引。
+
+## 3. disconnect 事件
+
+在工作进程的```IPC```管道被断开后触发。 可能导致事件触发的原因包括：工作进程优雅地退出、被杀死、或手动断开连接（如调用```worker.disconnect()```）。
+
+```disconnect```和```exit```事件之间可能存在延迟。 这些事件可以用来检测进程是否在清理过程中被卡住，或是否存在长时间运行的连接。
+
+```js
+cluster.on('disconnect', (worker) => {
+  console.log(`工作进程 #${worker.id} 已断开连接`);
+});
+```
+
+## 4. exit 事件
+
+当任何一个工作进程关闭的时候，```cluster```模块都将会触发```exit```事件。
+
+这可以用于重启工作进程（通过再次调用```.fork()```）。
+
+```js
+cluster.on('exit', (worker, code, signal) => {
+  console.log('工作进程 %d 关闭 (%s). 重启中...',
+              worker.process.pid, signal || code);
+  cluster.fork();
+});
+```
+
+## 5. fork 事件
+
+当新的工作进程被衍生时，```cluster```模块将会触发```fork```事件。 可以被用来记录工作进程活动，并产生一个自定义的超时。
+
+```js
+const timeouts = [];
+function errorMsg() {
+  console.error('连接出错');
+}
+
+cluster.on('fork', (worker) => {
+  timeouts[worker.id] = setTimeout(errorMsg, 2000);
+});
+cluster.on('listening', (worker, address) => {
+  clearTimeout(timeouts[worker.id]);
+});
+cluster.on('exit', (worker, code, signal) => {
+  clearTimeout(timeouts[worker.id]);
+  errorMsg();
+});
+```
+
+## 6. listening 事件
+
+当一个工作进程调用```listen()```后，工作进程上的 server 会触发```listening```事件，同时主进程上的```cluster```也会触发```listening```事件。
+
+事件句柄使用两个参数来执行，其中```worker```包含了工作进程对象，```address```包含了以下的连接属性：```address```、```port```和```addressType```。 当工作进程同时监听多个地址时，这些参数非常有用。
+
+```js
+cluster.on('listening', (worker, address) => {
+  console.log(
+    `工作进程已连接到 ${address.address}:${address.port}`);
+});
+```
+
+```addressType```可选值包括:
+
+4 (```TCPv4```)
+
+6 (```TCPv6```)
+
+-1 (```Unix```域```socket```)
+
+```udp4```or```udp6```(```UDP v4```或```v6```)
+
+## 7. message 事件
+
+当集群主进程从任何工作进程接收到消息时触发。
+
+## 8. online 事件
+
+当衍生一个新的工作进程后，工作进程应当响应一个上线消息。 当主进程收到上线消息后将会触发此事件。```fork```事件和```online```事件的区别在于，当主进程衍生工作进程时触发```fork```，当工作进程运行时触发```online```。
+
+```js
+cluster.on('online', (worker) => {
+  console.log('工作进程被衍生后响应');
+});
+```
+
+## 9. setup 事件
+
+每当```.setupMaster()```被调用时触发。
+
+settings 对象是```.setupMaster()```被调用时的```cluster.settings```对象，并且只能查询，因为在一个时间点内```.setupMaster()```可以被调用多次。
+
+如果精确度十分重要，则使用```cluster.settings```。
+
+## 10. cluster.isMaster
+
+如果该进程是主进程，则为```true。```这是由```process.env.NODE_UNIQUE_ID```决定的。 如果```process.env.NODE_UNIQUE_ID```未定义，则```isMaster```为```true```
+
+## 11. cluster.isWorker
+
+如果该进程不是主进程，则为```true```（与```cluster.isMaster```相反）
+
+## 12. cluster.worker
+
+当前工作进程对象的引用。 对于主进程则无效。
+
+## 13. cluster.workers
+
+这是一个哈希表，储存了活跃的工作进程对象，使用```id```作为键名。 这使得可以方便地遍历所有工作进程。 只能在主进程中调用。
+
+工作进程断开连接以及退出后，将会从```cluster.workers```里面移除。 这两个事件的先后顺序并不能预先确定。 但可以保证的是，```cluster.workers```的移除工作在```disconnect```和```exit```两个事件中的最后一个触发之前完成。
+
+```js
+// 遍历所有工作进程。
+function eachWorker(callback) {
+  for (let id in cluster.workers) {
+    callback(cluster.workers[id]);
+  }
+}
+eachWorker((worker) => {
+  worker.send('通知所有工作进程');
+});
+```
+
+使用工作进程的唯一```id```是定位工作进程最简单的方式。
+
+```js
+socket.on('data', (id) => {
+  const worker = cluster.workers[id];
+});
+```
