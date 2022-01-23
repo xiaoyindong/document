@@ -52,4 +52,53 @@ on:
 
 jobs:
     test:
-       
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: Use Node.js
+              uses: actions/setup-node@v1
+              with:
+                node-version: 14
+            - name: print node version
+              run: |
+                node -v
+                npm -v
+    test2:
+        runs-on: ubuntu-lastes
+        steps:
+            - run: touch a.txt
+            - run: echo 100 > a.txt
+            - run: cat a.txt
+```
+
+## 3. 自动测试
+
+.github/test.yml
+```yml
+name: test
+on:
+    push:
+        branches:
+            - master
+        paths:
+            - '.github/workflows/**'
+            - '__test__/**'
+            - 'src/**'
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: Use Node.js
+              uses: actions/setup-node@v1
+              with:
+                node-version: 14
+            - name: lint and test
+              run: |
+                npm i
+                npm run lint
+                npm run test:remote
+```
+
+[文档https://docs.github.com/cn/actions](https://docs.github.com/cn/actions)。
