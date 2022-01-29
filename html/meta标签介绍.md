@@ -123,4 +123,158 @@ expires:31 Dec 2008
 表示当前```html```是用什么工具编写生成的，并没有实际作用，一般是编辑器自动创建的。
 
 ```html
-<meta 
+<meta name="generator" content="vscode">
+```
+
+#### 5. revised
+
+指定页面的最新版本
+
+```html
+<meta name="revised" content="V2，2015/10/1">
+```
+
+#### 6. robots
+
+告诉搜索引擎机器人抓取哪些页面，```all / none / index / noindex / follow / nofollow```。
+
+```html
+<meta name="robots" content="all">
+```
+
+```all```：文件将被检索，且页面上的链接可以被查询；
+```none```：文件将不被检索，且页面上的链接不可以被查询；
+```index```：文件将被检索；
+```follow```：页面上的链接可以被查询；
+```noindex```：文件将不被检索，但页面上的链接可以被查询；
+```nofollow```：文件将不被检索，页面上的链接可以被查询。
+
+### 3. scheme 属性
+
+```scheme``` 属性用于指定要用来翻译属性值的方案。此方案应该在由 ```head``` 标签的 ```profile``` 属性指定的概况文件中进行了定义。```html5```不支持该属性。
+
+## 5. base 标签
+
+```base```标签定义了文档的基础```url```地址，在文档中所有的相对地址形式的```url```都是相对于这里定义的```url```而言的。为页面上的链接规定默认地址或目标。
+
+```html
+<base href="http://www.w3school.com.cn/i/" target="_blank" />
+```
+
+base标签包含的属性。
+
+#### 1. href
+
+```href```是必选属性，指定了文档的基础```url```地址。例如，如果希望将文档的基础URL定义为```https：//www.abc.com```，则可以使用如下语句：```<base href="http://www.abc.com">```如果文档的超链接指向```welcom.html```,则它实际上指向的是如下```url```地址：```https://www.abc.com/welocme.html```。
+
+#### 2. target
+
+定义了当文档中的```链接```点击后的打开方式```_blank```，```_self```，```_parrent```，```_top```。
+
+## 6. link 标签
+
+```link```用于引入外部样式表，在```html```的头部可以包含任意数量的```link```，```link```标签有以下常用属性。
+
+```html
+<link type="text/css" rel="stylesheet" href="github-markdown.css">
+```
+
+### 1. type
+
+定义包含的文档类型，例如```text/css```
+### 2. rel
+
+定义```html```文档和所要包含资源之间的链接关系，可能的值有很多，最为常用的是```stylesheet```，用于包含一个固定首选样式的表单。
+
+### 3. href
+
+表示指向被包含资源的```url```地址。
+
+## 7. style 标签
+
+编写内部样式表的标签。
+
+```html
+<style>
+    body {
+        background: #f3f5f9;
+    }
+</style>
+```
+
+## 8. script 标签
+
+加载```javascript```脚本的标签。加载的脚本会被默认执行。默认情况下当浏览器解析到```script```标签的时候会停止```html```的解析而开始加载```script```代码并且执行。
+
+```html
+<script src="script.js"></script>
+```
+
+### 1. type
+
+指示脚本的```MIME```类型。
+
+```html
+<script type="text/javascript">
+```
+
+### 2. async
+
+规定异步执行脚本，仅适用于通过```src```引入的外部脚本。设置的```async```属性的```script```加载不会影响后面```html```的解析，加载是与文档解析同时发生的。加载完成后立即执行。执行过程会停止```html```文档解析。
+
+```html
+<script async src="script.js"></script>
+```
+
+### 3. charset
+
+规定在外部脚本文件中使用的字符编码。
+
+```html
+<script type="text/javascript" src="script.js" charset="UTF-8"></script>
+```
+
+### 4. defer
+
+规定是否对脚本执行进行延迟，直到页面加载为止。设置了```defer```属性的```script```不会阻止后面```html```的解析，加载与解析是共同进行的，但是```script```的执行要在所有元素解析完成之后，```DOMContentLoaded```事件触发之前完成。
+
+```html
+<script defer src="script.js"></script>
+```
+
+### 5. language
+
+规定脚本语言，与``type```功能类似，不建议使用该字段。
+
+### 6. src
+
+外部脚本的地址。
+
+```html
+<script src="script.js"></script>
+```
+
+## 9. bgsound
+
+网站背景音乐。
+
+```html
+<bgsound src="music.mp4" autostart="true" loop="5">
+```
+
+### 1. src
+
+表示背景音乐的```url```值。
+
+### 2. autostart
+
+是否自动播放```ture```自动播放，```false```不播放，默认为```false```。
+
+### 3. loop
+
+是否重复播放，值为数字或者```infinite```，表示重复具体次或无限次。
+
+### 参考来源
+
+- [1] [w3chool head](https://www.w3school.com.cn/tags/tag_head.asp) https://www.w3school.com.cn/tags/tag_head.asp "w3c"
+- [2] [head标签及子标签](https://blog.csdn.net/qq_46580571/article/details/106035249) https://blog.csdn.net/qq_46580571/article/details/106035249 "Wangkiwa"
