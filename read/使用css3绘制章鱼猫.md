@@ -247,4 +247,243 @@ border-bottom-right-radius: 70px 70px;
             border-top-left-radius: 570px 40px;
             border-top: 1px solid #000;
         }
- 
+        .beard-right-2 {
+            position: absolute; 
+            height: 20px;
+            width: 330px;
+            top: 228px;
+            left: 148px;
+            border-top-right-radius: 570px 40px;
+            border-top: 1px solid #000;
+        }
+        .bottom {
+            position: absolute; 
+            width: 254px;
+            height: 88px;
+            /* border: 1px solid red; */
+            background: #62e3ff;
+            border-radius: 50%;
+            top: 370px;
+            left: 127px;
+        }
+        .body {
+            position: absolute; 
+            width: 109px;
+            height: 88px;
+            /* border: 1px solid red; */
+            background: #000;
+            top: 279px;
+            left: 198px;
+            border-top-left-radius: 26px 38px;
+            border-top-right-radius: 26px 38px;
+        }
+        .leg-1 {
+            position: absolute; 
+            width: 22px;
+            height: 40px;
+            /* border: 1px solid red; */
+            background: #000;
+            top: 359px;
+            left: 198px;
+            border-bottom-right-radius: 22px 24px;
+        }
+        .leg-2 {
+            position: absolute; 
+            width: 22px;
+            height: 50px;
+            /* border: 1px solid red; */
+            background: #000;
+            top: 358px;
+            left: 227px;
+            border-bottom-right-radius: 22px 31px;
+        }
+        .leg-3 {
+            position: absolute; 
+            width: 22px;
+            height: 50px;
+            /* border: 1px solid red; */
+            background: #000;
+            top: 358px;
+            left: 256px;
+            border-bottom-left-radius: 22px 31px;
+        }
+        .leg-4 {
+            position: absolute; 
+            width: 22px;
+            height: 40px;
+            /* border: 1px solid red; */
+            background: #000;
+            top: 359px;
+            left: 285px;
+            border-bottom-left-radius: 22px 24px;
+        }
+        .leg-white-1 {
+            position: absolute; 
+            width: 7px;
+            height: 60px;
+            /* border: 1px solid red; */
+            background: #fff;
+            top: 311px;
+            left: 220px;
+            border-top-left-radius: 8px 16px;
+        }
+        .leg-white-2 {
+            position: absolute; 
+            width: 7px;
+            height: 63px;
+            /* border: 1px solid red; */
+            background: #fff;
+            top: 308px;
+            left: 249px;
+        }
+        .leg-white-3 {
+            position: absolute; 
+            width: 7px;
+            height: 60px;
+            /* border: 1px solid red; */
+            background: #fff;
+            top: 311px;
+            left: 278px;
+            border-top-right-radius: 8px 16px;
+        }
+        .leg-shadow-1 {
+            position: absolute; 
+            width: 22px;
+            height: 58px;
+            /* border: 1px solid red; */
+            background: #42b0ff;
+            top: 398px;
+            left: 198px;
+            border-bottom-left-radius: 22px 4px;
+            border-top-right-radius: 22px 24px;
+        }
+        .leg-shadow-2 {
+            position: absolute; 
+            width: 22px;
+            height: 49px;
+            /* border: 1px solid red; */
+            background: #42b0ff;
+            top: 408px;
+            left: 227px;
+            border-bottom-left-radius: 1px 10px;
+            border-top-right-radius: 22px 31px;
+        }
+        .leg-shadow-3 {
+            position: absolute; 
+            width: 22px;
+            height: 49px;
+            /* border: 1px solid red; */
+            background: #42b0ff;
+            top: 408px;
+            left: 256px;
+            border-bottom-left-radius: 1px 10px;
+            border-top-left-radius: 22px 31px;
+        }
+        .leg-shadow-4 {
+            position: absolute; 
+            width: 22px;
+            height: 58px;
+            /* border: 1px solid red; */
+            background: #42b0ff;
+            top: 398px;
+            left: 285px;
+            border-bottom-right-radius: 22px 4px;
+            border-top-left-radius: 22px 24px;
+        }
+        .tail {
+            position: absolute; 
+            width: 82px;
+            height: 58px;
+            /* border: 1px solid red; */
+            background: #000;
+            top: 280px;
+            left: 134px;
+            border-bottom-left-radius: 42px 34px;
+            border-bottom-right-radius: 42px 15px;
+            border-top-right-radius: 70px 40px;
+        }
+        .tail2 {
+            position: absolute; 
+            width: 82px;
+            height: 32px;
+            /* border: 1px solid red; */
+            background: #fff;
+            top: 280px;
+            left: 134px;
+            border-bottom-left-radius: 40px 32px;
+            border-bottom-right-radius: 40px 32px;
+        }
+        .tail3 {
+            position: absolute; 
+            width: 40px;
+            height: 40px;
+            /* border: 1px solid red; */
+            background: #000;
+            top: 281px;
+            left: 121px;
+            border-top-right-radius: 40px 40px;
+            border-bottom-left-radius: 24px 40px;
+        }
+        .speckle-1, .speckle-2, .speckle-3, .speckle-4 {
+            position: absolute; 
+            width: 8px;
+            height: 5px;
+            background: #acfde4;
+            border-radius: 50%;
+            top: 316px;
+            left: 188px;
+        }
+        .speckle-2 {
+            top: 318px;
+            left: 170px;
+        }
+        .speckle-3 {
+            top: 314px;
+            left: 151px;
+        }
+        .speckle-4 {
+            top: 304px;
+            left: 138px;
+        }
+    </style>
+</head>
+<body>
+    <div id="box">
+        <div class="head"></div>
+        <div class="ears-left"></div>
+        <div class="ears-right"></div>
+        <div class="beard-left-1"></div>
+        <div class="beard-left-2"></div>
+        <div class="beard-right-1"></div>
+        <div class="beard-right-2"></div>
+        <div class="face"></div>
+        <div class="eye-left"></div>
+        <div class="eye-left2"></div>
+        <div class="eye-right"></div>
+        <div class="eye-righ2"></div>
+        <div class="nose"></div>
+        <div class="mouth"></div>
+        <div class="bottom"></div>
+        <div class="tail"></div>
+        <div class="tail2"></div>
+        <!-- <div class="tail3"></div> -->
+        <div class="speckle-1"></div>
+        <div class="speckle-2"></div>
+        <div class="speckle-3"></div>
+        <div class="speckle-4"></div>
+        <div class="body"></div>
+        <div class="leg-1"></div>
+        <div class="leg-2"></div>
+        <div class="leg-3"></div>
+        <div class="leg-4"></div>
+        <div class="leg-white-1"></div>
+        <div class="leg-white-2"></div>
+        <div class="leg-white-3"></div>
+        <div class="leg-shadow-1"></div>
+        <div class="leg-shadow-2"></div>
+        <div class="leg-shadow-3"></div>
+        <div class="leg-shadow-4"></div>
+    <div>
+</body>
+</html>
+```
