@@ -165,4 +165,152 @@ external_url="http://gitlab.example.com" yum install -y gitlab-ce
 
 ```s
 #查看当前绑定的域名或者IP
-grep "^external_url" /etc/gitlab/g
+grep "^external_url" /etc/gitlab/gitlab.rb
+
+#打开配置文件
+vi /etc/gitlab/gitlab.rb
+
+# external_url 'http://xx.xx.xx.xx'  #替换   #修改成域名访问
+external_url 'http://gitlab.new.com'  
+```
+
+修改之后要 ```gitlab-ctl reconfigure``` 重新跑一下配置，否则不生效。
+
+```s
+gitlab-ctl reconfigure
+```
+
+如果机器```80```端口被占用，需要修改```gitlab```端口
+
+```s
+#查看默认端口
+grep "'listen_port" /etc/gitlab/gitlab.rb
+
+ #打开配置文件
+vi /etc/gitlab/gitlab.rb
+
+#找到取消注释，修改端口为8080
+nginx['listen_port'] = 8080
+
+#重新跑一下配置
+gitlab-ctl reconfigure
+```
+
+由于更改端口，域名解析不到。提供方式使用云服务中的负载均衡。记得修改安全组。
+
+还要修改修改```nginx```中```gitlab```配置文件```vi ~git/nginx/conf/gitlab-http.conf```
+
+```s
+server {
+  listen *:8080; 保持端口一致
+  server_name http://gitlab.example.com;
+    ...
+}
+```
+
+重启```gitlab```
+
+```s
+gitlab-ctl restart
+```
+
+## 5. 配置https
+
+使用```openssl```命令创建```gitlab```本地证书并配置```config```加载该证书。
+
+```s
+#创建ssl命令
+mkdir -p /etc/gitlab/ssl
+
+# 创建本地私有秘钥
+openssl genrsa -out "/etc/gitlab/ssl/gitlab.example.com.key" 2048
+```
+
+使用```openssl```生成```csr```证书, 这里```country```可以输入```cn```，```province```可以输入```hz```，```city```输入```hz```，```organization```输入```空格```，```unit name```也输入```空格```，```common name```输入的是```gitlab的域名gitlab.example.com```, 邮箱地址输入```admin@example.com```, 证书密码输入```123456```，```company name```直接```回车```就可以。
+
+```s
+openssl req -new -key "/etc/gitlab/ssl/gitlab.example.com.key" -out "/etc/gitlab/ssl/gitlab.example.com.csr"
+
+# 创建签署证书
+openssl x509 -req -days 3650 -in "/etc/gitlab/ssl/gitlab.example.com.csr" -signkey "/etc/gitlab/ssl/gitlab.example.com.key" -out "/etc/gitlab/ssl/gitlab.example.com.crt"
+
+# 使用openssl生成pem证书
+openssl dhparam -out /etc/gitlab/ssl/dhparams.pem 2048
+
+# 查看证书 正常应该有4个
+cd /etc/gitlab/ssl/
+ll
+
+# 修改所有证书的权限为600
+#进入ssl文件夹
+cd /etc/gitlab/ssl/
+#更改本文件夹下所有文件的权限
+chmod 600 *
+
+# 编辑gitlab.rb，将所有的证书配置到gitlab的配置文件中
+vi /etc/gitlab/gitlab.rb
+```
+
+找到```external_url```这行，将```http```改为```https```
+
+```s
+https://gitlab.example.com
+```
+
+找到nginx['redirect_http_to_https']，移除```#```并将值改为```true```;
+
+找到nginx['ssl_certificate']，值修改为```/etc/gitlab/ssl/gitlab.example.com.crt```;
+
+找到nginx['ssl_certificate_key']，值修改为```/etc/gitlab/ssl/gitlab.example.com.key```;
+
+找到nginx['ssl_dhparam']，值修改为```/etc/gitlab/ssl/dhparams.pem```;
+
+修改完这些之后我们需要初始化```gitlab```配置
+
+```s
+#如果不执行此命令，此时可能会卡住报错
+systemctl restart gitlab-runsvdir
+#初始化
+gitlab-ctl reconfigure
+```
+
+当出现```gitlab Reconfigured```就是正常初始化结束。
+
+最后需要修改```gitlab```的```nginx```的代理文件，配置```https```。
+
+```s
+vi /var/opt/gitlab/nginx/conf/gitlab-http.conf
+```
+
+找到```server```，在```server_name```下增加：```rewrite ^(.*)$ https://$host$1 permanent```;
+
+重启```gitlab```使```Nginx```配置生效。
+
+```s
+gitlab-ctl restart
+```
+
+## 6. 使用镜像安装
+
+如果是国内的话，可以尝试使用清华大学的源，这样快些。
+
+官方源地址：```https://about.gitlab.com/downloads/#centos7```
+
+清华大学镜像源：```https://mirror.tuna.tsinghua.edu.cn/help/gitlab-ce```
+
+
+```s
+cat> /etc/yum.repos.d/gitlab-ce.repo<< EOF
+[gitlab-ce]
+name=Gitlab CE Repository
+baseurl=https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el7/  
+gpgcheck=0
+enabled=1
+EOF
+```
+
+如果在国外的话可以使用
+
+```s
+curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash
+```
