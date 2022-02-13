@@ -65,4 +65,57 @@ Promise.resolve().then(() => {
     console.log('p2')
 })
 
-console.log('start')
+console.log('start');
+
+setTimeout(() => {
+    console.log('s2');
+    Promise.resolve().then(() => {
+        console.log('p3');
+    })
+    process.nextTick(() => {
+        console.log('t2');
+    })
+})
+
+console.log('end');
+
+// start end p2 s1 s2 t1 t2 p1 p3
+```
+
+```Node```与浏览器事件环执行是有一些不同的。
+
+首先任务队列数不同，浏览器一般只有宏任务和微任务两个队列，而```Node```中除了微任务队列外还有```6个事件队列```。
+
+其次微任务执行时机不同，不过他们也有相同的地方就是在同步任务执行完毕之后都会去看一下微任务是否存在可执行的。对浏览器来说每当一个宏任务执行完成之后就会清空一次微任务队列。在```Node```中只有在事件队列切换时才会去清空微任务队列。
+
+最后在```Node```平台下微任务执行是有优先级的，```nextTick```优先于```Promise.then```, 而浏览器中则是先进先出。
+
+```js
+setTimeout(() => {
+    console.log('timeout');
+})
+
+setImmediate(() => {
+    console.log('immdieate');
+})
+```
+
+在```Node```中时而会先输出```timeout```时而会先输出```immdieate```，这是因为```setTimeout```是需要接收一个时间参数的，如果没写就是一个```0```，我们都知道无论是在```Node```还是在浏览器，程序是不可能真的是```0```，他会受很多的因素影响。这取决于运行的环境。
+
+如果```setTimeout```先执行就会放在```timers```队列中，这样```timeout```就会先输入，如果```setTimeout```因为某些原因后执行了，那么```check```队列中的```immdieate```就会先执行。这就是为什么时而输出```timeout```时而输出```immdieate```。
+
+```js
+const fs = require('fs');
+
+fs.readFile('./a.txt', () => {
+    setTimeout(() => {
+        console.log('timeout');
+    }, 0)
+
+    setImmediate(() => {
+        console.log('immdieate');
+    })
+})
+```
+
+这种情况就会一直先输出```immdieate```后输出```timeout```，这是因为，代码执行的时候会在```timers```里面加入```timeout```, 在```poll```中加入```fs```的回调，在```check```中加入```immdieate```。```fs```的回调执行结束之后实在```poll```队列，队列切换的时候首先会去看微任务，但是这里没有微任务就会继续向下，下面就是```check```队列而不是```timers```队列，所以```poll```清空之后会切换到```check```队列，执行```immdieate```回调。
