@@ -19,7 +19,7 @@
 ### 6. [canvas 基础 api](/javascript/canvas基础api.md)
 ### 7. [JavaScript 的原型链](/javascript/JavaScript的原型链.md)
 ### 8. [Promise 源码实现](/javascript/promise源码实现.md)
-### 9. [threejs 入门](/javascript/threejs入门.md)
+<!-- ### 9. [threejs 入门](/javascript/threejs入门.md) -->
 ### 10. [JavaScript 垃圾回收机制](/javascript/JavaScript垃圾回收机制.md)
 ### 11. [JavaScript 内存使用优化](/javascript/JavaScript内存使用优化.md)
 ### 12. [前端性能测试工具](/javascript/前端性能测试工具.md)
