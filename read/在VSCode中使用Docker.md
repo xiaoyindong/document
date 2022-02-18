@@ -103,4 +103,137 @@ function foo() {
 }
 
 function bar(sr) {
-    console.l
+    console.log(sr);
+}
+foo();
+```
+
+接着为```JavaScript```代码准备```Docker```相关的配置。```Docker```插件已经提供了```Docker```配置的快捷生成方式。
+
+## 4. 自动创建 Dockerfile 和 compose 配置 
+
+调出命令面板，然后搜索执行命令```Docker: Add docker fles to workspace```。接着```VS Code```会问想要创建什么环境的```Docker image```。选择```Node.js```就可以运行上面创建的```index.js```文件了。
+
+命令执行后，工作区内多出了三个文件，第一个文件是```Dockerfile```。
+
+```s
+FROM node:8.9-alpine
+
+ENV NODE_ENV production
+
+WORKDIR /usr/src/app
+
+COPY ["package.json", "package-lock.json*", "npm-shrinkwrap.json*", "./"] 
+
+RUN npm insall --production --silent && mv node_modules ../
+
+COPY..
+
+EXPOSE 3000
+```
+
+这个文件里指定了```Node.js 8.9```作为基础```image```，然后将当前工作目录下的```package.json```、```package-lock.json```等拷贝到```container```中。接着运行```npm install```命令来安装代码运行所需的```dependencies```。不过，由于只有一个简单的```JavaScript```文件并不需要```npm```，所以不 把这个文件修改的简单一些。
+
+```s
+FROM node:8.9-alpine 
+
+ENV NODE_ENV production 
+
+WORKDIR /usr/src/app 
+
+COPY..
+
+EXPOSE 3000
+```
+
+第二个文件是```docker-compose.yml```。这个文件里指定了当前只有一个```container```需要被创建并运行，而且这个```container```需要使用端口```3000```。
+
+```s
+version: '2.1'
+
+services:
+    vscode-sample:
+        image: vscode-sample 
+        build: . 
+        environment:
+            NODE_ENV: production 
+        ports:
+            - 3000:3000
+```
+
+第三个文件是```docker-compose.debug.yml```。用于调试时的```compose```文件，跟上面 的```docker-compose.yml```文件相比，它只多了两行代码。```9229:9229```，使用```9229```端口。```command: node --inspect index.js```在```container```运行起来后，运行```node```程序，并且调试```index.js```文件。
+
+```s
+version: '2.1'
+
+services:
+    vscode-sample:
+        image: vscode-sample 
+        build: . 
+        environment:
+            NODE_ENV: production 
+        ports:
+            - 3000:3000
+            - 9229:9229
+        ## set your sartup fle here 
+        command: node --inspect index.js
+```
+
+## 5. Compose Up
+
+有了这三个配置文件后，要想构建并且运行```container```就简单了。不需要先执行```Docker: build image``` 再运行```Docker: run```了，而是直接运行单个命令```Docker: compose up```即可。运行后，需要选择使用哪个```compose```配置文件。只要准备好```compose```配置文件，在```VS Code```中操作就非常简单了，一共只有三个命令。
+
+```s
+
+Docker compose up
+
+Docker compose down
+
+Docker compose start
+```
+
+如果想看看```VS Code```是不是真的成功运行了```container```，可以从```Docker```的视图里，找到新创建的```container```查看它的```log```。可以看到```index.js```在```container```里被成功地运行了，而且输出了```Hello World```。
+
+## 6. 调试
+
+```launch.json```里调试配置中，有一个属性是```request```。
+
+这个```JSON```文件里的```confgurations```值就是当前文件夹下所有的配置了。现在只有一个调试配置，有四个属性。
+
+第一个是```type```，代表着调试器的类型。它决定了```VS Code```会使用哪个调试插件来调试代码。
+
+第二个是```request```，代表着该如何启动调试器。如果代码已经运行起来了，则可以将它的值设为```attach```，使用调试器来调试这个已有的代码进程。如果值是```launch```，则使用调试器直接启动代码并且调试。
+
+当```request```的值被设置为```attach```后，可以将调试器附着到已经处于调试状态的代码进程上了，接着就能够调试代码了。而调试```Docker```中的代码，就是使用的```attach```方法。可以在```Docker container```里以命令行的方式调试代码，并且开放调试端口，接着让```VS Code```里的调试插件附着到这个端口上。这就是在```VS Code```中调试非本地环境运行的代码的理论知识了。下面一起看看怎么做。
+
+首先，对```docker-compose.debug.yml```做一点修改，将```command```改成如下的值。
+
+```s
+command: node --inspect-brk=0.0.0.0:9229 index.js
+```
+
+这个命令是调试```index.js```文件，然后在第一行停下来，并且使用```9229```这个端口进行调试。接着，运行```Docker: compose up```将```container```运行起来。
+
+创建```launch.json```以及借助自动补全来书写调试配置可以使用的```.vscode/launch.json```。
+
+```json
+{
+    "version": "0.2.0", 
+    "confgurations": [
+        {
+            "type": "node",
+            "reques": "attach",
+            "name": "Docker: Attach to Node", 
+            "port": 9229,
+            "address": "localhos", 
+            "localRoot": "${workspaceFolder}", 
+            "remoteRoot": "/usr/src/app", 
+            "protocol": "inspector"
+        } 
+    ]
+}
+```
+
+调试配置有几个属性值得注意。```request```是```attach```，也就是附着到已经运行的代码上。```port```是调试的端口。```localRoot```是本地代码的根目录。```remoteRoot```是指在远程运行的代码的根目录。例子里已经在```Dockerfile```里指明了工作目录是```/usr/src/app```。有了这个调试配置后，```F5```就能够调试```Docker container```中的代码了，并且停到了第一行代码上。
+
+至此就成功地将一段```JavaScript```代码运行在```Docker```中，并且从```VS Code```里调试起来了。
