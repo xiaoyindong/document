@@ -440,4 +440,417 @@ Primsie.prototype.then = function(onFulfilled, onRejected) {
             }, 0)
         }
 
-   
+        if (self.status === 'rejected') {
+            setTimeout(function() {
+                try {
+                    const x = onRejected(self.reason);
+                    resolvePromise(promise2, x, resolve, reject);
+                } catch(e) {
+                    reject(e);
+                }
+            }, 0)
+        }
+        if (self.status === 'pending') {
+            self.onResolvedCallbacks.push(function () {
+                setTimeout(function() {
+                    try {
+                        const x = onFulfilled(self.value);
+                        resolvePromise(promise2, x, resolve, reject);
+                    } catch(e) {
+                        reject(e);
+                    }
+                }, 0)
+            });
+            self.onRejectedCallbacks.push(function() {
+                setTimeout(function() {
+                    try {
+                        const x = onRejected(self.reason);
+                        resolvePromise(promise2, x, resolve, reject);
+                    } catch(e) {
+                        reject(e);
+                    }
+                }, 0)
+            });
+        }
+    })
+    return promise2;
+}
+```
+
+## 7. resolvePromise函数
+
+```resolvePromise```函数的作用是判断```x```是否是```promise```，如果是```promise```就执行并且将执行结果添加到```resolve```方法中，如果是常量则直接添加到```resolve```方法中。这些内容在文档上都可以找得到，具体可以自行翻阅文档，这里就不列出了，直接代码实现。
+
+首先判断```promise2```和```x```引用了一个相同的对象，也就是他们是同一个```promise```对象。比如下面这种情况。
+
+```js
+const p = new Promise(function(resolve, reject) {
+    resolve('成功');
+})
+const promise2 = p.then(data => { // 这个时候x和promise2就是相等的，也就是自己等待自己去做做完什么事，等 和 做某事不能同时执行。
+    return promise2;
+})
+```
+
+应该抛出一个类型错误作为错误原因。
+
+```js
+function resolvePromise (promise2, x, resolve, reject) {
+    if (promise2 === x) { // 防止自己等待自己
+        return reject(new TypeError('循环引用了'));
+    }
+}
+```
+
+如果```x```是```promise```类型，直接使用x的状态，也就是x成功就成功，x失败就失败。如果```x```是对象或者函数，就取他的then方法，获取then方法的时候如果出现异常，就执行失败。因为then方法可能是对象的一个不可访问的方法，get的时候报异常，所以我们需要使用```try...catch```去获取。
+
+如果```x```不是```promise```类型，是个普通值，直接调用```resolve```就可以。
+
+```js
+function resolvePromise (promise2, x, resolve, reject) {
+    if (promise2 === x) { // 防止自己等待自己
+        return reject(new TypeError('循环引用了'));
+    }
+    // x是object或者是个function
+    if ((x !== null && typeof x === 'object') || typeof x === 'function') {
+        try {
+            let then = x.then;
+        } catch (e) {
+            reject(e);
+        }
+    } else {
+        resolve(x);
+    }
+}
+```
+
+接着判断```then```，如果```then```是个函数，就认为他是```Promise```, 需要通过```call```执行```then```方法，改变```this```的指向为```x```，```then```中传入成功和失败的函数，官方文档中指明成功函数的参数叫```y```，失败的参数为```r```。
+
+如果```then```不是一个函数那么当前这个``then``是一个普通对象，调用```resolve```方法直接返回即可。
+
+```js
+try {
+    let then = x.then;
+    if (typeof then === 'function') {
+        then.call(x, function (y) {
+            resolve(y); // 成功的结果，让promise2变为成功状态
+        }, function (r) {
+            reject(r);
+        });
+    } else {
+        resolve(x)
+    }
+} catch (e) {
+    reject(e);
+}
+```
+
+```y```有可能也是一个```Promise```，所以不能直接写```resolve(y)```，应该递归判断```y```和```promise2```的关系。需要调用```resolvePromise```。```y```是```then```的成功回调返回的值，和之前的```x```基本一个概念。
+
+为什么这里要用递归呢，因为```then```返回的可能是```Promise```嵌套，也就是```Promise```中仍旧包含```Promise```，在```Promise```的标准中这样的写法是被允许的。所以要用递归来解决，拿到最终的返回，也就是基本类型。
+
+```js
+try {
+    let then = x.then;
+    if (typeof then === 'function') {
+        then.call(x, function (y) {
+            resolvePromise (promise2, y, resolve, reject)
+            // resolve(y); // 成功的结果，让promise2变为成功状态
+        }, function (r) {
+            reject(r);
+        });
+    } else {
+        resolve(x)
+    }
+} catch (e) {
+    reject(e);
+}
+```
+
+自己编写的```Promise```可能会和别人的```Promise```嵌套使用，官方文档要求，```Promise```中要书写判断避免因对方```Promise```编写不规范带来的影响。
+
+比如对方的```Promise```成功和失败都调用了，或者多次调用了成功。需要使用```called```变量来表示```Promise```有没有被调用过，一旦状态改变就不能再改变了。
+
+```js
+function resolvePromise (promise2, x, resolve, reject) {
+    if (promise2 === x) { // 防止自己等待自己
+        return reject(new TypeError('循环引用了'));
+    }
+    let called; // 表示Promise有没有被调用过
+    // x是object或者是个function
+    if ((x !== null && typeof x === 'object') || typeof x === 'function') {
+        try {
+            let then = x.then;
+            if (typeof then === 'function') {
+                then.call(x, function (y) {
+                    if (called) { // 是否调用过
+                        return;
+                    }
+                    called = true;
+                    resolvePromise (promise2, y, resolve, reject)
+                }, function (r) {
+                    if (called) { // 是否调用过
+                        return;
+                    }
+                    called = true;
+                    reject(r);
+                });
+            } else { // 当前then是一个普通对象。
+                resolve(x)
+            }
+        } catch (e) {
+            if (called) { // 是否调用过
+                return;
+            }
+            called = true;
+            reject(e);
+        }
+    } else {
+        if (called) { // 是否调用过
+            return;
+        }
+        called = true;
+        resolve(x);
+    }
+}
+```
+
+
+当前```Promise```还存在一个小问题，如果```Promise```有多个```then```方法，只在最后一个```then```方法中传递了```onFulfilled```，是需要将```Promise```的返回值传递过去的，也就是下面的代码需要用内容输出，这叫值的穿透。
+
+```js
+p.then().then().then(function(data) {
+    console.log(data);
+})
+```
+
+实现起来也比较简单，假如用户没有传递```onFulfilled```，或者传入的不是函数，可以给个默认值，也就是这个参数是一个可选参数。
+
+```js
+Primsie.prototype.then = function(onFulfilled, onRejected) {
+    onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : function (data) { return data;};
+    onRejected = typeof onRejected === 'function' ? onRejected : function (err) { throw err;};
+}
+```
+
+最后在调用```executor```的时候也可能会出错，只要```Promise```出现错误，就需要走到```then```的``reject``中，所以这里也需要```try...catch```。
+
+```js
+try {
+    executor(resolve, reject);
+} catch (e) {
+    reject(e);
+}
+```
+
+至此Promise就写完了，全部代码如下:
+
+```js
+function Promise (executor) {
+    var self = this;
+    self.status = 'pending';
+    self.value;
+    self.reason;
+    self.onResolvedCallbacks = []; // 存放所有成功的回调。
+    self.onRejectedCallbacks = []; // 存放所有失败的回调。
+    function resolve(value) {
+        if (self.status === 'pending') {
+            self.status = 'resolved';
+            self.value = value;
+            self.onResolvedCallbacks.forEach(function (fn) {
+                fn();
+            })
+        }
+    }
+
+    function reject(reason) {
+        if (self.status === 'pending') {
+            self.status = 'rejected';
+            self.reason = reason;
+            self.onRejectedCallbacks.forEach(function (fn) {
+                fn();
+            })
+        }
+    }
+    try {
+        executor(resolve, reject);
+    } catch (e) {
+        reject(e);
+    }
+}
+
+function resolvePromise (promise2, x, resolve, reject) {
+    if (promise2 === x) { // 防止自己等待自己
+        return reject(new TypeError('循环引用了'));
+    }
+    let called; // 表示Promise有没有被调用过
+    // x是object或者是个function
+    if ((x !== null && typeof x === 'object') || typeof x === 'function') {
+        try {
+            let then = x.then;
+            if (typeof then === 'function') {
+                then.call(x, function (y) {
+                    if (called) { // 是否调用过
+                        return;
+                    }
+                    called = true;
+                    resolvePromise (promise2, y, resolve, reject)
+                }, function (r) {
+                    if (called) { // 是否调用过
+                        return;
+                    }
+                    called = true;
+                    reject(r);
+                });
+            } else { // 当前then是一个普通对象。
+                resolve(x)
+            }
+        } catch (e) {
+            if (called) { // 是否调用过
+                return;
+            }
+            called = true;
+            reject(e);
+        }
+    } else {
+        if (called) { // 是否调用过
+            return;
+        }
+        called = true;
+        resolve(x);
+    }
+}
+
+Promise.prototype.then = function(onFulfilled, onRejected) {
+    onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : function (data) { return data;};
+    onRejected = typeof onRejected === 'function' ? onRejected : function (err) { throw err;};
+    var self = this;
+    const promise2 = new Promise(function (resolve, reject) {
+        if (self.status === 'resolved') {
+            setTimeout(function() {
+                try {
+                    const x = onFulfilled(self.value);
+                    resolvePromise(promise2, x, resolve, reject);
+                } catch(e) {
+                    reject(e);
+                } 
+            }, 0)
+        }
+
+        if (self.status === 'rejected') {
+            setTimeout(function() {
+                try {
+                    const x = onRejected(self.reason);
+                    resolvePromise(promise2, x, resolve, reject);
+                } catch(e) {
+                    reject(e);
+                }
+            }, 0)
+        }
+        if (self.status === 'pending') {
+            self.onResolvedCallbacks.push(function () {
+                setTimeout(function() {
+                    try {
+                        const x = onFulfilled(self.value);
+                        resolvePromise(promise2, x, resolve, reject);
+                    } catch(e) {
+                        reject(e);
+                    }
+                }, 0)
+            });
+            self.onRejectedCallbacks.push(function() {
+                setTimeout(function() {
+                    try {
+                        const x = onRejected(self.reason);
+                        resolvePromise(promise2, x, resolve, reject);
+                    } catch(e) {
+                        reject(e);
+                    }
+                }, 0)
+            });
+        }
+    })
+    return promise2;
+}
+
+```
+
+## 8. 测试
+
+可以使用```promises-aplus-tests```测试```Promise```是否符合规范。测试的时候需要提供一段脚本，通过入口进行测试。
+
+```js
+Promise.defer = Promise.deferred =  function() {
+    let dfd = {};
+    dft.promise = new Promise((resolve, reject) => {
+        dfd.resolve = resolve;
+        dfd.reject = reject;
+    });
+    return dfd;
+}
+```
+
+```s
+
+# 安装
+npm install promises-aplus-tests -g
+
+# 执行测试脚本
+promises-aplus-tests promise.js
+
+```
+
+## 9. 静态方法实现
+
+```js
+Promise.all = function (values) {
+    return new Promise(function (resolve, reject) {
+        var arr = []; // 最终结果的数组
+        var index = 0;
+
+        function processData (key, value) {
+            index++;
+            arr[key] = value;
+            if (index === values.length) {
+                resolve(arr);
+            }
+        }
+
+        for (var i = 0; i < values.length; i++) {
+            var current = values[i];
+            if (current && current.then && typeof current.then === 'function') {
+                current.then(function(y) {
+                    processData(i, y);
+                }, reject);
+            } else {
+                processData(i, current);
+            }
+        }
+    });
+}
+
+Promise.race = function (values) {
+    return new Promise(function (resolve, reject) {
+        for (var i = 0; i < values.length; i++) {
+            var current = values[i];
+            if (current && current.then && typeof current.then === 'function') {
+                current.then(resolve, reject);
+            } else {
+                resolve(current);
+            }
+        }
+    });
+}
+
+Promise.resolve = function(value){
+    return new Promise((resolve,reject)=>{
+        resolve(value);
+    });
+}
+
+Promise.reject = function(reason){
+    return new Promise((resolve,reject)=>{
+        reject(reason);
+    });
+}
+```
