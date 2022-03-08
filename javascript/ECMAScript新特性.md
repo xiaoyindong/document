@@ -917,11 +917,11 @@ const m = new Map();
 m.set('foo', '123');
 m.set('bar', '345');
 
-for (const item if m) {
+for (const item of m) {
     console.log(item); // ['foo', '123'];
 }
 
-for (const [key, value] if m) {
+for (const [key, value] of m) {
     console.log(key, value); // 'foo', '123'
 }
 ```
@@ -945,7 +945,7 @@ for (const [key, value] if m) {
 ```js
 const obj = {
     store: [1, 2, 3, 4, 5],
-    [Symbol.iterable]: function() {
+    [Symbol.iterator]: function() {
         let index = 0;
         const self = this;
         return {

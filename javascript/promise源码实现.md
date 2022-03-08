@@ -278,7 +278,7 @@ function reject(reason) {
 
 ## 6. 实现链式调用
 
-```Promise```最大的优点就是链式调用，如果一个```then```方法返回普通值，这个值会传递给下一次```then```中，作为成功的结果。如果返回的是一个```primise```，则会把```promise```的执行结果传递下去，并且取决于这个```Promise```的成功或失败。如果返回的是一个报错就会执行到下一个```then```的失败的函数中。
+```Promise```最大的优点就是链式调用，如果一个```then```方法返回普通值，这个值会传递给下一次```then```中，作为成功的结果。如果返回的是一个```promise```，则会把```promise```的执行结果传递下去，并且取决于这个```Promise```的成功或失败。如果返回的是一个报错就会执行到下一个```then```的失败的函数中。
 
 捕获错误的机制是，默认会找距离自己最近的then的失败方法，如果找不到就向下继续找，一直找到```catch```方法。
 
@@ -773,6 +773,23 @@ Promise.prototype.then = function(onFulfilled, onRejected) {
     return promise2;
 }
 
+// 捕获失败的Promise，返回新的Promise
+Promise.prototype.catch = function(reject) {
+    return this.then(null, reject);
+}
+
+// 无论成功还是失败都会执行，并且最后返回原状态，返回新的Promise
+Promise.prototype.finally = function(handle) {
+    return this.then(function(value) {
+        return Promise.resolve(handle()).then(function() {
+            return value;
+        })
+    }, function (reason) {
+        return Promise.resolve(handle()).then(function() {
+            throw reason;
+        })
+    })
+}
 ```
 
 ## 8. 测试
@@ -803,11 +820,15 @@ promises-aplus-tests promise.js
 ## 9. 静态方法实现
 
 ```js
+// 只要有一个失败就返回，否则返回所有Promise的结果list
 Promise.all = function (values) {
     return new Promise(function (resolve, reject) {
+        values = Array.isArray(values) ? values : []; 
+        if (values.length === 0) {
+            resolve(values);
+        }
         var arr = []; // 最终结果的数组
         var index = 0;
-
         function processData (key, value) {
             index++;
             arr[key] = value;
@@ -829,6 +850,7 @@ Promise.all = function (values) {
     });
 }
 
+// 只要有一个完成就返回
 Promise.race = function (values) {
     return new Promise(function (resolve, reject) {
         for (var i = 0; i < values.length; i++) {
@@ -842,15 +864,79 @@ Promise.race = function (values) {
     });
 }
 
+// 返回一个成功的Promise，如果入参是Promise直接返回
 Promise.resolve = function(value){
+    if (value && value.then && typeof value === 'function') {
+        return value;
+    }
     return new Promise((resolve,reject)=>{
         resolve(value);
     });
 }
 
+// 返回一个失败的Promise，如果入参是Promise，直接返回
 Promise.reject = function(reason){
+    if (reason && reason.then && typeof reason === 'function') {
+        return value;
+    }
     return new Promise((resolve,reject)=>{
         reject(reason);
     });
+}
+
+// 任意一个传入的Promise成功则成功，否则返回所有Promise结果的list。
+Promise.any = function (values) {
+    return new Promise(function(resolve, reject) {
+        let errs = [];
+        values.forEach((item, idx) => {
+            if (item instanceof Promise) {
+                item.then(function(value) {
+                    resolve(value);
+                }, function(err) {
+                    errs[idx] = err;
+                    if(errs.length === values.length) {
+                        reject(errs);
+                    }
+                })
+            } else {
+                resolve(value);
+            }
+        })
+    })
+}
+
+// 返回所有传入的promise对象结果值
+Promise.allsettled = function(values) {
+    return new Promise(function(resolve, reject) {
+        var list = [];
+        function ret (list) {
+            if (list.length === values.length) {
+                resolve(list);
+            }
+        }
+        values.forEach((item, idx) => {
+            if (item instanceof Promise) {
+                item.then(function(value) {
+                    list[idx] = {
+                        status: 'fulfilled',
+                        value,
+                    }
+                    ret(list);
+                }, function(rea) => {
+                    list[idx] = {
+                        status: 'rejected',
+                        reason: rea,
+                    }
+                    ret(list);
+                })
+            } else {
+                list[idx] = {
+                    status: 'fulfilled',
+                    value: item,
+                }
+                ret(list);
+            }
+        })
+    })
 }
 ```
