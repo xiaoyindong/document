@@ -51,6 +51,7 @@ console.log('end');
 ```
 
 ```js
+// node v16.13.1
 setTimeout(() => {
     console.log('s1');
     Promise.resolve().then(() => {
@@ -79,7 +80,7 @@ setTimeout(() => {
 
 console.log('end');
 
-// start end p2 s1 s2 t1 t2 p1 p3
+// start end p2 s1 t1 p1 s2 t2 p3
 ```
 
 ```Node```与浏览器事件环执行是有一些不同的。
