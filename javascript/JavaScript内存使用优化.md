@@ -286,7 +286,7 @@ document.body.appendChild(fragEle);
 // 字面量方式
 var a = [1, 2, 3];
 
-// 实力换方式
+// 实例化方式
 var a1 = new Array(3)
 a1[0] = 1;
 a1[1] = 2;
