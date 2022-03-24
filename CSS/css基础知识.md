@@ -94,13 +94,7 @@ display: webkit-box;
 
 -webkit-overflow-scrolling: touch;
 
-## 15. flex
-
-## 16. column
-
-## 17. grid
-
-## 18. 块级格式上下文
+## 15. 块级格式上下文
 
 块级格式上下文，英文全称是 Block Formatting Context，简称 BFC
 
@@ -169,27 +163,27 @@ display:table-header-groupthead
 
 display:table-footer-grouptfoot
 
-## 19. 哪些定位方式
+## 16. 哪些定位方式
 
 static，relative，absolute，fixed，sticky
 
-## 20. 层叠上下文
+## 17. 层叠上下文
 
 层叠上下文是元素在Z轴上的层次关系集合并影响渲染顺序，设置z-index可改变position不为static的元素的层叠顺序
 
 层叠上下文中父元素层级决定了子元素层级，兄弟元素间的层级由z-index影响
 
-## 21. 水平居中
+## 18. 水平居中
 
 text-align: centet，margin: 0 auto
 
 justify-content: center
 
-## 22. 垂直居中
+## 19. 垂直居中
 
 line-height，vertical-align: middle，align-items: center
 
-## 23. 圣杯布局
+## 20. 圣杯布局
 
 ```html
 <style>
@@ -245,7 +239,7 @@ cl  ear: both;
 <div class="footer">footer</div>
 ```
 
-## 24. 双飞翼布局
+## 21. 双飞翼布局
 
 ```html
 <style>
@@ -298,7 +292,7 @@ c  lear: both;
 <div class="footer">footer</div>
 ```
 
-## 25. 浏览器是如何解析和渲染 CSS 的
+## 22. 浏览器是如何解析和渲染 CSS 的
 
 浏览器解析和渲染 CSS 的步骤：
 
@@ -340,7 +334,7 @@ Render Tree
 重新渲染
 JS 更改 CSS 属性，CSS 动画以及伪类（如hover），内容变更等，可能会引起浏览器重新布局、绘制或者合成
 
-## 26. 获取 CSS 样式的接口
+## 23. 获取 CSS 样式的接口
 
 style
 可读写
@@ -362,7 +356,7 @@ document.styleSheets
 IE9+
 可写支持insertRule``deleteRule
 
-## 27. 重排和重绘
+## 24. 重排和重绘
 
 引起重排的属性
 
@@ -415,20 +409,20 @@ IE9+
 使用replaceChild``cloneNode减少先删除、创建再插入 DOM 的场景
 
 
-## 28. 色相
+## 25. 色相
 
 ```css
 filter:hue-rotate(60deg); // 色相旋转60度
 ```
 
-## 29. 蒙版
+## 26. 蒙版
 
 ```css
 -webkit-background-clip: text;
 -webkit-text-fill-color: transparent;
 ```
 
-## 30. 设置滚动条
+## 27. 设置滚动条
 
 ```css
 div::-webkit-scrollbar {
@@ -446,26 +440,26 @@ div::-webkit-scrollbar {
 -webkit-scrollbar-resizer: // 纵向滚动交界
 ```
 
-## 31. 拖动
+## 28. 拖动
 
 ```css
 resize: horizontal;
 ```
 
-## 32. 遮罩
+## 29. 遮罩
 
 ```css
 -webkit-mask-image: url(png文件遮罩)
 ```
 
-## 33. 混合模式
+## 30. 混合模式
 
 ```css
 mix-blend-mode: hue; // 屏蔽灰色之后着色。
 background-blend-mode: darken; // 背景混合模式
 ```
 
-## 34. 滤镜
+## 31. 滤镜
 
 ```css
 filter: brightness(80%) grayscale(20%) contrast(1.2); // 光线下降80%；灰度20%；对比度
@@ -478,7 +472,7 @@ background-blend-mode: darken;
 filter: brightness(80%) grayscale(20%) contrast(1.2);
 ```
 
-## 35. 自助滚动
+## 32. 自助滚动
 
 父元素
 
@@ -493,7 +487,7 @@ scroll-snap-align: x mandatory;
 scroll-snap-align: start;
 ```
 
-## 36. 画图形
+## 33. 画图形
 
 ```css
 shape-outsize: polygon(0, 0, 25%, 0, 57%);
@@ -509,7 +503,7 @@ grid-auto-flow
 max-content/min-content
 ```
 
-## 37. 阴影
+## 34. 阴影
 
 文本
 
@@ -522,7 +516,7 @@ text-shadow: 横向偏移 纵向偏移 大小 颜色
 ```css
 box-shadow: [insert] 横向偏移 纵向偏移 大小 [阴影区] 颜色
 ```
-## 38. 渐变，一般只能加在背景上
+## 35. 渐变，一般只能加在背景上
 
 线性渐变
 
@@ -536,7 +530,7 @@ background-image: linear-gradient(left top, green);
 background-image: radial-gradient(left top, green);
 ```
 
-## 39. animation
+## 36. animation
 
 ```css
 animation-name: // 动画名称
@@ -548,7 +542,7 @@ animation-direction: alternate; // 循环方向
 animation-play-state: paused; // 暂停
 ```
 
-## 40. 分栏布局
+## 37. 分栏布局
 
 columns
 
@@ -563,10 +557,6 @@ column-rule < column-rule-width > | < column-rule-style > | < column-rule-color 
 column-fill: auto | balance
 
 column-span: none | all
-
-column-break-before：auto | always | avoid | left | right | page | column | avoid-page | avoid-column
-
-column-break-after：auto | always | avoid | left | right | page | column | avoid-page | avoid-column
 
 column-break-inside：auto | avoid | avoid-page | avoid-column
 
