@@ -1,12 +1,4 @@
-首先先定义```Promise```的构造函数，因为创建```Promise```对象的时候会接收函数参数```executor```，并且函数会立即被调用，所以```Promise```内部立即执行这个函数。
-
-```js
-function Promise (executor) {
-    excutor();
-}
-```
-
-```executor```函数会接收两个函数方法，一个是```resolve```，一个```reject```。调用```resolve```和```reject```的时候会传入信息，成功的时候传递成功的值，失败的时候传递失败的原因。
+定义Promise的构造函数，因为创建Promise对象的时候会接收一个函数executor，并且函数会立即被调用，executor函数接收两个函数方法，resolve和reject。调用resolve和reject的时候会传入对应的值。
 
 ```js
 function Promise (executor) {
@@ -20,7 +12,7 @@ function Promise (executor) {
 }
 ```
 
-```Promise```存在```3```种状态的，等待状态```pending```，成功状态```resolved```，失败状态```rejected```，并且状态只可以改变一次，默认是等待状态，先调用了```resolve```就是成功状态，先调用```reject```就是失败状态。通过```status```属性来保存状态，默认```pending```。状态只可改变一次，只有当状态未发生改变时才去改变状态。成功```resolve```或失败```reject```会传递参数，定义```value```和```reason```分别保存。
+Promise存在3种状态的，等待pending，成功resolved以及失败rejected，状态只可以改变一次，默认是等待状态，可以通过status属性来保存状态，默认pending。状态只可改变一次，只有当状态未发生改变时才去改变状态。成功或失败会传递参数，定义value和reason分别保存。
 
 ```js
 function Promise (executor) {
@@ -47,9 +39,7 @@ function Promise (executor) {
 }
 ```
 
-## 1. 添加then方法
-
-```Promise```的对象存在```then```方法，方法里面会有两个参数，成功的回调```onFulfilled```和失败的回调```onRejected```，成功会执行```onFulfilled```，失败会执行```onRejected```。而且方法需要添加在原型上。
+Promise存在then方法，接收两个参数，成功的回调onFulfilled和失败的回调onRejected，方法需要添加在原型上。
 
 ```js
 Primsie.prototype.then = function(onFulfilled, onRejected) {
@@ -64,7 +54,7 @@ Primsie.prototype.then = function(onFulfilled, onRejected) {
 }
 ```
 
-## 2. Promise A+规范
+## 1. Promise A+规范
 
 ```Promise```的概念不是凭空出现的，是[Promise A+规范](https://promisesaplus.com/)中定义的，要求所有实现```Promise```的代码都必须要基于这个规范。
 
@@ -158,7 +148,8 @@ function reject(reason) {
     }
 }
 ```
-## 3. 链式调用
+
+## 2. 链式调用
 
 ```Promise```的链式调用和其它对象比如```JQuery```的链式调用有所不同，```Promise```的```then```方法返回的是一个全新的```Promise```，而不是当前的```Promise```。因为```Promise```的状态只能改变一次，如果使用同一个```Promise```的话后面的```then```就失去了成功失败的自由性。
 
@@ -271,7 +262,7 @@ Primsie.prototype.then = function(onFulfilled, onRejected) {
 }
 ```
 
-## 4. resolvePromise函数
+## 3. resolvePromise函数
 
 ```resolvePromise```函数的作用是判断```x```是否是```promise```，如果是```promise```就执行并且将执行结果添加到```resolve```方法中，如果是常量则直接添加到```resolve```方法中。这些内容在文档上都可以找得到，具体可以自行翻阅文档，这里就不列出了，直接代码实现。
 
@@ -582,7 +573,7 @@ Promise.prototype.finally = function(handle) {
 }
 ```
 
-## 5. 测试
+## 4. 测试
 
 可以使用```promises-aplus-tests```测试```Promise```是否符合规范。测试的时候需要提供一段脚本，通过入口进行测试。
 
@@ -607,7 +598,7 @@ promises-aplus-tests promise.js
 
 ```
 
-## 6. 静态方法实现
+## 5. 静态方法实现
 
 ```js
 // 只要有一个失败就返回，否则返回所有Promise的结果list
